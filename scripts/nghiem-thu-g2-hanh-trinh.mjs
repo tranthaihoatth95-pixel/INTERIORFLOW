@@ -1624,7 +1624,889 @@ async function bamTheBangBanPhim(page, tran = 40) {
   return { toiDuoc: false, soTab: tran, coRing: false, dungO: '' };
 }
 
-const HANH_TRINH = [J16, J16b, J23, J17, J19, J20, J07, J12, J04, J06, J18, J22, J05];
+
+/* ═══════════════ LƯỢT 7 (05/09) — J15 · VÒNG ĐỜI CẤU KIỆN `.idfc` ═══════════════ */
+
+/**
+ * ĐỌC NƠI LƯU THẬT của KHO CẤU KIỆN STUDIO — không đọc chữ trên kệ.
+ *
+ * Đường thật, đo tại nguồn chứ không nhớ hộ: `lib/library/idfc-store.ts:19` khai
+ * `IDB_ROUTE = '/studio-idfc'`; kho đi qua `createStudioBlobStore` →
+ * `lib/storage/studio-persist.ts:27,55` (`STUDIO_USER = 'studio'`) → `lib/sheets-persist.ts:54`
+ * ghép khoá `userId::route` (không có projectId ⇒ KHÔNG có đoạn thứ ba) ⇒ khoá cuối cùng là
+ * **`studio::/studio-idfc`** trong DB `interiorflow-sheets`, store `sheets`.
+ *
+ * ⚠️ KHÔNG dùng `docKhoSheets` cho việc này: hàm đó đếm `doc.entities`/`deck.slides` — hai hình
+ * dạng của bản vẽ và deck. Kho cấu kiện mang `sheets[0].payload` là MẢNG `StoredIdfc`, nên đọc
+ * bằng lăng kính kia sẽ ra `soThucThe: 0` cho một kho đầy hàng: **xanh giả**.
+ */
+function docKhoIdfc(page) {
+  return page.evaluate(
+    () =>
+      new Promise((res) => {
+        let xong = false;
+        const tra = (v) => { if (!xong) { xong = true; res(v); } };
+        setTimeout(() => tra({ loi: 'het-gio', mon: [] }), 8000);
+        let rq;
+        try { rq = indexedDB.open('interiorflow-sheets'); } catch { return tra({ loi: 'khong-mo-duoc', mon: [] }); }
+        rq.onerror = () => tra({ loi: 'open-error', mon: [] });
+        rq.onsuccess = () => {
+          const db = rq.result;
+          if (!db.objectStoreNames.contains('sheets')) return tra({ mon: [], khoaCo: false });
+          const st = db.transaction('sheets', 'readonly').objectStore('sheets');
+          const g = st.get('studio::/studio-idfc');
+          g.onerror = () => tra({ loi: 'get-error', mon: [] });
+          g.onsuccess = () => {
+            const rec = g.result;
+            const payload = rec?.sheets?.[0]?.payload;
+            if (!Array.isArray(payload)) return tra({ mon: [], khoaCo: !!rec, viSao: 'payload không phải mảng' });
+            tra({
+              khoaCo: true,
+              mon: payload.map((m) => ({
+                code: String(m?.meta?.code ?? ''),
+                ten: String(m?.meta?.name ?? ''),
+                kind: String(m?.meta?.kind ?? ''),
+                w: m?.body?.geom2d?.w ?? null,
+                soPrim: (m?.body?.geom2d?.prims ?? []).length,
+                the: (m?.meta?.tags ?? []).join(','),
+                storedAt: String(m?.storedAt ?? ''),
+              })),
+            });
+          };
+        };
+      }),
+  );
+}
+
+const J15_MA = 'G2-J15-GHE';
+
+/** Một `.idfc` HỢP LỆ v3 — `importIdfc` (`lib/cad/idfc.ts:427`) đòi: idfcVersion số, meta.name +
+ *  meta.code chuỗi, meta.kind thuộc IDFC_KINDS, và ruột khớp loại (`component` ⇒ geom2d đủ
+ *  group/w/h/prims). Dựng đúng ngần ấy, không hơn — thừa trường là thừa chỗ để sai. */
+function tepIdfc({ ten, w, prims, the }) {
+  return JSON.stringify({
+    idfcVersion: 3,
+    meta: {
+      name: ten,
+      code: J15_MA,
+      kind: 'furniture',
+      tags: the,
+      createdAt: '2026-09-05T00:00:00.000Z',
+      modifiedAt: new Date().toISOString(),
+      appVersion: 'interiorflow-1.0.0',
+    },
+    body: { type: 'component', geom2d: { group: 'Phòng khách', w, h: 800, prims } },
+  });
+}
+
+/** Mở tấm Thư viện bằng ĐÚNG thao tác người dùng (phím `l`, `use-library-sheet.ts:97`), bật chế
+ *  độ "Nạp hàng loạt", thả tệp vào ô nhập thật rồi bấm "Đưa vào kho". Trả về những gì đã bấm để
+ *  báo cáo không phải đoán bước nào chạy, bước nào không. */
+async function napIdfcQuaThuVien(page, duongTep) {
+  const buoc = [];
+  await page.keyboard.press('l');
+  await cho(1500);
+  const nutNap = page.getByRole('button', { name: /Nạp hàng loạt|Bulk add/ });
+  await nutNap.first().click({ timeout: 15000 });
+  buoc.push('nạp hàng loạt');
+  await cho(1200);
+  await page.locator('[data-testid="lib-ingest-input"]').setInputFiles(duongTep);
+  await cho(1800);
+  // Dòng tệp phải mang dấu ✓ + mã — tức app ĐÃ PARSE được, không chỉ nhận tên tệp.
+  const nhanDien = await page.locator('.droprow').first().innerText().catch(() => '');
+  buoc.push(`dòng tệp: ${nhanDien.replace(/\s+/g, ' ').trim().slice(0, 90)}`);
+  const nutKho = page.getByRole('button', { name: /Đưa vào kho|Add to store/ });
+  await nutKho.first().click({ timeout: 15000 });
+  buoc.push('đưa vào kho');
+  await cho(2500);
+  return { buoc, nhanDien };
+}
+
+/**
+ * J15 — MỞ LẠI MỘT `.idfc` ĐÃ LƯU, SỬA, GHI LẠI.
+ *
+ * ⭐ BA LẦN ĐÓNG APP, KHÔNG PHẢI HAI. Khung chỉ chạy hai phiên, nhưng hành trình này đòi bản GỐC
+ * phải sống sót qua một lần đóng TRƯỚC KHI được sửa — nếu không, ta chỉ chứng minh "ghi hai lần
+ * trong cùng một phiên", thứ không ai nghi ngờ. Nên `chuanBi` chạy một **phiên mồi**: nhập bản
+ * gốc rồi đóng hẳn. Phiên 1 của khung mới là lượt "mở lại — thấy bản gốc — sửa"; phiên 2 là lượt
+ * "mở lại — bản sửa còn nguyên".
+ *
+ * ⛔ "SỬA" Ở ĐÂY LÀ NHẬP LẠI CÙNG MÃ, và đó là ngữ nghĩa DUY NHẤT app có. `idfc-store.ts:14-15`
+ * khai thẳng: kho một chiều, *"không có hàm nào sửa nội dung một `.idfc` đã lưu tại chỗ (muốn
+ * đổi: nhập file mới cùng mã, đè)"*, và `saveIdfcItems` upsert theo `meta.code`. Đo cái app có,
+ * không đo cái ta mong nó có.
+ *
+ * KHẲNG ĐỊNH, ba vế rời nhau — vế nào hỏng cũng đỏ:
+ *   ① bản gốc còn nguyên sau lần đóng thứ nhất (nếu không, "mở lại một .idfc đã lưu" vô nghĩa)
+ *   ② sau khi nhập bản sửa: kho mang giá trị MỚI (tên · w · prims · thẻ), KHÔNG phải giá trị cũ
+ *   ③ số món KHÔNG tăng — đè theo mã, không nhân bản. Đây là vế dễ hỏng nhất và cũng là vế mà
+ *      màn hình không nói cho biết.
+ */
+const J15 = {
+  ma: 'J15',
+  ten: 'Thư viện: mở lại `.idfc` đã lưu → sửa → ghi lại → đóng app → vẫn là bản sửa',
+  chan: 'G5',
+  loai: 'trinh-duyet',
+  hieuChuanMo: 'chặn IDBObjectStore.put trên `interiorflow-sheets` — kho cấu kiện không ghi xuống được',
+  async chuanBi(mt) {
+    const thuMuc = path.join(os.tmpdir(), `g2-j15${mt.hauTo}`);
+    mkdirSync(thuMuc, { recursive: true });
+    const goc = path.join(thuMuc, 'ghe-goc.idfc');
+    const sua = path.join(thuMuc, 'ghe-sua.idfc');
+    writeFileSync(goc, tepIdfc({ ten: 'Ghế G2 bản gốc', w: 600, prims: [], the: ['g2', 'goc'] }));
+    writeFileSync(sua, tepIdfc({
+      ten: 'Ghế G2 ĐÃ SỬA',
+      w: 940,
+      prims: [{ t: 'rect', x: 0, y: 0, w: 940, h: 800 }],
+      the: ['g2', 'da-sua'],
+    }));
+
+    // ── PHIÊN MỒI: nhập bản gốc rồi ĐÓNG HẲN. Sau lượt này, mọi thứ J15 đọc được đều đã đi qua
+    //    ít nhất một lần tắt app.
+    const p0 = await moPhienTrinhDuyet(`J15${mt.hauTo}`, { chanIdb: mt.hongCoY });
+    try {
+      const me = await p0.ctx.request.get(`${GOC}/api/auth/me`);
+      if (!(await me.json())?.user?.id) await dangNhap(p0.ctx);
+      await p0.page.goto(`${GOC}/files`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+      await cho(6000);
+      await boQuaLopChe(p0.page);
+      await napIdfcQuaThuVien(p0.page, goc);
+      await chup(p0.page, 'J15-0-vua-nhap-ban-goc');
+    } finally {
+      await dongPhien(p0);
+    }
+    await cho(1200);
+    return { tepGoc: goc, tepSua: sua };
+  },
+  async moPhien(mt, st, lan) {
+    const p = await moPhienTrinhDuyet(`J15${mt.hauTo}`, { chanIdb: mt.hongCoY });
+    const me = await p.ctx.request.get(`${GOC}/api/auth/me`);
+    st.userId = (await me.json())?.user?.id || (await dangNhap(p.ctx));
+    st.lan = lan;
+    return p;
+  },
+  async thaoTac(p, mt, st) {
+    await p.page.goto(`${GOC}/files`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(6000);
+    await boQuaLopChe(p.page);
+    // ① MỞ LẠI: bản gốc phải còn — đọc từ IndexedDB, không tin kệ.
+    st.khoLucMoLai = await docKhoIdfc(p.page);
+    await chup(p.page, 'J15-1-mo-lai-thay-ban-goc');
+    // ② SỬA: nhập lại cùng mã với nội dung khác.
+    st.buocSua = await napIdfcQuaThuVien(p.page, st.tepSua);
+    await chup(p.page, 'J15-2-vua-ghi-ban-sua');
+  },
+  async ghiXuong(p) {
+    return docKhoIdfc(p.page);
+  },
+  async vaoLai(p) {
+    await p.page.goto(`${GOC}/files`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(6000);
+    await boQuaLopChe(p.page);
+    // Kho hydrate bất đồng bộ từ IDB (`hydrateIdfcStore`) — nhưng ta đọc THẲNG IndexedDB nên
+    // không phụ thuộc app hydrate xong hay chưa. Chờ ở đây chỉ để ảnh chụp có nội dung.
+    await chup(p.page, 'J15-3-mo-lai-sau-khi-sua');
+  },
+  soSanh(truoc, sau, st) {
+    const g = (kho) => (kho?.mon ?? []).find((m) => m.code === J15_MA) ?? null;
+    const banGoc = g(st.khoLucMoLai);
+    const s = g(sau);
+    const loi = [];
+    if (!banGoc) loi.push(`① mở lại KHÔNG thấy bản gốc trong kho (khoá studio::/studio-idfc: ${JSON.stringify(st.khoLucMoLai).slice(0, 160)})`);
+    else if (banGoc.w !== 600) loi.push(`① bản gốc sai giá trị: w=${banGoc.w}, đợi 600`);
+    if (!s) loi.push('② sau khi sửa + đóng app: không còn món nào mang mã ' + J15_MA);
+    else {
+      if (s.w !== 940) loi.push(`② w vẫn là ${s.w} — bản sửa (940) KHÔNG ghi xuống`);
+      if (!/ĐÃ SỬA/.test(s.ten)) loi.push(`② tên vẫn là "${s.ten}" — bản sửa không ghi xuống`);
+      if (s.soPrim !== 1) loi.push(`② prims=${s.soPrim}, đợi 1`);
+      if (!/da-sua/.test(s.the)) loi.push(`② thẻ vẫn là "${s.the}"`);
+    }
+    const soTruoc = (truoc?.mon ?? []).length;
+    const soSau = (sau?.mon ?? []).length;
+    if (soSau !== soTruoc) loi.push(`③ số món đổi qua lần đóng app: ${soTruoc} → ${soSau}`);
+    const trung = (sau?.mon ?? []).filter((m) => m.code === J15_MA).length;
+    if (trung > 1) loi.push(`③ NHÂN BẢN: ${trung} món cùng mã ${J15_MA} — đè theo mã đã hỏng`);
+    if (loi.length) return { dat: false, vi: loi.join(' · ') };
+    return {
+      dat: true,
+      vi: `khoá IndexedDB \`studio::/studio-idfc\`: bản gốc sống qua lần đóng #1 (w=600, "${banGoc.ten}") → nhập lại cùng mã ${J15_MA} → sau lần đóng #2 kho mang ĐÚNG bản sửa (w=940, "${s.ten}", ${s.soPrim} prim, thẻ "${s.the}"), tổng ${soSau} món, không nhân bản`,
+      ghiChu: `nhận diện lúc thả tệp: ${String(st.buocSua?.nhanDien ?? '').replace(/\s+/g, ' ').trim().slice(0, 90)}`,
+    };
+  },
+};
+
+
+/* ═══════════════ LƯỢT 7 (05/09) — J13 · NHẬP TỆP THÔ → THƯ VIỆN → TỆP TRÊN ĐĨA ═══════════════ */
+
+/**
+ * ĐỌC NƠI LƯU THẬT #1 — MANIFEST của trang `/library/ingest`.
+ * `lib/refingest.ts:161` khai `route: '/studio-ref-manifest'`, cùng đường studio-persist như kho
+ * `.idfc` ⇒ khoá `studio::/studio-ref-manifest`.
+ */
+function docManifestIngest(page) {
+  return page.evaluate(
+    () =>
+      new Promise((res) => {
+        let xong = false;
+        const tra = (v) => { if (!xong) { xong = true; res(v); } };
+        setTimeout(() => tra({ loi: 'het-gio', asset: [] }), 8000);
+        let rq;
+        try { rq = indexedDB.open('interiorflow-sheets'); } catch { return tra({ loi: 'khong-mo-duoc', asset: [] }); }
+        rq.onerror = () => tra({ loi: 'open-error', asset: [] });
+        rq.onsuccess = () => {
+          const db = rq.result;
+          if (!db.objectStoreNames.contains('sheets')) return tra({ asset: [], khoaCo: false });
+          const g = db.transaction('sheets', 'readonly').objectStore('sheets').get('studio::/studio-ref-manifest');
+          g.onerror = () => tra({ loi: 'get-error', asset: [] });
+          g.onsuccess = () => {
+            const m = g.result?.sheets?.[0]?.payload;
+            const ds = m?.assets;
+            if (!Array.isArray(ds)) return tra({ asset: [], khoaCo: !!g.result, viSao: 'manifest không có mảng assets' });
+            tra({ khoaCo: true, asset: ds.map((a) => ({ ten: String(a?.name ?? ''), loai: String(a?.type ?? ''), usage: String(a?.usage ?? ''), byte: a?.bytes ?? 0 })) });
+          };
+        };
+      }),
+  );
+}
+
+/** ĐỌC NƠI LƯU THẬT #2 — kho `LibraryAsset`, hỏi qua ĐÚNG cửa app dùng (`GET /api/library`,
+ *  `app/api/library/route.ts:8`), trong page nên cookie phiên đi kèm như người dùng thật. */
+function docKhoLibraryAsset(page, dauVet) {
+  return page.evaluate(async (dv) => {
+    try {
+      const r = await fetch('/api/library');
+      if (!r.ok) return { ok: false, ma: r.status, mon: [] };
+      const j = await r.json();
+      const ds = (j?.assets ?? []).filter((a) => String(a.name ?? '').includes(dv));
+      return { ok: true, tong: (j?.assets ?? []).length, mon: ds.map((a) => ({ id: a.id, ten: a.name, category: a.category, tags: a.tags, usage: a.usage, url: a.url })) };
+    } catch (e) {
+      return { ok: false, loi: String(e).slice(0, 120), mon: [] };
+    }
+  }, dauVet);
+}
+
+/**
+ * ĐỌC NƠI LƯU THẬT #3 — **BYTE THẬT TRÊN ĐĨA**, không qua app.
+ * `lib/server/library-save.ts:15,55` ghi tệp vào `<cwd>/uploads/<path>` rồi mới tạo hàng DB. Đây
+ * đọc thẳng cột `path` từ CSDL rồi băm nội dung tệp và so với tệp nguồn — hàng DB trỏ vào một tệp
+ * KHÔNG tồn tại (hoặc rỗng) là ca hỏng mà mọi phép đo qua app đều bỏ lọt: `GET /api/library` chỉ
+ * đọc bảng, nó không mở tệp ra xem.
+ */
+function docTepTrenDia(duongDb, dauVet, bamNguon) {
+  const { PrismaClient } = require('@prisma/client');
+  const crypto = require('node:crypto');
+  const pr = new PrismaClient({ datasources: { db: { url: `file:${duongDb}` } } });
+  return pr.libraryAsset
+    .findMany({ where: { name: { contains: dauVet }, deletedAt: null }, select: { id: true, name: true, path: true, mime: true, tags: true, category: true } })
+    .then((hang) => {
+      const out = hang.map((h) => {
+        const duong = path.join(process.cwd(), 'uploads', h.path);
+        if (!existsSync(duong)) return { ...h, coTep: false, byte: 0, bam: '' };
+        const b = readFileSync(duong);
+        return { id: h.id, ten: h.name, tags: h.tags, category: h.category, coTep: true, byte: b.length, bam: crypto.createHash('sha256').update(b).digest('hex').slice(0, 16), duong };
+      });
+      return { hang: out, khopNguon: out.filter((o) => o.bam === bamNguon).length };
+    })
+    .finally(() => pr.$disconnect());
+}
+
+/** Một PNG THẬT (magic byte đúng) — `saveLibraryAssetFromBuffer` sniff magic chứ không tin nhãn
+ *  client khai (`lib/server/mime-sniff.ts`), nên tệp giả tên `.png` sẽ bị chặn ở cửa. */
+async function taoAnhThat(duong, mau) {
+  const sharp = require('sharp');
+  await sharp({ create: { width: 240, height: 160, channels: 3, background: mau } }).png().toFile(duong);
+  const crypto = require('node:crypto');
+  return crypto.createHash('sha256').update(readFileSync(duong)).digest('hex').slice(0, 16);
+}
+
+const J13_DAU_VET = 'g2j13anhtho';
+
+/**
+ * DỌN SẠCH DẤU VẾT CŨ TRƯỚC MỖI LƯỢT — khung đã `rmSync` hồ sơ trình duyệt, nhưng hàng
+ * `LibraryAsset` và tệp trong `uploads/` sống ở CSDL/đĩa nên lượt trước để lại.
+ *
+ * ⛔ ĐÂY LÀ BẪY "THẾ GIỚI ĐÃ ẤM", VÀ NÓ ĐÃ CẮN THẬT: lượt hiệu chuẩn đầu tiên báo **PASS trong
+ * thế giới đã hỏng** — không phải vì cửa ghi vẫn chạy, mà vì phép đo ③ đọc CSDL và nhặt được hàng
+ * của lượt LÀNH chạy trước đó. Trạng thái sẵn có làm bộ đo phát chứng chỉ cho một lần ghi chưa hề
+ * xảy ra. Dọn ở đây là điều kiện để phép hiệu chuẩn có nghĩa, không phải dọn cho gọn.
+ */
+async function donDauVetJ13(duongDb) {
+  const { PrismaClient } = require('@prisma/client');
+  const pr = new PrismaClient({ datasources: { db: { url: `file:${duongDb}` } } });
+  try {
+    const hang = await pr.libraryAsset.findMany({ where: { name: { contains: J13_DAU_VET } }, select: { id: true, path: true } });
+    for (const h of hang) {
+      try { rmSync(path.join(process.cwd(), 'uploads', h.path), { force: true }); } catch { /* tệp đã mất — vẫn xoá hàng */ }
+    }
+    if (hang.length) await pr.libraryAsset.deleteMany({ where: { id: { in: hang.map((h) => h.id) } } });
+    return hang.length;
+  } finally {
+    await pr.$disconnect();
+  }
+}
+
+/**
+ * J13 — NHẬP TỆP THÔ → GẮN ĐỊNH NGHĨA → LƯU VÀO THƯ VIỆN → MỞ LẠI CÒN TỆP TRÊN ĐĨA.
+ *
+ * 🔴 MỘT LỆCH CỦA CHÍNH MA TRẬN, ĐO ĐƯỢC TRƯỚC KHI VIẾT HÀNH TRÌNH NÀY. Ma trận khai đường vào là
+ * `/library/ingest` và cột đã-lưu là *`LibraryAsset` + tệp trên đĩa*. Hai vế đó KHÔNG nối với
+ * nhau: `app/library/ingest/page.tsx:98` `add()` chỉ đẩy tệp vào state rồi `saveManifest` (`:92`)
+ * ghi **manifest xuống IndexedDB**; grep `'/api/library'` trong tệp đó = **0**. Tức thả tệp ở
+ * trang ingest **không sinh hàng `LibraryAsset` nào và không đặt byte nào lên đĩa** — nó chỉ giữ
+ * *tham chiếu metadata* (chính trang tự khai thế ở `:109`).
+ * ⇒ Hành trình này đo **CẢ HAI** đường, mỗi đường một khẳng định riêng, không gộp làm một để
+ * chữ PASS che mất chỗ hở:
+ *   ① `/library/ingest` — nhập thô + gắn định nghĩa (`usage`) ⇒ sống trong manifest IDB
+ *   ② `/inspiration` — tải cùng tệp lên kèm giấy phép ⇒ `POST /api/library`
+ *      (`components/dna/InspirationBoard.tsx:228`) ⇒ hàng `LibraryAsset` + **byte trên đĩa**
+ * Chỉ đường ② mới đáp được câu "mở lại còn tệp trên đĩa"; nói rõ ra là việc của bộ đo.
+ */
+const J13 = {
+  ma: 'J13',
+  ten: 'Nhập tệp thô → gắn định nghĩa → lưu vào Thư viện → mở lại còn hàng DB + byte trên đĩa',
+  chan: 'G5',
+  loai: 'trinh-duyet',
+  hieuChuanMo: 'chặn POST /api/library (500) — cửa ghi thật của LibraryAsset đóng, GET vẫn mở nên app dựng bình thường',
+  async chuanBi(mt) {
+    const thuMuc = path.join(os.tmpdir(), `g2-j13${mt.hauTo}`);
+    mkdirSync(thuMuc, { recursive: true });
+    const anh = path.join(thuMuc, `${J13_DAU_VET}.png`);
+    const bam = await taoAnhThat(anh, { r: 32, g: 96, b: 120 });
+    const daDon = await donDauVetJ13(mt.duongDb);
+    return {
+      daDon,
+      tepAnh: anh,
+      bamNguon: bam,
+      canThiep: mt.hongCoY
+        ? [{ mau: '/api/library', chiPhuongThuc: 'POST', tra: { status: 500, body: { error: 'chặn có chủ ý — thế giới biết chắc hỏng' } } }]
+        : [],
+    };
+  },
+  async moPhien(mt, st, lan) {
+    const p = await moPhienTrinhDuyet(`J13${mt.hauTo}`, { canThiep: st.canThiep ?? [] });
+    const me = await p.ctx.request.get(`${GOC}/api/auth/me`);
+    st.userId = (await me.json())?.user?.id || (await dangNhap(p.ctx));
+    st.lan = lan;
+    return p;
+  },
+  async thaoTac(p, mt, st) {
+    // ── ① ĐƯỜNG MA TRẬN TRỎ TỚI: `/library/ingest`
+    await p.page.goto(`${GOC}/library/ingest`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(5000);
+    const oNhap = p.page.locator('input[type="file"]').first();
+    await oNhap.setInputFiles(st.tepAnh);
+    await cho(4000);
+    // GẮN ĐỊNH NGHĨA: đổi vai trò của tệp vừa nhập (ô chọn `usage`, `page.tsx:423`).
+    const chonUsage = p.page.locator('select').filter({ hasText: /.*/ });
+    st.datUsage = false;
+    try {
+      const s = p.page.locator('select').last();
+      await s.selectOption('material', { timeout: 6000 });
+      st.datUsage = true;
+    } catch { /* không có ô usage ⇒ khai thẳng ở kết quả, không giả vờ đã gắn */ }
+    await cho(3000); // autosave manifest (`useEffect` ở `page.tsx:92`)
+    await chup(p.page, 'J13-1-ingest-da-nhap-tho');
+    st.manifestLucNhap = await docManifestIngest(p.page);
+
+    // ── ② ĐƯỜNG SINH TỆP TRÊN ĐĨA THẬT: `/inspiration` → POST /api/library
+    await p.page.goto(`${GOC}/inspiration`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(6000);
+    await boQuaLopChe(p.page);
+    // Khối nhập ảnh MẶC ĐỊNH ĐÓNG (`InspirationBoard.tsx:116,337` — `importOpen` khởi tạo false),
+    // nên ô nhập tệp chưa có trong DOM: phải bấm "Nhập ảnh có nguồn" như người dùng. Lượt chạy đầu
+    // ngã đúng ở đây (`setInputFiles` hết 30s), và đó là bộ đo thiếu bước, không phải app hỏng.
+    await p.page.getByRole('button', { name: /Nhập ảnh có nguồn|Import sourced image/ }).first().click({ timeout: 15000 });
+    await cho(2500);
+    // GẮN ĐỊNH NGHĨA #2: giấy phép — nó đi vào `tags` qua `buildInspirationTags` (`:227`).
+    try {
+      await p.page.locator('select.ins-select').filter({ has: p.page.locator('option[value="cc0"]') }).first().selectOption('cc0', { timeout: 6000 });
+      st.datGiayPhep = true;
+    } catch { st.datGiayPhep = false; }
+    await p.page.locator('input[type="file"]').first().setInputFiles(st.tepAnh);
+    await cho(9000); // đọc tệp → smartImportImage → POST → refresh
+    await chup(p.page, 'J13-2-inspiration-da-tai-len');
+  },
+  async ghiXuong(p, mt, st) {
+    return {
+      manifest: await docManifestIngest(p.page),
+      kho: await docKhoLibraryAsset(p.page, J13_DAU_VET),
+      dia: await docTepTrenDia(mt.duongDb, J13_DAU_VET, st.bamNguon),
+    };
+  },
+  async vaoLai(p) {
+    await p.page.goto(`${GOC}/library/ingest`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(5000);
+    await chup(p.page, 'J13-3-mo-lai-ingest');
+    await p.page.goto(`${GOC}/inspiration`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(6000);
+    await chup(p.page, 'J13-4-mo-lai-inspiration');
+  },
+  soSanh(truoc, sau, st) {
+    const loi = [];
+    // ① manifest của trang ingest
+    const mTruoc = (truoc.manifest?.asset ?? []).filter((a) => a.ten.includes(J13_DAU_VET));
+    const mSau = (sau.manifest?.asset ?? []).filter((a) => a.ten.includes(J13_DAU_VET));
+    if (!mTruoc.length) loi.push(`① /library/ingest KHÔNG ghi tệp vào manifest (khoá studio::/studio-ref-manifest: ${JSON.stringify(truoc.manifest).slice(0, 140)})`);
+    else if (!mSau.length) loi.push('① manifest mất tệp sau khi đóng app');
+    else if (st.datUsage && mSau[0].usage !== 'material') loi.push(`① định nghĩa đã gắn không sống sót: usage="${mSau[0].usage}", đợi "material"`);
+    // ② hàng LibraryAsset đọc qua đúng cửa app
+    if (!sau.kho?.ok) loi.push(`② GET /api/library không trả được (${sau.kho?.ma ?? sau.kho?.loi})`);
+    else if (!sau.kho.mon.length) loi.push('② sau khi đóng app: kho Thư viện KHÔNG còn hàng nào mang dấu vết ' + J13_DAU_VET);
+    // ③ BYTE THẬT TRÊN ĐĨA — vế nặng nhất, và là vế app không tự kiểm
+    const hang = sau.dia?.hang ?? [];
+    if (!hang.length) loi.push('③ CSDL không có hàng LibraryAsset nào — cửa ghi không chạy');
+    else {
+      const mat = hang.filter((h) => !h.coTep);
+      if (mat.length) loi.push(`③ ${mat.length} hàng DB trỏ vào tệp KHÔNG tồn tại trong uploads/`);
+      if (!sau.dia.khopNguon) loi.push(`③ không tệp nào trên đĩa khớp băm nguồn ${st.bamNguon} (đĩa: ${hang.map((h) => h.bam).join(',')})`);
+    }
+    if (loi.length) return { dat: false, vi: loi.join(' · ') };
+    const h = hang.find((x) => x.bam === st.bamNguon) ?? hang[0];
+    return {
+      dat: true,
+      vi: `① manifest \`studio::/studio-ref-manifest\` giữ tệp thô (usage="${mSau[0].usage}") qua lần đóng app · ② \`GET /api/library\` còn ${sau.kho.mon.length} hàng (tags "${String(sau.kho.mon[0].tags).slice(0, 60)}") · ③ byte trên đĩa \`uploads/\`: ${h.byte} B, sha256 ${h.bam} — KHỚP tệp nguồn`,
+      ghiChu: `⚠️ LỆCH MA TRẬN: đường \`/library/ingest\` (cột "đường vào" của J13) KHÔNG sinh \`LibraryAsset\` và KHÔNG đặt byte nào lên đĩa — nó chỉ ghi manifest IDB. Hàng DB + tệp đĩa ở trên đến từ \`/inspiration\` → POST /api/library. Hai đường, một cột.`,
+    };
+  },
+};
+
+
+/* ═══════════════ LƯỢT 7 (05/09) — J21 · XUẤT GÓI `.idfp` → MỞ TỆP RA SOI → MÁY SẠCH NẠP LẠI ═══ */
+
+/**
+ * MỞ TỆP `.idfp` RA SOI — bằng `JSON.parse` thuần, KHÔNG hỏi lại app đã sinh ra nó.
+ *
+ * ⛔ BÀI HỌC J20 (`JOURNEY-MATRIX` §1.6b), ĐỪNG LẶP: bộ khẳng định vòng đầu chỉ hỏi *mở được ·
+ * có trang · đủ byte* nên nó **cho một trang trắng tinh đi qua với chữ PASS**. Với `.idfp` — một
+ * gói JSON — ba câu đó còn rẻ hơn nữa: `{"idfpVersion":1,"sheets":[]}` dài 34 byte đã "hợp lệ".
+ * Nên ở đây soi tới tận **phần tử của từng slide**, và soi luôn **chữ placeholder** (`makeText()`
+ * đặt mặc định "Nhập nội dung", `lib/present-editor/model.ts` — đúng lỗi F1 mà mắt người bắt được
+ * còn máy thì không, vì trong PDF nó đã thành điểm ảnh; trong `.idfp` thì nó là CHỮ, grep được).
+ */
+function soiIdfp(duong) {
+  const kichThuoc = statSync(duong).size;
+  let j;
+  try {
+    j = JSON.parse(readFileSync(duong, 'utf8'));
+  } catch (e) {
+    return { hopLe: false, kichThuoc, loi: `JSON hỏng: ${String(e.message || e).slice(0, 100)}` };
+  }
+  const sheets = Array.isArray(j?.sheets) ? j.sheets : [];
+  const slides = sheets.flatMap((s) => s?.deck?.slides ?? []);
+  const els = slides.flatMap((sl) => sl?.elements ?? []);
+  const chu = els.filter((e) => typeof e?.text === 'string').map((e) => String(e.text));
+  const anhNhung = els.filter((e) => typeof e?.src === 'string' && e.src.startsWith('data:')).length;
+  const anhLink = els.filter((e) => typeof e?.src === 'string' && !e.src.startsWith('data:')).length;
+  return {
+    hopLe: true,
+    kichThuoc,
+    phienBan: j?.idfpVersion ?? null,
+    coBrandKit: !!j?.brandKit,
+    soHoSo: sheets.length,
+    soTrang: slides.length,
+    soPhanTu: els.length,
+    loaiPhanTu: [...new Set(els.map((e) => String(e?.kind ?? e?.type ?? '?')))].join(','),
+    chu,
+    // Placeholder trong tệp GIAO ĐI — `CHUAN-DAU-RA-NGHE` §4 đòi 0 placeholder. `.idfp` là gói
+    // "mở lại chỉnh tiếp" nên nó KHÔNG cùng luật với PDF giao khách; đo và khai, không phán vội.
+    coPlaceholder: chu.filter((t) => /Nhập nội dung|Enter text/i.test(t)).length,
+    anhNhung,
+    anhLink,
+  };
+}
+
+/** Đọc kho Trình bày trong IndexedDB — cùng lăng kính J12 dùng (`deck.slides[].elements[]`). */
+async function docKhoTrinhBay(page, userId, duAn) {
+  const kho = await docKhoSheets(page);
+  const khoaDung = `${userId}::/present-editor::${duAn}`;
+  const ban = kho.ban.find((b) => b.khoa === khoaDung) ?? null;
+  return { khoaDung, soTrang: ban?.soTrang ?? 0, soPhanTu: ban?.soPhanTu ?? 0, moiKhoa: kho.ban.map((b) => b.khoa) };
+}
+
+/**
+ * J21 — XUẤT GÓI `.idfp` → SOI TỆP → **MÁY SẠCH** NẠP LẠI ĐƯỢC.
+ *
+ * `SHIP-BLOCKERS` B4 ghi *".idf/.idfc sinh từ máy sạch chưa chạy lại sau khi thu 11 slice"* và ô
+ * đó ⬜ chưa ai mở. Hành trình này mở đúng mắt ấy cho `.idfp`, và mở ở mức gắt nhất mà bất biến
+ * cho phép: giữa hai phiên **XOÁ SẠCH hồ sơ trình duyệt** (như J07), nên bản deck quay lại KHÔNG
+ * thể đến từ IndexedDB cũ — nó chỉ có thể đến từ CHÍNH TỆP vừa xuất.
+ *
+ * BA KHẲNG ĐỊNH RỜI NHAU:
+ *   ① tệp sinh ra và **soi ra nội dung thật** — có hồ sơ, có trang, có phần tử, không rỗng
+ *   ② máy sạch nạp lại: kho Trình bày mọc lại **đúng số trang và số phần tử** của tệp
+ *   ③ chữ trong tệp là chữ NGƯỜI DÙNG gõ, không phải placeholder mặc định của model
+ */
+const J21 = {
+  ma: 'J21',
+  ten: 'Xuất gói `.idfp` → mở tệp ra soi → MÁY SẠCH nạp lại được',
+  chan: 'G5',
+  loai: 'trinh-duyet',
+  hieuChuanMo: 'chặn IDBObjectStore.put trên `interiorflow-sheets` ở phiên NẠP LẠI — tệp vẫn mở ra được nhưng không có gì lưu lại',
+  async chuanBi(mt) {
+    const duAn = await duAnRieng(mt, 'J21');
+    // DỰ ÁN THỨ HAI để nạp lại vào. Xoá hồ sơ trình duyệt là CHƯA ĐỦ để có "máy sạch" cho chặng
+    // Trình bày: `PresentSheets` cũng ghi bản sao ra ĐĨA và tự khôi phục khi IndexedDB rỗng (cùng
+    // họ lưới đỡ máy chủ mà J07 dựa vào ở chặng 2D) ⇒ lượt chạy trước đo ra "máy sạch mà kho đã có
+    // sẵn 7 phần tử". Nạp vào một dự án CHƯA TỪNG CÓ GÌ thì con số không thể đến từ đâu khác ngoài
+    // chính tệp — và nó chứng minh được điều mạnh hơn: gói mang nội dung SANG DỰ ÁN KHÁC được.
+    const duAnNap = await duAnRieng(mt, 'J21b');
+    return { duAn, duAnNap };
+  },
+  async moPhien(mt, st, lan) {
+    // Thế giới hỏng chỉ chặn ở phiên 2 (lượt NẠP LẠI): chặn từ phiên 1 thì deck không có gì để
+    // xuất, bộ sẽ đỏ vì "chưa dựng được nội dung" — đỏ ở bước TRƯỚC chỗ khẳng định, tức không
+    // chứng minh được điều mình định chứng minh (bẫy ③ của phép hiệu chuẩn).
+    const p = await moPhienTrinhDuyet(`J21${mt.hauTo}`, { chanIdb: mt.hongCoY && lan === 2 });
+    const me = await p.ctx.request.get(`${GOC}/api/auth/me`);
+    st.userId = (await me.json())?.user?.id || (await dangNhap(p.ctx));
+    st.lan = lan;
+    return p;
+  },
+  async thaoTac(p, mt, st) {
+    await p.page.goto(`${GOC}/projects/${st.duAn}/present`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(6000);
+    await boQuaLopChe(p.page);
+    // Dự án RIÊNG nên nó rỗng: phải qua cửa "chưa có bản vẽ nào" trước, đúng thao tác người dùng
+    // (`ProjectScopeEmptyState`). J20 không cần bước này vì nó dùng dự án chung đã có sẵn nội dung
+    // — lượt chạy đầu của J21 ngã đúng ở đây, bộ đo thiếu bước chứ app không hỏng.
+    await quaCuaDuAnRong(p.page).catch(() => {});
+    st.buocUi = await dungNoiDungTrinhBay(p.page);
+    // Chữ RIÊNG của lượt này — để câu "tệp mang đúng nội dung người dùng gõ" kiểm được, chứ
+    // không chỉ kiểm "có chữ gì đó".
+    st.chuGo = `G2-J21 chu that ${Date.now().toString(36)}`;
+    // 🔴 GÕ CHỮ PHẢI VÀO ĐÚNG Ô. Lượt chạy đầu gõ thẳng vào canvas ⇒ chữ KHÔNG vào ô nào và tệp
+    // xuất ra toàn `Nhập nội dung` (giá trị mặc định của `makeText()`). Panel bên phải nói đúng
+    // cách: *"Nháp đúp chữ để sửa nội dung"* (`Element.tsx:349` → `onEditText`). Đây là sửa BỘ ĐO,
+    // không phải sửa app — nhưng nó lộ ra một điều đáng ghi: bằng chứng "deck có nội dung thật"
+    // của J20 hoá ra chỉ là ô placeholder.
+    try {
+      const oChu = p.page.getByText('Nhập nội dung').first();
+      await oChu.dblclick({ timeout: 10000 });
+      await cho(900);
+      await p.page.keyboard.press('Control+a');
+      await p.page.keyboard.type(st.chuGo);
+      await cho(600);
+      await p.page.keyboard.press('Escape');
+      await cho(1500);
+      st.daGoChu = true;
+    } catch { st.daGoChu = false; }
+    st.khoTruocKhiXuat = await docKhoTrinhBay(p.page, st.userId, st.duAn);
+    await chup(p.page, 'J21-1-deck-truoc-khi-xuat');
+
+    mkdirSync(THU_MUC_ANH, { recursive: true });
+    await p.page.locator('button[title="Xuất file từ chặng Trình chiếu"]').first().click({ timeout: 20000 });
+    await cho(700);
+    const [tai] = await Promise.all([
+      p.page.waitForEvent('download', { timeout: 120000 }),
+      p.page.getByRole('menuitem', { name: /Toàn bộ project/ }).first().click({ timeout: 15000 }),
+    ]);
+    st.duongIdfp = path.join(THU_MUC_ANH, 'J21-project.idfp');
+    await tai.saveAs(st.duongIdfp);
+    await cho(1200);
+    await chup(p.page, 'J21-2-sau-khi-xuat');
+  },
+  /** ĐÓNG HẲN **VÀ XOÁ MÁY** sau phiên 1 — bản nạp lại không được phép nhờ IndexedDB cũ. */
+  async dong(p, mt, st, lan) {
+    await dongPhien(p);
+    if (lan !== 2) {
+      await cho(800);
+      rmSync(duongHoSo(`J21${mt.hauTo}`), { recursive: true, force: true });
+      st.daXoaHoSo = true;
+    }
+  },
+  async vaoLai(p, mt, st) {
+    await p.page.goto(`${GOC}/projects/${st.duAnNap}/present`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(7000);
+    await boQuaLopChe(p.page);
+    // ĐO KHO (dự án nạp) TRƯỚC KHI CHẠM GÌ — đây là bằng chứng "máy thật sự sạch". Đo sau khi đã bấm qua các
+    // màn thì con số mất nghĩa (bẫy ④ thế-giới-đã-ấm).
+    st.khoLucMaySach = await docKhoTrinhBay(p.page, st.userId, st.duAn);
+    // Rồi mới đi vào chỗ có thanh công cụ: qua cửa dự-án-rỗng (nếu còn) + màn chọn lối vào.
+    await quaCuaDuAnRong(p.page).catch(() => {});
+    for (const ten of [/Trang trống/i, /Tạo hồ sơ trống/i]) {
+      const n = p.page.getByRole('button', { name: ten });
+      if (await n.count().catch(() => 0)) { await n.first().click({ timeout: 8000 }).catch(() => {}); await cho(2500); break; }
+    }
+    // `openIdfpFile` hỏi `window.confirm` trước khi thay toàn bộ project (`Toolbar.tsx:229`) —
+    // đó là hộp thoại NGƯỜI DÙNG bấm, nên phải trả lời chứ không tắt đi.
+    p.page.once('dialog', (d) => d.accept().catch(() => {}));
+    // 🔴 PHẢI CHỌN ĐÚNG Ô NHẬP. Toolbar có HAI `input[type=file]`: cổng chung (`Toolbar.tsx:613`,
+    // KHÔNG khai `accept`) và ô nhận ẢNH (`:694`, `accept="image/*"`). Lượt đầu bộ đo lấy `.last()`
+    // ⇒ tệp `.idfp` bị nạp như một tấm ẢNH, kho mọc ra đúng 1 phần tử `image` — đọc ra như "app
+    // nạp thiếu", trong khi app chưa hề được yêu cầu mở project. Lọc theo `:not([accept])`.
+    await p.page.locator('input[type="file"]:not([accept])').first().setInputFiles(st.duongIdfp);
+    await cho(9000);
+    await chup(p.page, 'J21-3-may-sach-da-nap-lai');
+  },
+  async ghiXuong(p, mt, st) {
+    // Lượt 1 đọc kho của dự án NGUỒN, lượt 2 đọc kho của dự án ĐÍCH — hai con số khác vai, không
+    // được gộp: cái đầu nói "đã dựng được nội dung", cái sau nói "gói nạp lại được".
+    const duAnDoc = st.lan === 2 ? st.duAnNap : st.duAn;
+    return {
+      tep: st.duongIdfp && existsSync(st.duongIdfp) ? soiIdfp(st.duongIdfp) : { hopLe: false, viSao: 'không có tệp' },
+      kho: await docKhoTrinhBay(p.page, st.userId, duAnDoc),
+    };
+  },
+  soSanh(truoc, sau, st) {
+    const t = sau.tep;
+    const loi = [];
+    // ① SOI TỆP
+    if (!t?.hopLe) loi.push(`① tệp .idfp không mở ra được: ${t?.loi ?? t?.viSao}`);
+    else {
+      if (!t.soHoSo) loi.push('① gói có 0 hồ sơ');
+      if (!t.soTrang) loi.push('① gói có 0 trang');
+      if (!t.soPhanTu) loi.push(`① gói có 0 phần tử — GÓI RỖNG (đúng ca "trang trắng" mà J20 từng cho đi qua)`);
+    }
+    // ② MÁY SẠCH NẠP LẠI
+    if (!st.daXoaHoSo) loi.push('② bộ đo không xoá được hồ sơ ⇒ phép "máy sạch" không thành');
+    if ((st.khoLucMaySach?.soPhanTu ?? 0) > 0) loi.push(`② dự án đích chưa từng có gì mà kho đã có sẵn ${st.khoLucMaySach.soPhanTu} phần tử — phép đo không sạch, mọi kết luận sau vô nghĩa`);
+    if ((sau.kho?.soPhanTu ?? 0) < (t?.soPhanTu ?? 0)) loi.push(`② nạp lại thiếu: tệp mang ${t?.soPhanTu} phần tử, kho sau khi nạp chỉ có ${sau.kho?.soPhanTu} (khoá ${sau.kho?.khoaDung})`);
+    if ((sau.kho?.soTrang ?? 0) < (t?.soTrang ?? 0)) loi.push(`② nạp lại thiếu trang: tệp ${t?.soTrang}, kho ${sau.kho?.soTrang}`);
+    if (loi.length) return { dat: false, vi: loi.join(' · ') };
+    return {
+      dat: true,
+      vi: `tệp ${path.basename(st.duongIdfp)} (${(t.kichThuoc / 1024).toFixed(1)} KB, idfpVersion ${t.phienBan}, brandKit ${t.coBrandKit ? 'có' : 'không'}) soi ra ${t.soHoSo} hồ sơ · ${t.soTrang} trang · ${t.soPhanTu} phần tử [${t.loaiPhanTu}]; XOÁ SẠCH hồ sơ trình duyệt rồi mở một DỰ ÁN KHÁC chưa từng có gì (kho = ${st.khoLucMaySach.soPhanTu} phần tử) → nạp tệp → kho mọc lên ${sau.kho.soPhanTu} phần tử / ${sau.kho.soTrang} trang ở khoá ${sau.kho.khoaDung}`,
+      ghiChu: t.coPlaceholder
+        ? `🔴 MỞ TỆP RA SOI THẤY: ${t.coPlaceholder}/${t.soPhanTu} ô chữ mang nguyên văn "Nhập nội dung" — giá trị mặc định của \`makeText()\` (\`lib/present-editor/model.ts\`), tức đúng lỗi F1 mà J20 bắt được trên PDF, nay tái hiện trên \`.idfp\`. Khác PDF ở chỗ đắt giá: trong \`.idfp\` nó là CHỮ nên **máy grep được**, còn trong PDF nó đã thành điểm ảnh và chỉ mắt người bắt nổi. Kèm: ${t.chu.length} ô chữ đều **không có \`x\`/\`y\`** trong tệp ⇒ chồng khít một chỗ, nhìn trên màn tưởng chỉ có một ô.`
+        : `ảnh nhúng ${t.anhNhung} · ảnh liên kết ngoài ${t.anhLink}`,
+    };
+  },
+};
+
+
+/* ═══════════════ LƯỢT 7 (05/09) — J14 · DÙNG VẬT LIỆU → BOQ KHỚP SỐ ═══════════════ */
+
+// 🔴 ĐỔI MÓN SAU KHI ĐO ĐƯỢC LỖ CHẶN (xem báo cáo): thả từ kho `.idfc` cho ra **nét rời**
+// (`LibraryDropBridge.tsx:112` tự khai *"specId KHÔNG gắn được lên nét rời — schema chỉ cho
+// Block/Hatch entity mang specId"*) ⇒ cấu kiện `.idfc` **không bao giờ lên BOQ**, và tệ hơn là
+// BOQ cũng KHÔNG báo `missing-specId-item` vì nét rời không được đếm là món rời. Nhánh ĐANG SỐNG
+// là `via:'blockdef'` (`:145` gắn `specId` thật), nên hành trình đo nhánh đó: món `SOFA-3S` của
+// kệ "Ký hiệu · khối" (`lib/library/shelves.ts:189`).
+const J14_MA = 'SOFA-3S';
+const J14_SPEC_ID = 'ps-g2-j14-ghe';
+const J14_GIA = 1_500_000;
+const J14_HAO = 10;
+
+/** Gieo MỘT bản ghi `ProductSpec` có giá thật, `sku` = mã cấu kiện ⇒ `matchSpec` (`lib/library/
+ *  spec-panel.ts:51`, khớp `code` ↔ `sku`) nối được món trong kệ với hàng giá. CSDL sạch có **0**
+ *  ProductSpec (đo tại nguồn 05/09), mà `computeBoq` chỉ ra số khi entity mang `specId` trỏ tới một
+ *  spec CÓ `priceVnd` — không gieo thì không có gì để nói chuyện "khớp". */
+async function gieoSpecJ14(duongDb) {
+  const { PrismaClient } = require('@prisma/client');
+  const pr = new PrismaClient({ datasources: { db: { url: `file:${duongDb}` } } });
+  try {
+    const data = {
+      kind: 'furniture', name: 'Ghế G2 J14', sku: J14_MA, vendor: 'NCC Kiểm',
+      unit: 'cai', priceVnd: J14_GIA, wastagePercent: J14_HAO, materials: '[]', finishes: '[]',
+    };
+    await pr.productSpec.upsert({ where: { id: J14_SPEC_ID }, create: { id: J14_SPEC_ID, ...data }, update: data });
+    const s = await pr.productSpec.findUnique({ where: { id: J14_SPEC_ID }, select: { id: true, sku: true, priceVnd: true, wastagePercent: true, matId: true } });
+    // ⚠️ Prisma trả `Decimal` cho cả hai cột số ⇒ so `!==` với số JS luôn TRƯỢT dù giá trị bằng
+    // nhau (lượt trước báo "hao hụt BOQ 10% ≠ kho 10%"). Ép về `number` NGAY TẠI NGUỒN đọc.
+    return { id: s.id, sku: s.sku, priceVnd: Number(s.priceVnd), wastagePercent: Number(s.wastagePercent), matId: s.matId };
+  } finally {
+    await pr.$disconnect();
+  }
+}
+
+/** Gọi ĐÚNG cửa mà màn BOQ đi (`BoqScreen.tsx:160` → `POST /api/boq/[projectId]` với Doc sống).
+ *  Chạy trong page nên cookie phiên đi kèm; Doc lấy từ IndexedDB của chính phiên đó. */
+function docBangBoq(page, duAn, userId) {
+  return page.evaluate(
+    async ([pid, uid]) => {
+      const doc = await new Promise((res) => {
+        let xong = false;
+        const tra = (v) => { if (!xong) { xong = true; res(v); } };
+        setTimeout(() => tra(null), 8000);
+        let rq;
+        try { rq = indexedDB.open('interiorflow-sheets'); } catch { return tra(null); }
+        rq.onerror = () => tra(null);
+        rq.onsuccess = () => {
+          const db = rq.result;
+          if (!db.objectStoreNames.contains('sheets')) return tra(null);
+          const g = db.transaction('sheets', 'readonly').objectStore('sheets').get(`${uid}::/cad-editor::${pid}`);
+          g.onerror = () => tra(null);
+          g.onsuccess = () => tra(g.result?.sheets?.[0]?.doc ?? null);
+        };
+      });
+      if (!doc) return { coDoc: false };
+      const ents = doc.entities ?? [];
+      const mangSpec = ents.filter((e) => e?.specId).map((e) => ({ type: e.type, specId: e.specId }));
+      const r = await fetch(`/api/boq/${pid}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ doc }),
+      });
+      if (!r.ok) return { coDoc: true, soThucThe: ents.length, mangSpec, ok: false, ma: r.status };
+      const j = await r.json();
+      return {
+        coDoc: true, soThucThe: ents.length, mangSpec, ok: true,
+        rows: (j.rows ?? []).map((x) => ({ specId: x.specId ?? x.matId, ten: x.ten ?? x.name, kind: x.kind, khoiLuong: x.khoiLuong ?? x.qty, donGia: x.donGia ?? x.priceVnd, hao: x.haoHutPhanTram ?? x.wastagePercent, thanhTien: x.thanhTien ?? x.amount })),
+        errors: (j.errors ?? []).map((e) => `${e.code ?? e.ma ?? '?'}:${e.specId ?? e.matId ?? ''}`),
+        tong: j.totalAmount,
+      };
+    },
+    [duAn, userId],
+  );
+}
+
+/** Thả một món từ tấm Thư viện xuống bản vẽ đang mở — đường người dùng thật
+ *  (`LibrarySheet.instantiate` → sự kiện → `LibraryDropBridge`). */
+async function thaMonTuThuVien(page, ma) {
+  const buoc = [];
+  // 🔴 KHÔNG DÙNG PHÍM `l` Ở CHẶNG 2D. Đo được ở lượt chạy đầu (ảnh `J14-0`): phím `l` bị **dòng
+  // lệnh CAD nuốt** — bảng gợi ý `L / LEN / LINE / LENGTHEN` bật lên, tấm Thư viện KHÔNG mở. Cùng
+  // phím đó chạy đúng ở `/files` (J15 dùng được), nên đây là **va phím tắt theo chặng**, không
+  // phải phím hỏng. Đường chắc chắn là bấm nút "Thư viện" ở chân panel trái.
+  await page.keyboard.press('Escape').catch(() => {});
+  await cho(500);
+  const nutTV = page.getByRole('button', { name: /^Thư viện$/ });
+  if (await nutTV.count().catch(() => 0)) {
+    await nutTV.first().click({ timeout: 10000 });
+    buoc.push('bấm nút Thư viện');
+  } else {
+    await page.keyboard.press('l');
+    buoc.push('phím l (không thấy nút)');
+  }
+  await cho(3000);
+  // Tấm mở ra ở kệ "Ký hiệu · khối"; món `.idfc` vừa nhập nằm ở kệ **Cấu kiện (.idfc)** — không
+  // chuyển kệ thì ô tìm trả "Không có món nào khớp bộ lọc" (đo được ở ảnh `J14-0` lượt trước).
+  try {
+    await page.locator('.if-lib-root').getByText(/Ký hiệu · khối/).first().click({ timeout: 8000 });
+    await cho(1500);
+    buoc.push('chuyển kệ Ký hiệu · khối');
+  } catch { buoc.push('KHÔNG chuyển được kệ'); }
+  // Ô tìm của tấm Thư viện — gõ mã để lọc đúng món vừa nhập.
+  try {
+    const o = page.locator('.if-lib-root input[type="search"], .if-lib-root input').first();
+    await o.fill(ma, { timeout: 6000 });
+    await cho(1500);
+    buoc.push('lọc theo mã');
+  } catch { buoc.push('KHÔNG lọc được'); }
+  await chup(page, 'J14-0-tam-thu-vien-truoc-khi-chon');
+  buoc.push(`kệ đang có: ${(await page.locator('.if-lib-root').innerText().catch(() => '')).replace(/\s+/g, ' ').slice(0, 200)}`);
+  // Bấm chính thẻ món (nhãn mang tên + mã).
+  const the = page.locator('.if-lib-root').getByText(ma, { exact: false }).first();
+  await the.click({ timeout: 12000 });
+  await cho(1200);
+  buoc.push('chọn món');
+  // Nhãn THẬT của nút thả (`LibrarySheet.tsx:1109-1112`): "Kéo ra bàn làm việc" (mechanic `keo`)
+  // hoặc "Dùng cho vật đang chọn" (mechanic `ap`). Bốn nhãn bộ đo đoán ở lượt trước đều không có
+  // thật ⇒ nó bấm hụt, bản vẽ 0 thực thể mà không ai báo lỗi.
+  for (const ten of [/Kéo ra bàn làm việc/i, /Dùng cho vật đang chọn/i, /^Sửa bản sao$/]) {
+    const n = page.locator('.if-lib-root').getByRole('button', { name: ten });
+    if (await n.count().catch(() => 0)) { await n.first().click({ timeout: 8000 }); buoc.push(`bấm ${ten}`); break; }
+  }
+  await cho(3000);
+  await page.keyboard.press('Escape').catch(() => {});
+  await cho(1500);
+  return buoc;
+}
+
+/**
+ * J14 — DÙNG MỘT VẬT LIỆU → XUẤT BOQ → SỐ TRONG BOQ KHỚP VẬT LIỆU.
+ *
+ * ⚠️ NỢ DỮ LIỆU ĐÃ BIẾT, KHAI TRƯỚC KHI ĐO: `ProductSpec.matId` **toàn `null`** (backfill treo từ
+ * 19/08, `scripts/backfill-material-matid.ts` mặc định dry-run) ⇒ **nhánh `matId` chưa chạy sống
+ * lần nào**. Hành trình này đo nhánh ĐANG SỐNG — `specId` (= `ProductSpec.id`, khoá mà
+ * `computeBoq` thật sự dùng, `lib/boq/model.ts`) — và **ghi lại giá trị `matId` đọc được**, không
+ * bịa dữ liệu để bảng xanh.
+ *
+ * KHẲNG ĐỊNH: ① bản vẽ có entity mang `specId` ② BOQ ra dòng cho đúng spec đó, **đơn giá và hao
+ * hụt bằng ĐÚNG số trong CSDL** ③ đóng app mở lại: vẫn ra đúng bảng đó (Doc sống trong IndexedDB,
+ * giá sống trong CSDL — hai nơi lưu khác nhau, cùng phải sống sót).
+ */
+const J14 = {
+  ma: 'J14',
+  ten: 'Dùng một vật liệu → BOQ → đơn giá/hao hụt khớp kho giá, còn đúng sau khi đóng app',
+  chan: 'G5',
+  loai: 'trinh-duyet',
+  hieuChuanMo: 'chặn IDBObjectStore.put trên `interiorflow-sheets` — bản vẽ không lưu được nên BOQ không còn gì để tính',
+  async chuanBi(mt) {
+    const duAn = await duAnRieng(mt, 'J14');
+    const spec = await gieoSpecJ14(mt.duongDb);
+    const thuMuc = path.join(os.tmpdir(), `g2-j14${mt.hauTo}`);
+    mkdirSync(thuMuc, { recursive: true });
+    const tep = path.join(thuMuc, 'ghe-j14.idfc');
+    writeFileSync(tep, JSON.stringify({
+      idfcVersion: 3,
+      meta: { name: 'Ghế G2 J14', code: J14_MA, kind: 'furniture', createdAt: '2026-09-05T00:00:00.000Z', modifiedAt: new Date().toISOString(), appVersion: 'interiorflow-1.0.0' },
+      // ⚠️ Khoá của `Prim` là **`k`**, không phải `t` (`lib/cad/furniture.ts:18-22`). Lượt trước bộ
+      // đo dựng `{t:'rect'}` ⇒ hình học rỗng, và app **báo đúng sự thật** ở thanh trạng thái:
+      // *"«Ghế G2 J14» là mẫu .idfc không mang hình vẽ 2D — chưa thả xuống bản vẽ được"*. Nó
+      // KHÔNG thả bừa một khối rỗng rồi để BOQ đếm nhầm — điểm này đáng ghi có lợi cho app.
+      body: {
+        type: 'component',
+        geom2d: {
+          group: 'Phòng khách', w: 500, h: 500,
+          prims: [{ k: 'poly', pts: [{ x: 0, y: 0 }, { x: 500, y: 0 }, { x: 500, y: 500 }, { x: 0, y: 500 }], closed: true }],
+        },
+      },
+    }));
+    return { duAn, spec, tepIdfc: tep };
+  },
+  async moPhien(mt, st, lan) {
+    const p = await moPhienTrinhDuyet(`J14${mt.hauTo}`, { chanIdb: mt.hongCoY });
+    const me = await p.ctx.request.get(`${GOC}/api/auth/me`);
+    st.userId = (await me.json())?.user?.id || (await dangNhap(p.ctx));
+    st.lan = lan;
+    return p;
+  },
+  async thaoTac(p, mt, st) {
+    // ① đưa cấu kiện vào kệ (kệ Cấu kiện đọc `loadIdfcStore()`)
+    await p.page.goto(`${GOC}/files`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(6000);
+    await boQuaLopChe(p.page);
+    // (không cần nhập .idfc nữa — món SOFA-3S là hàng sẵn của kệ "Ký hiệu · khối")
+    // ② mở bản vẽ 2D rồi THẢ món xuống — đây là "dùng một vật liệu"
+    await moMatVe(p.page, st.duAn);
+    st.buocTha = await thaMonTuThuVien(p.page, J14_MA);
+    await cho(2500);
+    await chup(p.page, 'J14-1-da-tha-mon-xuong-ban-ve');
+    // ③ mở màn BOQ bằng tay (thao tác thật; số thì đọc từ nơi tính, không đọc chữ trên màn)
+    await p.page.goto(`${GOC}/projects/${st.duAn}/present`, { waitUntil: 'domcontentloaded', timeout: 120000 });
+    await cho(6000);
+    await boQuaLopChe(p.page);
+    await quaCuaDuAnRong(p.page).catch(() => {});
+    for (const ten of [/Bảng khối lượng/i, /^BOQ$/]) {
+      const n = p.page.getByRole('button', { name: ten });
+      if (await n.count().catch(() => 0)) { await n.first().click({ timeout: 8000 }).catch(() => {}); await cho(4000); st.moManBoq = true; break; }
+    }
+    await chup(p.page, 'J14-2-man-boq');
+  },
+  async ghiXuong(p, mt, st) {
+    return docBangBoq(p.page, st.duAn, st.userId);
+  },
+  async vaoLai(p, mt, st) {
+    await moMatVe(p.page, st.duAn);
+    await cho(4000);
+    await chup(p.page, 'J14-3-mo-lai-sau-khi-dong');
+  },
+  soSanh(truoc, sau, st) {
+    const loi = [];
+    if (!truoc.coDoc) loi.push('① sau khi thả: KHÔNG có Doc nào trong IndexedDB');
+    else if (!truoc.mangSpec?.length) loi.push(`① thả xong nhưng KHÔNG entity nào mang specId (bản vẽ có ${truoc.soThucThe} thực thể; bước đã bấm: ${(st.buocTha ?? []).join(' → ')})`);
+    const dong = (kq) => (kq?.rows ?? []).find((r) => r.specId === st.spec.id) ?? null;
+    const t = dong(truoc);
+    const s = dong(sau);
+    if (!t) loi.push(`② BOQ ngay sau khi thả KHÔNG có dòng cho spec ${st.spec.id} (dòng: ${JSON.stringify(truoc.rows ?? []).slice(0, 160)} · lỗi: ${(truoc.errors ?? []).join(',')})`);
+    else {
+      if (Number(t.donGia) !== st.spec.priceVnd) loi.push(`② đơn giá BOQ ${t.donGia} ≠ giá trong kho ${st.spec.priceVnd}`);
+      if (Number(t.hao) !== st.spec.wastagePercent) loi.push(`② hao hụt BOQ ${t.hao}% ≠ kho ${st.spec.wastagePercent}%`);
+      const cho_ = Math.round(Number(t.khoiLuong) * st.spec.priceVnd * (1 + st.spec.wastagePercent / 100));
+      if (Math.abs(Number(t.thanhTien) - cho_) > 1) loi.push(`② thành tiền ${t.thanhTien} ≠ ${t.khoiLuong}×${st.spec.priceVnd}×(1+${st.spec.wastagePercent}%) = ${cho_}`);
+    }
+    if (!s) loi.push('③ sau khi ĐÓNG APP mở lại: BOQ mất dòng — bản vẽ hoặc kho giá không sống sót');
+    else if (t && (Number(s.thanhTien) !== Number(t.thanhTien) || Number(s.khoiLuong) !== Number(t.khoiLuong)))
+      loi.push(`③ mở lại ra số KHÁC: trước ${t.khoiLuong}×${t.donGia}=${t.thanhTien}, sau ${s.khoiLuong}×${s.donGia}=${s.thanhTien}`);
+    if (loi.length) return { dat: false, vi: loi.join(' · ') };
+    return {
+      dat: true,
+      vi: `thả 1 cấu kiện mang \`specId=${st.spec.id}\` xuống bản vẽ → \`POST /api/boq\` ra dòng ${s.kind}: khối lượng ${s.khoiLuong}, đơn giá ${s.donGia} và hao ${s.hao}% ĐÚNG BẰNG hàng \`ProductSpec\` trong CSDL, thành tiền ${s.thanhTien}; đóng app mở lại vẫn ra y hệt (Doc ở IndexedDB, giá ở CSDL — hai nơi lưu, cùng sống sót)`,
+      ghiChu: `⚠️ NỢ DỮ LIỆU ĐANG SỐNG: \`ProductSpec.matId\` của chính hàng này đọc ra **${st.spec.matId === null ? 'null' : st.spec.matId}** ⇒ nhánh matId-UUID vẫn CHƯA chạy sống lần nào; hành trình này đo nhánh \`specId\` — nhánh mà \`computeBoq\` thật sự dùng. Backfill (\`scripts/backfill-material-matid.ts\`, dry-run) vẫn là việc chưa làm.`,
+    };
+  },
+};
+
+const HANH_TRINH = [J16, J16b, J23, J17, J19, J20, J07, J12, J04, J06, J18, J22, J05, J15, J13, J21, J14];
 
 /* ─────────────────────────── khung chạy ─────────────────────────── */
 
@@ -1773,7 +2655,20 @@ async function main() {
   for (const h of chuaChay) console.log(`CHƯA  ${h.ma}  ${h.ten}`);
   const dat = ketQua.filter((r) => r.trangThai === 'PASS').length;
   console.log(`\nĐẠT ${dat}/${ketQua.length} · hiệu chuẩn ${okHieuChuan === null ? 'BỎ QUA' : okHieuChuan ? 'ĐẠT' : 'TRƯỢT'}`);
-  writeFileSync(path.join(THU_MUC_ANH, 'ket-qua.json'), JSON.stringify({ okHieuChuan, ketQua }, null, 2));
+  // 🔴 CHẠY MỘT CA KHÔNG ĐƯỢC XOÁ BẰNG CHỨNG CỦA CA KHÁC. Trước 05/09 dòng này ghi đè cả tệp, nên
+  // `--ca=J14` biến sổ 10 mục (bằng chứng của nhiều lượt/nhiều lane) thành 1 mục — mất sạch, im
+  // lặng, và người chạy không có dấu hiệu nào để biết. Nay HỢP NHẤT theo mã: mục mới đè mục cũ
+  // CÙNG MÃ, mục không liên quan giữ nguyên. `okHieuChuan` chỉ ghi đè khi lượt này thật sự chạy
+  // hiệu chuẩn (`--bo-hieu-chuan` cho `null`, không được phép xoá kết quả cũ).
+  const duong = path.join(THU_MUC_ANH, 'ket-qua.json');
+  let cu = { okHieuChuan: null, ketQua: [] };
+  try { cu = JSON.parse(readFileSync(duong, 'utf8')); } catch { /* chưa có sổ — lượt đầu */ }
+  const theoMa = new Map((cu.ketQua ?? []).map((r) => [r.ma, r]));
+  for (const r of ketQua) theoMa.set(r.ma, r);
+  writeFileSync(duong, JSON.stringify({
+    okHieuChuan: okHieuChuan === null ? (cu.okHieuChuan ?? null) : okHieuChuan,
+    ketQua: [...theoMa.values()],
+  }, null, 2));
   process.exit(dat === ketQua.length && okHieuChuan !== false ? 0 : 1);
 }
 

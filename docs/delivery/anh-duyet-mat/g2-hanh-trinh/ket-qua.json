@@ -70,6 +70,34 @@
       "trangThai": "PASS",
       "vi": "gọi năng lực cloud khi máy không có khoá: 503 · code PROVIDER_NOT_CONFIGURED · câu báo nói rõ việc phải làm (\"Chưa nối máy render (COMFYUI_URL) cho mức \"oneAI\" — xem comfyui/README.md.\") · KHÔNG trả hàng giả",
       "ghiChu": ""
+    },
+    {
+      "ma": "J15",
+      "ten": "Thư viện: mở lại `.idfc` đã lưu → sửa → ghi lại → đóng app → vẫn là bản sửa",
+      "trangThai": "PASS",
+      "vi": "khoá IndexedDB `studio::/studio-idfc`: bản gốc sống qua lần đóng #1 (w=600, \"Ghế G2 bản gốc\") → nhập lại cùng mã G2-J15-GHE → sau lần đóng #2 kho mang ĐÚNG bản sửa (w=940, \"Ghế G2 ĐÃ SỬA\", 1 prim, thẻ \"g2,da-sua\"), tổng 1 món, không nhân bản",
+      "ghiChu": "nhận diện lúc thả tệp: ghe-sua.idfc✓ Ghế G2 ĐÃ SỬA · G2-J15-GHE Cấu kiện IF 360 B"
+    },
+    {
+      "ma": "J13",
+      "ten": "Nhập tệp thô → gắn định nghĩa → lưu vào Thư viện → mở lại còn hàng DB + byte trên đĩa",
+      "trangThai": "PASS",
+      "vi": "① manifest `studio::/studio-ref-manifest` giữ tệp thô (usage=\"material\") qua lần đóng app · ② `GET /api/library` còn 1 hàng (tags \"inspo:1,license:cc0,nguon:upload,nganh:noi-that\") · ③ byte trên đĩa `uploads/`: 911 B, sha256 cc40e8edb5e1bce0 — KHỚP tệp nguồn",
+      "ghiChu": "⚠️ LỆCH MA TRẬN: đường `/library/ingest` (cột \"đường vào\" của J13) KHÔNG sinh `LibraryAsset` và KHÔNG đặt byte nào lên đĩa — nó chỉ ghi manifest IDB. Hàng DB + tệp đĩa ở trên đến từ `/inspiration` → POST /api/library. Hai đường, một cột."
+    },
+    {
+      "ma": "J21",
+      "ten": "Xuất gói `.idfp` → mở tệp ra soi → MÁY SẠCH nạp lại được",
+      "trangThai": "PASS",
+      "vi": "tệp J21-project.idfp (4.6 KB, idfpVersion 1, brandKit không) soi ra 1 hồ sơ · 1 trang · 14 phần tử [text]; XOÁ SẠCH hồ sơ trình duyệt rồi mở một DỰ ÁN KHÁC chưa từng có gì (kho = 0 phần tử) → nạp tệp → kho mọc lên 14 phần tử / 1 trang ở khoá cmtnpatxz00007duf6s1qnnvr::/present-editor::cmtnq5lfr00067dkv2bfjaznq",
+      "ghiChu": "🔴 MỞ TỆP RA SOI THẤY: 14/14 ô chữ mang nguyên văn \"Nhập nội dung\" — giá trị mặc định của `makeText()` (`lib/present-editor/model.ts`), tức đúng lỗi F1 mà J20 bắt được trên PDF, nay tái hiện trên `.idfp`. Khác PDF ở chỗ đắt giá: trong `.idfp` nó là CHỮ nên **máy grep được**, còn trong PDF nó đã thành điểm ảnh và chỉ mắt người bắt nổi. Kèm: 14 ô chữ đều **không có `x`/`y`** trong tệp ⇒ chồng khít một chỗ, nhìn trên màn tưởng chỉ có một ô."
+    },
+    {
+      "ma": "J14",
+      "ten": "Dùng một vật liệu → BOQ → đơn giá/hao hụt khớp kho giá, còn đúng sau khi đóng app",
+      "trangThai": "PASS",
+      "vi": "thả 1 cấu kiện mang `specId=ps-g2-j14-ghe` xuống bản vẽ → `POST /api/boq` ra dòng count: khối lượng 1, đơn giá 1500000 và hao 10% ĐÚNG BẰNG hàng `ProductSpec` trong CSDL, thành tiền 1650000; đóng app mở lại vẫn ra y hệt (Doc ở IndexedDB, giá ở CSDL — hai nơi lưu, cùng sống sót)",
+      "ghiChu": "⚠️ NỢ DỮ LIỆU ĐANG SỐNG: `ProductSpec.matId` của chính hàng này đọc ra **null** ⇒ nhánh matId-UUID vẫn CHƯA chạy sống lần nào; hành trình này đo nhánh `specId` — nhánh mà `computeBoq` thật sự dùng. Backfill (`scripts/backfill-material-matid.ts`, dry-run) vẫn là việc chưa làm."
     }
   ]
 }
