@@ -1,0 +1,84 @@
+[
+  {
+    "ten": "01-home",
+    "phu": "thẻ Resume · nền theo giờ · presence-avatar-row · project-init-board",
+    "url": "/",
+    "chu": 990,
+    "nut": 52,
+    "loi": []
+  },
+  {
+    "ten": "02-2d",
+    "phu": "pie-menu-2d · toolbar-mot-khuon · panel-handle-chung",
+    "url": "/projects/cmtodhgxt00077dgs28mmqbq7/cad",
+    "chu": 2377,
+    "nut": 106,
+    "loi": []
+  },
+  {
+    "ten": "03-3d",
+    "phu": "dock-3d-that · tool-state-3d · hinh-hoc-v2 · render-queue-live · ghe-3d-window-app",
+    "url": "/projects/cmtodhgxt00077dgs28mmqbq7/render",
+    "chu": 295,
+    "nut": 66,
+    "loi": []
+  },
+  {
+    "ten": "04-trinh-bay",
+    "phu": "h4-picker · material-a3 · present-magic-cua-vao · present-task-first",
+    "url": "/projects/cmtodhgxt00077dgs28mmqbq7/present",
+    "chu": 730,
+    "nut": 59,
+    "loi": []
+  },
+  {
+    "ten": "05-vat-lieu",
+    "phu": "vat-lieu-mot-vat · material-impact-ui · boq-specid-namespace",
+    "url": "/materials",
+    "chu": 1672,
+    "nut": 57,
+    "loi": []
+  },
+  {
+    "ten": "06-thu-vien",
+    "phu": "panel-handle-chung · o-giai-nghia-co-hinh",
+    "url": "/library",
+    "chu": 1846,
+    "nut": 64,
+    "loi": []
+  },
+  {
+    "ten": "07-gallery",
+    "phu": "gallery-lien-nganh",
+    "url": "/library/gallery",
+    "chu": 462,
+    "nut": 50,
+    "loi": []
+  },
+  {
+    "ten": "08-viec",
+    "phu": "tao-viec-tu-day · focus-entity-doc",
+    "url": "/tasks",
+    "chu": 601,
+    "nut": 89,
+    "loi": []
+  },
+  {
+    "ten": "09-files",
+    "phu": "hai tầng Files · panel-handle-chung",
+    "url": "/files",
+    "chu": 2711,
+    "nut": 67,
+    "loi": []
+  },
+  {
+    "ten": "10-cai-dat",
+    "phu": "mat-do-con-tro · hinh-hoc-ap-thang · vùng cuộn có vệt mờ",
+    "url": "/settings",
+    "chu": 5230,
+    "nut": 116,
+    "loi": [
+      "Minified React error #418; visit https://react.dev/errors/418 for the full message or use the non-minified dev environme"
+    ]
+  }
+]
