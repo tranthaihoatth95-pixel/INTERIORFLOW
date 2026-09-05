@@ -34,9 +34,13 @@ import {
   FULL_SNAPSHOT_EVERY, type BackupEntry, type BackupDiff, type BackupKind,
 } from './backup-diff';
 
+import { khoaTheoNguoi, xoaKhoaCu } from '../tay-cam-thu-muc';
+
 const HANDLE_DB = 'interiorflow-backup';
 const HANDLE_STORE = 'handles';
-const HANDLE_KEY = 'backupDir';
+/** ⛔ KHOÁ CŨ, KHÔNG THEO NGƯỜI — giữ CHỈ để XOÁ khi gặp (lỗ P1 quyền-rò-qua-người-dùng,
+ * `lib/tay-cam-thu-muc.ts`). Nhận lại nó cho người đang đăng nhập = tái hiện đúng lỗ đó. */
+const HANDLE_KEY_CU = 'backupDir';
 const INTERVAL_MS = 10 * 60 * 1000; // 10 phút
 const MIN_GAP_MS = 30_000; // chặn spam nếu autosave bắn liên tục lúc đang vẽ
 
@@ -62,11 +66,13 @@ function openHandleDb(): Promise<IDBDatabase | null> {
 }
 
 async function storeHandle(handle: FileSystemDirectoryHandle): Promise<void> {
+  const khoa = khoaTheoNguoi('backupDir');
+  if (!khoa) return; // FAIL CLOSED: chưa biết người dùng ⇒ không cất lời cấp quyền cho ai cả
   const db = await openHandleDb();
   if (!db) return;
   await new Promise<void>((resolve) => {
     const tx = db.transaction(HANDLE_STORE, 'readwrite');
-    tx.objectStore(HANDLE_STORE).put(handle, HANDLE_KEY);
+    tx.objectStore(HANDLE_STORE).put(handle, khoa);
     tx.oncomplete = () => resolve();
     tx.onerror = () => resolve();
   });
@@ -76,8 +82,11 @@ async function storeHandle(handle: FileSystemDirectoryHandle): Promise<void> {
 async function loadHandle(): Promise<FileSystemDirectoryHandle | null> {
   const db = await openHandleDb();
   if (!db) return null;
+  xoaKhoaCu(db, HANDLE_STORE, HANDLE_KEY_CU); // khoá cũ chỉ được XOÁ, không được nhận về
+  const khoa = khoaTheoNguoi('backupDir');
+  if (!khoa) { db.close(); return null; } // FAIL CLOSED
   const handle = await new Promise<FileSystemDirectoryHandle | null>((resolve) => {
-    const req = db.transaction(HANDLE_STORE, 'readonly').objectStore(HANDLE_STORE).get(HANDLE_KEY);
+    const req = db.transaction(HANDLE_STORE, 'readonly').objectStore(HANDLE_STORE).get(khoa);
     req.onsuccess = () => resolve((req.result as FileSystemDirectoryHandle | undefined) ?? null);
     req.onerror = () => resolve(null);
   });

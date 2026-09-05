@@ -306,6 +306,16 @@ export function quenLuotDanhTinh(): void {
  * KHÔNG gọi mạng, KHÔNG ném lỗi — chạy được cả khi localStorage bị chặn hẳn.
  */
 export function quenDangXuat(): void {
+  /* ⚠️ ĐỌC id TRƯỚC KHI XOÁ — `xoaTayCamCuaPhien` cần biết xoá tay cầm CỦA AI. Gọi sau
+   * `clearLastUserId()` thì bộ đệm đã rỗng và nó lặng lẽ không xoá gì: một lỗ im lặng đúng
+   * kiểu đang chữa. */
+  const uid = getLastUserId();
   clearLastUserId();
   quenLuotDanhTinh();
+  /* Lớp phòng thủ THỨ HAI cho lỗ P1 quyền-hệ-tệp-rò-qua-người-dùng. Lớp thứ nhất là khoá theo
+   * người (`lib/tay-cam-thu-muc.ts`) — nó đã chặn người B đọc tay cầm của người A. Lớp này đóng
+   * thêm ca *cùng một người, máy công cộng*: đăng xuất thì lời cấp quyền cũng phải hết.
+   * Nạp động: `auto-backup` kéo theo cả ifpack/backup-diff, không đáng đưa vào mọi nơi gọi
+   * đăng xuất. Không `await` — đăng xuất KHÔNG được chờ IndexedDB, và không được ném lỗi. */
+  void import('./tay-cam-thu-muc').then((m) => m.xoaTayCamCuaPhien(uid)).catch(() => {});
 }

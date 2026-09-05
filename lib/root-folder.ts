@@ -18,9 +18,13 @@
  * khoá sẽ làm lộn 2 vai trò).
  */
 
+import { khoaTheoNguoi, xoaKhoaCu } from './tay-cam-thu-muc';
+
 const HANDLE_DB = 'interiorflow-root';
 const HANDLE_STORE = 'handles';
-const HANDLE_KEY = 'rootDir';
+/** ⛔ KHOÁ CŨ, KHÔNG THEO NGƯỜI — giữ tên ở đây CHỈ để XOÁ khi gặp. Xem `lib/tay-cam-thu-muc.ts`:
+ * nhận lại bản ghi này cho người đang đăng nhập chính là tái hiện lỗ P1 quyền-rò-qua-người-dùng. */
+const HANDLE_KEY_CU = 'rootDir';
 
 export function rootFolderSupported(): boolean {
   return typeof window !== 'undefined' && 'showDirectoryPicker' in window;
@@ -44,11 +48,13 @@ function openHandleDb(): Promise<IDBDatabase | null> {
 }
 
 async function storeHandle(handle: FileSystemDirectoryHandle): Promise<void> {
+  const khoa = khoaTheoNguoi('rootDir');
+  if (!khoa) return; // FAIL CLOSED: chưa biết người dùng ⇒ không cất lời cấp quyền cho ai cả
   const db = await openHandleDb();
   if (!db) return;
   await new Promise<void>((resolve) => {
     const tx = db.transaction(HANDLE_STORE, 'readwrite');
-    tx.objectStore(HANDLE_STORE).put(handle, HANDLE_KEY);
+    tx.objectStore(HANDLE_STORE).put(handle, khoa);
     tx.oncomplete = () => resolve();
     tx.onerror = () => resolve();
   });
@@ -61,8 +67,11 @@ async function storeHandle(handle: FileSystemDirectoryHandle): Promise<void> {
 export async function loadRootFolderHandle(): Promise<FileSystemDirectoryHandle | null> {
   const db = await openHandleDb();
   if (!db) return null;
+  xoaKhoaCu(db, HANDLE_STORE, HANDLE_KEY_CU); // khoá cũ KHÔNG được nhận về — chỉ được xoá
+  const khoa = khoaTheoNguoi('rootDir');
+  if (!khoa) { db.close(); return null; } // FAIL CLOSED
   const handle = await new Promise<FileSystemDirectoryHandle | null>((resolve) => {
-    const req = db.transaction(HANDLE_STORE, 'readonly').objectStore(HANDLE_STORE).get(HANDLE_KEY);
+    const req = db.transaction(HANDLE_STORE, 'readonly').objectStore(HANDLE_STORE).get(khoa);
     req.onsuccess = () => resolve((req.result as FileSystemDirectoryHandle | undefined) ?? null);
     req.onerror = () => resolve(null);
   });
