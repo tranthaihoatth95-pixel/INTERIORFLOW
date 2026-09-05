@@ -227,7 +227,13 @@ const LUAT = [
         if (r.startsWith('docs/') || r.startsWith('scripts/')) continue // tài liệu được phép nhắc
         const src = read(f)
         src.split('\n').forEach((l, i) => {
-          if (CAM.test(l)) hits.push({ file: r, dong: i + 1, doan: l.trim().slice(0, 70) })
+          if (!CAM.test(l)) return
+          // ⚠️ NGOẠI LỆ CÓ LÝ DO — glob LOẠI TRỪ không phải là nhúng cứng.
+          // Dòng kiểu `"!public/detech/**",` trong package.json TỒN TẠI ĐỂ THI HÀNH chính luật này:
+          // nó GẠT tài sản khách RA KHỎI gói cài. Bắt nó là bắt đúng cái khoá đang khoá cửa.
+          // Cùng họ lỗi với 3 ca 04/09 (máy soi khớp trúng chính cơ chế nó canh) — thu hẹp mẫu, không nới luật.
+          if (/^"!/.test(l.trim())) return
+          hits.push({ file: r, dong: i + 1, doan: l.trim().slice(0, 70) })
         })
       }
       return hits
