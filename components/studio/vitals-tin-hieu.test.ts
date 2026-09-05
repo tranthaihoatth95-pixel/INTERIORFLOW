@@ -1,0 +1,261 @@
+/**
+ * components/studio/vitals-tin-hieu.test.ts — khoá LUẬT "chỉ dữ liệu thật" của khẩu độ Vitals.
+ * Chạy: `node_modules/.bin/sucrase-node components/studio/vitals-tin-hieu.test.ts`
+ *
+ * Mỗi mục là một cách hỏng đã lường trước:
+ *  1. Không có gì ⇒ MẢNG RỖNG. Đây là ca quan trọng nhất — cách hỏng kinh điển của mọi bảng
+ *     "insight" là lấp chỗ trống bằng câu chung chung khi không có dữ liệu.
+ *  2. `undefined` (chưa đo) ≠ `0` (đo rồi, sạch) — nhưng CẢ HAI đều không ra dòng. Nhập hai
+ *     thứ này là mở đường cho câu "bản vẽ không có lỗi", điều `violationsPromptBlock` đã cấm.
+ *  3. Số trên nhãn PHẢI là số nguồn đưa vào — không làm tròn, không "vài", không "nhiều".
+ *  4. Trần 3 và thứ tự ưu tiên cố định (chạy 2 lần ra 2 kết quả giống nhau).
+ *  5. `chiTiet` chỉ có khi nguồn thật sự cấp nhãn — chuỗi rỗng không được thành dòng phụ rỗng.
+ *  6. Chấm ambient ánh xạ về đúng bộ VitalsState sẵn có, không đẻ trạng thái thứ hai.
+ *  7. Nguồn KHÔNG có cửa nào nhận chữ tự do (chống "insight AI" lọt vào bằng đường sau).
+ */
+
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { THU_TU, chonTinHieu, trangThaiAmbient, TRAN_TIN_HIEU, VI_SAO, type NguonTinHieu } from './vitals-tin-hieu';
+
+let fail = 0;
+function ok(msg: string, cond: unknown) {
+  if (cond) console.log('  ok  -', msg);
+  else {
+    fail += 1;
+    console.log('  FAIL -', msg);
+  }
+}
+
+console.log('\nvitals-tin-hieu — khẩu độ Vitals chỉ nói điều có thật');
+
+const RONG: NguonTinHieu = { dangChay: 0, chayLoi: 0 };
+
+console.log('\n[1] Không có gì thì KHÔNG hiện gì');
+ok('nguồn rỗng ⇒ []', chonTinHieu(RONG).length === 0);
+ok('rỗng + bản vẽ chưa đo ⇒ []', chonTinHieu({ ...RONG, chuanCanXem: undefined }).length === 0);
+ok('số âm/NaN không lọt thành tín hiệu', chonTinHieu({ dangChay: -1, chayLoi: Number.NaN }).length === 0);
+
+console.log('\n[2] `undefined` (chưa đo) ≠ `0` (đo rồi) — cả hai đều im');
+ok('chuanCanXem undefined ⇒ không có dòng chuan-ve', !chonTinHieu({ ...RONG, chuanCanXem: undefined }).some((t) => t.loai === 'chuan-ve'));
+ok('chuanCanXem 0 ⇒ không có dòng chuan-ve', !chonTinHieu({ ...RONG, chuanCanXem: 0 }).some((t) => t.loai === 'chuan-ve'));
+ok('chuanCanXem 3 ⇒ CÓ dòng chuan-ve', chonTinHieu({ ...RONG, chuanCanXem: 3 }).some((t) => t.loai === 'chuan-ve'));
+
+console.log('\n[3] Số trên nhãn là số nguồn đưa vào, không diễn đạt lại');
+const ba = chonTinHieu({ dangChay: 2, chayLoi: 0, chuanCanXem: 17 });
+ok('so khớp nguồn (2)', ba.find((t) => t.loai === 'dang-chay')?.so === 2);
+ok('so khớp nguồn (17)', ba.find((t) => t.loai === 'chuan-ve')?.so === 17);
+ok('nhãn chứa đúng con số 17', /\b17\b/.test(ba.find((t) => t.loai === 'chuan-ve')?.nhan ?? ''));
+ok('không có chữ mơ hồ trong nhãn', !ba.some((t) => /vài|nhiều|một số|có thể/i.test(t.nhan)));
+
+console.log('\n[4] Trần 3 + thứ tự ưu tiên cố định');
+const du = chonTinHieu({ dangChay: 1, nhanDangChay: 'Phối cảnh phòng khách', chayLoi: 2, chuanCanXem: 5 });
+ok(`không quá ${TRAN_TIN_HIEU} tín hiệu`, du.length <= TRAN_TIN_HIEU);
+ok('thứ tự: đang chạy → lỗi → quy chuẩn', du.map((t) => t.loai).join(',') === 'dang-chay,chay-loi,chuan-ve');
+ok('chạy lại ra kết quả y hệt', JSON.stringify(chonTinHieu({ dangChay: 1, nhanDangChay: 'Phối cảnh phòng khách', chayLoi: 2, chuanCanXem: 5 })) === JSON.stringify(du));
+
+console.log('\n[5] `chiTiet` chỉ có khi nguồn thật sự cấp nhãn');
+ok('có nhãn ⇒ có chiTiet', du[0].chiTiet === 'Phối cảnh phòng khách');
+ok('không nhãn ⇒ KHÔNG có khoá chiTiet', !('chiTiet' in chonTinHieu({ dangChay: 1, chayLoi: 0 })[0]));
+ok('nhãn rỗng ⇒ KHÔNG có khoá chiTiet', !('chiTiet' in chonTinHieu({ dangChay: 1, nhanDangChay: '', chayLoi: 0 })[0]));
+
+console.log('\n[6] Chấm ambient dùng lại đúng bộ VitalsState sẵn có');
+ok('rỗng ⇒ idle (im)', trangThaiAmbient([]) === 'idle');
+ok('đang chạy ⇒ answering', trangThaiAmbient(chonTinHieu({ dangChay: 1, chayLoi: 0 })) === 'answering');
+ok('chỉ có việc cần xem ⇒ alert', trangThaiAmbient(chonTinHieu({ dangChay: 0, chayLoi: 1 })) === 'alert');
+{
+  const HOP_LE = new Set(['idle', 'listening', 'thinking', 'answering', 'alert']);
+  const badge = readFileSync(join(__dirname, 'VitalsStateBadge.tsx'), 'utf8');
+  ok('mọi giá trị trả về đều nằm trong VitalsState của VitalsStateBadge.tsx', [[], chonTinHieu({ dangChay: 1, chayLoi: 0 }), chonTinHieu({ dangChay: 0, chayLoi: 1 })].every((t) => {
+    const s = trangThaiAmbient(t);
+    return HOP_LE.has(s) && badge.includes(`'${s}'`);
+  }));
+}
+
+console.log('\n[7] Không có cửa sau cho chữ tự do (chống "insight AI")');
+{
+  const SRC = readFileSync(join(__dirname, 'vitals-tin-hieu.ts'), 'utf8');
+  const khaiNguon = SRC.slice(SRC.indexOf('interface NguonTinHieu'), SRC.indexOf('const THU_TU'));
+  // Mọi trường của NguonTinHieu phải là `number` (hoặc nhãn lượt chạy lấy thẳng từ FlowRun.label).
+  ok('NguonTinHieu chỉ nhận số đếm + nhãn FlowRun', !/:\s*string\[\]/.test(khaiNguon) && (khaiNguon.match(/:\s*string/g) ?? []).length === 1);
+  ok('nguồn không nhận hàm/callback sinh chữ', !/=>/.test(khaiNguon));
+}
+
+console.log(fail === 0 ? '\nTẤT CẢ ĐẠT\n' : `\n${fail} MỤC HỎNG\n`);
+if (fail > 0) process.exit(1);
+
+/* 8 — MỌI tín hiệu phải mang câu "vì sao bị gắn cờ", và câu đó phải đến từ bảng hằng số
+   `VI_SAO` (không có cửa nào cho chữ tự do / AI sinh lọt vào — cùng lý do mục 7). */
+{
+  const day = chonTinHieu({ dangChay: 2, chayLoi: 1, chuanCanXem: 4 });
+  const hopLe = Object.values(VI_SAO);
+  for (const t of day) {
+    if (!t.viSao || !hopLe.includes(t.viSao)) {
+      console.error('✗ tín hiệu thiếu/lệch câu vì sao:', t.loai, t.viSao);
+      process.exit(1);
+    }
+    if (t.viSao !== VI_SAO[t.loai]) {
+      console.error('✗ câu vì sao không khớp loại:', t.loai);
+      process.exit(1);
+    }
+  }
+  // 22/08 — BỎ SỐ GÕ CỨNG (`!== 4`). Ý ĐỊNH của kiểm này là ĐỘ PHỦ: mọi loại tín hiệu phải có
+  // câu VÌ SAO. Neo vào một con số thì thêm một loại hợp lệ cũng làm đỏ, và người sửa dễ chỉnh
+  // số cho qua — tức là làm hỏng đúng thứ nó canh. Nay so thẳng với danh sách loại chính tắc.
+  const thieu = THU_TU.filter((l) => !(l in VI_SAO));
+  const thua = Object.keys(VI_SAO).filter((k) => !(THU_TU as string[]).includes(k));
+  if (thieu.length || thua.length) {
+    console.error('✗ VI_SAO phải phủ ĐÚNG bộ loại tín hiệu — thiếu:', thieu, '· thừa:', thua);
+    process.exit(1);
+  }
+}
+console.log("  [8] ok  - mọi tín hiệu mang câu VÌ SAO, lấy từ bảng hằng số");
+
+console.log('\n[9] demo-flow — tiến độ, KHÔNG phải cảnh báo');
+ok('thiếu cả hai số ⇒ không có dòng demo-flow', !chonTinHieu({ ...RONG }).some((t) => t.loai === 'demo-flow'));
+ok('demoTong=0 ⇒ không có dòng (mẫu số rỗng)', !chonTinHieu({ ...RONG, demoXong: 0, demoTong: 0 }).some((t) => t.loai === 'demo-flow'));
+ok('đã xong hết (7/7) ⇒ im, không có gì để xem tiến độ nữa', !chonTinHieu({ ...RONG, demoXong: 7, demoTong: 7 }).some((t) => t.loai === 'demo-flow'));
+ok('còn dở (7/9) ⇒ CÓ dòng demo-flow', chonTinHieu({ ...RONG, demoXong: 7, demoTong: 9 }).some((t) => t.loai === 'demo-flow'));
+ok('nhãn mang đúng cặp số 7/9', /\b7\/9\b/.test(chonTinHieu({ ...RONG, demoXong: 7, demoTong: 9 }).find((t) => t.loai === 'demo-flow')?.nhan ?? ''));
+ok(
+  'demo-flow đứng SAU 3 loại kia (ưu tiên thấp nhất)',
+  chonTinHieu({ dangChay: 1, chayLoi: 1, chuanCanXem: 1, demoXong: 1, demoTong: 2 }).map((t) => t.loai).indexOf('demo-flow') === -1, // trần 3 cắt trước khi tới demo-flow — đúng luật ưu tiên
+);
+ok(
+  'demo-flow một mình (không gì khác) vẫn hiện — dưới trần 3',
+  chonTinHieu({ ...RONG, demoXong: 1, demoTong: 2 }).some((t) => t.loai === 'demo-flow'),
+);
+ok('demo-flow KHÔNG kéo ambient sang alert', trangThaiAmbient(chonTinHieu({ ...RONG, demoXong: 1, demoTong: 2 })) === 'idle');
+ok('demo-flow + lỗi thật thì ambient vẫn alert (lỗi thắng)', trangThaiAmbient(chonTinHieu({ dangChay: 0, chayLoi: 1, demoXong: 1, demoTong: 2 })) === 'alert');
+
+/* ═══════════════════════════════════════════════════════════════════════════════════════════
+ * P0 `L2-03` — NHÃN KHẨU ĐỘ. Lane `IF-UXUI-RUNTIME-001` đo trên app thật: nút Vitals đọc
+ * `aria-label="Vitals — không có tín hiệu"` **kể cả khi đã đăng nhập, có dữ liệu, mọi API 200**,
+ * và cùng lúc DOM ghi `data-vitals-state="calm"`. Hai bề mặt của một nút nói hai chuyện.
+ * ═══════════════════════════════════════════════════════════════════════════════════════════ */
+{
+  const { mucKhauDo, nhanKhauDo, domKhauDo } = require('./vitals-tin-hieu');
+  console.log('\n[L2-03] nhãn khẩu độ — bốn mức, và DOM không được lệch nhãn');
+
+  /* ── ĐO ĐƯỢC thắng/thua ở đâu ── */
+  ok('đo được + im ⇒ yen', mucKhauDo('idle', true) === 'yen');
+  ok('KHÔNG đo được + im ⇒ khong-biet (KHÔNG phải yen)', mucKhauDo('idle', false) === 'khong-biet');
+  // Đang chạy là một PHÉP ĐO — ta thấy nó chạy. Không đo được nguồn khác không xoá điều đó.
+  ok('đang chạy ⇒ dang-chay dù nguồn khác chưa đo được', mucKhauDo('answering', false) === 'dang-chay');
+  ok('có việc cần xem ⇒ can-xem dù nguồn khác chưa đo được', mucKhauDo('alert', false) === 'can-xem');
+
+  /* ── XƯƠNG SỐNG: bốn mức, bốn câu KHÁC NHAU ── */
+  for (const en of [false, true]) {
+    const cau = ['yen', 'dang-chay', 'can-xem', 'khong-biet'].map((m: any) => nhanKhauDo(m, en));
+    ok(`${en ? 'en' : 'vi'} — 4 mức ra 4 câu, không trùng đôi nào`, new Set(cau).size === 4);
+  }
+
+  /* ── Câu "không có tín hiệu" là câu KHẲNG ĐỊNH VỀ THẾ GIỚI khi ta chưa nhìn thấy thế giới ── */
+  ok('vi — "chưa đo được" nói về CHÍNH TA, không khẳng định về thế giới',
+    nhanKhauDo('khong-biet', false) === 'chưa đo được');
+  ok('vi — KHÔNG còn câu "không có tín hiệu" ở bất kỳ mức nào',
+    !['yen', 'dang-chay', 'can-xem', 'khong-biet'].some((m: any) => /không có tín hiệu/.test(nhanKhauDo(m, false))));
+  ok('en — "not measured yet", không phải "no signals"',
+    nhanKhauDo('khong-biet', true) === 'not measured yet' && !/no signals/.test(nhanKhauDo('yen', true)));
+
+  /* ── DOM sinh từ CÙNG `muc` ⇒ không thể lệch nhãn ── */
+  ok('yen → calm', domKhauDo('yen') === 'calm');
+  ok('can-xem → attention', domKhauDo('can-xem') === 'attention');
+  ok('dang-chay → running', domKhauDo('dang-chay') === 'running');
+  ok('khong-biet → unknown (KHÔNG phải calm — đây là ca đã sập)', domKhauDo('khong-biet') === 'unknown');
+  // Ca chính xác đã đo được trên runtime: không đo được mà DOM nói `calm`.
+  ok('không đo được ⇒ DOM tuyệt đối KHÔNG được là calm',
+    domKhauDo(mucKhauDo('idle', false)) !== 'calm');
+
+  /* ── Nhãn và DOM luôn cùng gốc: bốn mức, bốn giá trị DOM, ánh xạ một-một ── */
+  const domSet = new Set(['yen', 'dang-chay', 'can-xem', 'khong-biet'].map((m: any) => domKhauDo(m)));
+  ok('4 mức → 4 giá trị DOM riêng biệt', domSet.size === 4);
+}
+
+/* ═══════════ [chặng] MÀN KHÔNG PHẢI CHẶNG THÌ KHÔNG ĐƯỢC KHAI MÌNH LÀ CHẶNG (04/09) ═══════════
+ * Ca thật: ảnh chụp app 04/09 — đứng ở Trang chủ mà tấm chat ghi "VITALS · THIẾT KẾ 3D".
+ * Gốc: `activeToPhase` trả `'render'` cho MỌI thứ không phải cad/photo/present, mà sáu màn cấp app
+ * đều bọc `<AppShell active="render">`. Khoá lại bằng máy: đường dẫn quyết định, không phải `active`.
+ */
+{
+  const { changTheoDuong } = require('./vitals-tin-hieu');
+  console.log('\n[chặng] đường dẫn quyết định, KHÔNG phải `active`');
+
+  ok('/projects/x/cad → concept', changTheoDuong('/projects/abc/cad') === 'concept');
+  ok('/projects/x/render → render', changTheoDuong('/projects/abc/render') === 'render');
+  ok('/projects/x/present → present', changTheoDuong('/projects/abc/present') === 'present');
+  ok('/projects/x/photo → render (photo là mặt của chặng 3D)', changTheoDuong('/projects/abc/photo') === 'render');
+  ok('/cad-editor → concept', changTheoDuong('/cad-editor') === 'concept');
+  ok('/present-editor → present', changTheoDuong('/present-editor') === 'present');
+
+  // Sáu màn cấp app — đều `active="render"` trong mã, và ĐỀU PHẢI trả 'gallery'.
+  for (const d of ['/', '/files', '/library', '/library/gallery', '/materials', '/tasks', '/settings', '/inspiration', '/colors']) {
+    ok(`${d} → gallery (không thuộc chặng nào)`, changTheoDuong(d) === 'gallery');
+  }
+  ok('null/undefined → gallery, không nổ', changTheoDuong(null) === 'gallery' && changTheoDuong(undefined) === 'gallery');
+  ok('/projects/x/overview → gallery (tổng quan không phải chặng)', changTheoDuong('/projects/abc/overview') === 'gallery');
+
+  /* Nhãn tấm chat: 'gallery' KHÔNG được chứa tên chặng nào. Đọc thẳng chuỗi từ nơi vẽ để test
+     không tự chép lại một bản nhãn thứ hai (chép là hai nguồn, và chúng sẽ lệch). */
+  const nguon = readFileSync(join(__dirname, 'VitalsGesture.tsx'), 'utf8');
+  ok('`nhanTamChat` là NGUỒN DUY NHẤT của nhãn (tiêu đề + aria cùng gọi nó)',
+    (nguon.match(/nhanTamChat\(stage\)/g) || []).length >= 2 && !/Vitals · \{STAGE_LABEL/.test(nguon));
+  const nhanTamChat = (st: string) => (st === 'gallery' ? 'Vitals' : null);
+  ok('gallery ⇒ nhãn chỉ còn "Vitals", không kèm tên chặng', nhanTamChat('gallery') === 'Vitals');
+  ok('mã nguồn có nhánh gallery bỏ tên chặng',
+    /stage === 'gallery' \? 'Vitals'/.test(nguon));
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   [CẤM HỘP RỖNG] — Hoà cấm 05/09, kèm ảnh chụp: Peek mở ra một tấm chỉ để nói
+   "Không có tín hiệu nào." + một dòng "Mở Vitals…".
+
+   Ba luật cùng cấm nó: N-10 cờ đỏ *hộp rỗng* · khuôn thông điệp TRỐNG phải hành
+   động được · định nghĩa Peek §17 (một tín hiệu lớn + ngữ cảnh + một hành động)
+   — không tín hiệu thì Peek KHÔNG CÓ RUỘT.
+
+   Đây là test ĐỌC MÃ, không dựng DOM: nó canh cho ba điều kiện dưới đây không
+   bị gỡ ra trong lúc sửa việc khác. Gỡ một trong ba là hộp rỗng sống lại.
+   ═══════════════════════════════════════════════════════════════════════════ */
+{
+  const fs = require('node:fs') as typeof import('node:fs');
+  const path = require('node:path') as typeof import('node:path');
+  const nguon = fs.readFileSync(
+    path.join(__dirname, 'VitalsAperture.tsx'),
+    'utf8',
+  );
+
+  // [1] Lối vào: `moPeek` phải bỏ đi khi không có tín hiệu.
+  if (!/if \(tinHieu\.length === 0\) \{/.test(nguon)) {
+    throw new Error(
+      '[CẤM HỘP RỖNG] `moPeek` không còn chặn `tinHieu.length === 0` — rê chuột ' +
+        'vào ổ khi không có tín hiệu sẽ bật ra một tấm rỗng. Hoà cấm 05/09.',
+    );
+  }
+
+  // [2] Cổng dựng tấm: Peek chỉ được dựng khi CÓ tín hiệu (Engage thì miễn).
+  if (!/muc === 'engage' \|\| tinHieu\.length > 0/.test(nguon)) {
+    throw new Error(
+      '[CẤM HỘP RỖNG] Cổng portal không còn điều kiện ' +
+        "`muc === 'engage' || tinHieu.length > 0` — tín hiệu tắt trong lúc tấm " +
+        'đang mở sẽ để lộ một tấm rỗng.',
+    );
+  }
+
+  // [3] Không được dựng lại câu chết. Chỉ cho phép nó tồn tại trong CHÚ THÍCH
+  //     (dòng bắt đầu bằng * hoặc //) — đó là chỗ ghi vì sao nó bị cấm.
+  const dongChet = nguon
+    .split('\n')
+    .map((d, i) => [i + 1, d] as const)
+    .filter(([, d]) => d.includes('Không có tín hiệu nào'))
+    .filter(([, d]) => !/^\s*(\*|\/\/)/.test(d));
+  if (dongChet.length > 0) {
+    throw new Error(
+      '[CẤM HỘP RỖNG] Câu "Không có tín hiệu nào." quay lại thành GIAO DIỆN ở dòng ' +
+        dongChet.map(([n]) => n).join(', ') +
+        ' — trống thì phải hành động được, không phải một câu chết.',
+    );
+  }
+
+  console.log('  ✓ [CẤM HỘP RỖNG] ba chốt chặn còn nguyên');
+}

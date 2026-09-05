@@ -193,7 +193,7 @@ export function LevelManagerPanel() {
                 value={level.name}
                 onChange={(e) => renameLevel(level.id, e.target.value)}
                 aria-label={tr('Tên tầng', 'Level name')}
-                className="h-[var(--row)] min-w-0 flex-1 rounded-[6px] border border-transparent bg-transparent px-1 text-[11.5px] leading-[1.6] text-[var(--t2)] transition-colors hover:border-[var(--border)] focus:border-[var(--accent-ring)] focus:bg-[var(--field)] focus:outline-none"
+                className="h-[var(--row)] min-w-0 flex-1 rounded-[6px] border border-transparent bg-transparent px-1 text-[11.5px] leading-[1.6] text-[var(--t2)] transition-colors hover:border-[var(--border)] focus:border-[var(--focus-ring)] focus:bg-[var(--field)]"
               />
 
               <Tooltip
@@ -287,7 +287,7 @@ export function LevelManagerPanel() {
                 if (level) assignLevelToEntities([assignableId], level);
               }}
               aria-label={tr('Chọn tầng', 'Pick a level')}
-              className="mt-1 h-[var(--tap)] w-full rounded-[10px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
+              className="mt-1 h-[var(--tap)] w-full rounded-[10px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--focus-ring)]"
             >
               <option value="">{tr('— chưa xếp tầng —', '— unassigned —')}</option>
               {levels.map((l) => (

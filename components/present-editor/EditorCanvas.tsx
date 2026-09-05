@@ -626,6 +626,9 @@ export default function EditorCanvas({
             onEditTextCommit(editing.id, editing.text);
             setEditing(null);
           }}
+          /* ring TRONG: ô gõ chữ nằm ĐÚNG khung chữ trên trang — ring ngoài sẽ lấn sang phần tử
+             bên cạnh và làm sai cảm giác vị trí khung; ring trong bám đúng mép khung đang sửa. */
+          className="if-focus-inset"
           style={{
             position: 'absolute',
             left: `${editingEl.frame.x}%`,
@@ -644,7 +647,6 @@ export default function EditorCanvas({
             lineHeight: editingEl.lineHeight ?? 1.2,
             background: 'rgba(255,255,255,.06)',
             border: '1.5px dashed var(--accent)',
-            outline: 'none',
             resize: 'none',
             padding: 0,
             zIndex: 30,

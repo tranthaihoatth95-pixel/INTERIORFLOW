@@ -22,6 +22,7 @@ import { useStageTransition } from '@/components/studio/StageTransitionProvider'
 import { activeToPhase, pickStage } from '@/lib/studio/stage-nav';
 import type { AppChromeActive } from '@/components/studio/AppChromeTypes';
 import { useT } from '@/lib/i18n';
+import { quenDangXuat } from '@/lib/danh-tinh-phien';
 import { cn } from '@/lib/utils';
 import { UserAvatar } from '@/components/avatar/UserAvatar';
 
@@ -158,6 +159,8 @@ function AccountRow() {
           title="Đăng xuất"
           onClick={async () => {
             await fetch('/api/auth/me', { method: 'DELETE' });
+            // G1 · xoá bộ đệm định danh NGAY khi đăng xuất (xem lib/danh-tinh-phien.ts).
+            quenDangXuat();
             setUser(null);
           }}
           className="grid h-9 w-9 place-items-center rounded-[10px] border border-[var(--border)] text-[var(--t3)] transition-colors hover:bg-[var(--hover)] hover:text-red-400"

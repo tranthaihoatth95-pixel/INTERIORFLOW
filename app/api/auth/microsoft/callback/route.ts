@@ -3,7 +3,8 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/server/db';
 import { createSession, randomPasswordHash, oauthSignInGate } from '@/lib/server/auth';
 import { MS_OAUTH_STATE_COOKIE, microsoftConfigured, msTenant } from '@/lib/server/oauth';
-import { saveTokens } from '@/lib/integrations/oauth-core';
+import { saveTokens, getGrantedScope } from '@/lib/integrations/oauth-core';
+import { nenGhiDeToken } from '@/lib/integrations/scopes';
 
 /**
  * Bước 2 OAuth Microsoft: Entra ID redirect về đây kèm ?code&state — ĐÚNG pattern
@@ -109,13 +110,18 @@ export async function GET(req: Request) {
 
     // Best-effort: lưu token vào IntegrationAccount 'ms365' (mã hoá AES-GCM) để tầng
     // tích hợp Outlook/Teams/Calendar dùng lại — thiếu INTEGRATION_ENC_KEY thì bỏ qua êm.
+    // Slice 7: KHÔNG HẠ SCOPE — nếu người dùng đã nối lịch (Calendars.Read) qua
+    // /api/integrations/ms365/connect, token login chỉ có User.Read mà ghi đè là lịch chết.
     try {
-      await saveTokens(user.id, 'ms365', {
-        access_token: tokens.access_token,
-        refresh_token: tokens.refresh_token,
-        expires_in: tokens.expires_in,
-        scope: tokens.scope,
-      });
+      const scopeCu = await getGrantedScope(user.id, 'ms365');
+      if (nenGhiDeToken(scopeCu, tokens.scope)) {
+        await saveTokens(user.id, 'ms365', {
+          access_token: tokens.access_token,
+          refresh_token: tokens.refresh_token,
+          expires_in: tokens.expires_in,
+          scope: tokens.scope,
+        });
+      }
     } catch {
       /* không chặn login vì thiếu khoá mã hoá / lỗi lưu token tích hợp */
     }

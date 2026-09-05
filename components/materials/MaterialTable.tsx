@@ -18,6 +18,7 @@ export function MaterialTable({
   onEditPbr,
   baMatCua,
   onMoBaMat,
+  chiDocThuongMai,
 }: {
   items: MaterialSpecDto[];
   onEdit: (m: MaterialSpecDto) => void;
@@ -28,6 +29,14 @@ export function MaterialTable({
   /** [marker: vatLieuBaMat] ba mặt đã đọc sẵn cho từng dòng — bảng chỉ VẼ, không tự tra. */
   baMatCua: (m: MaterialSpecDto) => BaMat;
   onMoBaMat: (m: MaterialSpecDto) => void;
+  /**
+   * 04/09 — dòng CHỈ ĐỌC Ở MẶT THƯƠNG MẠI (vật liệu hạt giống ship theo bản cài). Chúng KHÔNG có
+   * bản ghi `ProductSpec` để sửa/xoá; hiện nút Sửa/Xoá cho chúng là **nút giả bấm không ra gì**
+   * (§9 cấm) và tệ hơn — người dùng tưởng xoá được mẫu gốc. Mặt THỊ GIÁC vẫn mở được: bản chỉnh
+   * rơi xuống tầng studio, mẫu gốc trong repo không đổi (một chiều, `.idfc` chốt 07/08).
+   * Không truyền ⇒ mọi dòng đều sửa được, đúng hành vi trước 04/09.
+   */
+  chiDocThuongMai?: (m: MaterialSpecDto) => boolean;
 }) {
   const tr = useT();
 
@@ -56,6 +65,7 @@ export function MaterialTable({
           {items.map((m) => {
             const src = materialSourceLabel(m);
             const url = imageUrlOf(m);
+            const chiDoc = chiDocThuongMai?.(m) ?? false;
             return (
               <tr key={m.id} style={{ height: 46 }}>
                 <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)' }}>
@@ -72,9 +82,9 @@ export function MaterialTable({
                   {m.sku || '—'}
                 </td>
                 <td
-                  onClick={() => onEdit(m)}
-                  title={tr('Bấm để sửa', 'Click to edit')}
-                  style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t1)', cursor: 'pointer', fontWeight: 500 }}
+                  onClick={chiDoc ? undefined : () => onEdit(m)}
+                  title={chiDoc ? tr('Mẫu theo bản cài — không sửa được ở đây', 'Ships with the app — not editable here') : tr('Bấm để sửa', 'Click to edit')}
+                  style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t1)', cursor: chiDoc ? 'default' : 'pointer', fontWeight: 500 }}
                 >
                   {m.name}
                   {m.verified && (
@@ -101,17 +111,30 @@ export function MaterialTable({
                 <td style={{ padding: '0 10px', borderBottom: '1px solid var(--border)', color: 'var(--t4)', fontSize: 11.5 }}>{tr(src.vi, src.en)}</td>
                 <td style={{ padding: '0 6px', borderBottom: '1px solid var(--border)' }}>
                   <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-                    {onEditPbr && m.sku && (
+                    {onEditPbr && (m.sku || m.matId) && (
                       <button type="button" onClick={() => onEditPbr(m)} aria-label={tr('Chất liệu render', 'Render material')} title={tr('Chất liệu render (PBR)', 'Render material (PBR)')} style={iconBtn}>
                         <Orbit size={13} />
                       </button>
                     )}
-                    <button type="button" onClick={() => onEdit(m)} aria-label={tr('Sửa', 'Edit')} style={iconBtn}>
-                      <Pencil size={13} />
-                    </button>
-                    <button type="button" onClick={() => onDelete(m)} aria-label={tr('Xoá', 'Delete')} style={iconBtn}>
-                      <Trash2 size={13} />
-                    </button>
+                    {chiDoc ? (
+                      /* Nhãn CHỮ, không phải icon câm: người dùng phải đọc được VÌ SAO không có
+                         nút, không phải đoán qua chỗ trống (luật màu/hình không là kênh duy nhất). */
+                      <span
+                        style={{ fontSize: 11, color: 'var(--t4)', padding: '0 6px', whiteSpace: 'nowrap' }}
+                        title={tr('Vật liệu đi kèm bản cài — sửa thông số render thì bản chỉnh lưu riêng, mẫu gốc giữ nguyên', 'Ships with the app — render tweaks are saved separately, the original stays intact')}
+                      >
+                        {tr('theo bản cài', 'built-in')}
+                      </span>
+                    ) : (
+                      <>
+                        <button type="button" onClick={() => onEdit(m)} aria-label={tr('Sửa', 'Edit')} style={iconBtn}>
+                          <Pencil size={13} />
+                        </button>
+                        <button type="button" onClick={() => onDelete(m)} aria-label={tr('Xoá', 'Delete')} style={iconBtn}>
+                          <Trash2 size={13} />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>

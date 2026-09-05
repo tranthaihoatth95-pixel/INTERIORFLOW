@@ -358,8 +358,12 @@ model AssetRepresentation {
   /// 🔴 MỨC SỰ THẬT — dùng lại NGUYÊN từ vựng ba nấc đang chạy (~509 chỗ trong code):
   /// `measured` đo được · `inferred` máy suy · `verified` người đã ký.
   /// LUẬT (Hoà chốt 15/08 + cửa duyệt 03): BOQ CHỈ nhận `measured`/`verified`.
-  /// Cửa duyệt 03: bấm "Nhận" KHÔNG tự nâng cả ba chiều lên `verified` — chỉ chiều nào người
-  /// GÕ LẠI SỐ mới được `verified`; chiều để nguyên vẫn là `inferred`.
+  /// Cửa duyệt 03: bấm "Nhận" KHÔNG tự nâng cả ba chiều lên `verified`.
+  /// 🔄 04/09 — nói CHÍNH XÁC hơn dòng cũ ("chỉ chiều nào GÕ LẠI SỐ"): nay `truthLevel` **luôn
+  /// suy ra từ CĂN CỨ**, không nơi nào gán tay (`lib/capabilities/image-to-3d.ts` —
+  /// `nacTuCanCu(canCu)`). Có ĐÚNG HAI đường lên `verified`: người **gõ lại số**
+  /// (`human-override`) hoặc người **xác nhận kèm tham chiếu** (`human-confirmed`). Bấm Nhận trần,
+  /// không gõ gì và không nêu tham chiếu ⇒ chiều đó giữ nguyên `inferred` và **không vào BOQ**.
   truthLevel String @default("inferred")
 
   /// Nguồn gốc: sinh từ đâu, bằng năng lực nào, tham số gì (JSON chuỗi — cùng lối `palette`).

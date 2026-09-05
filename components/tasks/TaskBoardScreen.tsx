@@ -33,6 +33,12 @@ import {
 } from '@/lib/tasks/board';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { RawStyle } from '@/components/filemanager/RawStyle';
+import type { Grant, MemberSummary } from '@/lib/auth/authorize';
+import type { Denial } from '@/lib/auth/roles';
+import { can as canRole } from '@/lib/auth/roles';
+import { DeniedState } from '@/components/auth/DeniedState';
+import { RoleBadge } from '@/components/auth/RoleBadge';
+import { AssigneePicker } from '@/components/tasks/AssigneePicker';
 
 interface ProjectOpt { id: string; name: string }
 
@@ -145,6 +151,15 @@ export function TaskBoardScreen() {
   const [editTitle, setEditTitle] = useState('');
   const [busy, setBusy] = useState(false);
   const [dragOverCol, setDragOverCol] = useState<string | null>(null);
+  /* SLICE 6 (02/09): quyền + thành viên đi kèm GET /api/tasks — giao việc theo NĂNG LỰC
+   * (task:assignable), tên người thật thay id, từ chối tường minh thay "HTTP 404". */
+  const [grant, setGrant] = useState<Grant | null>(null);
+  const [members, setMembers] = useState<MemberSummary[]>([]);
+  const [denial, setDenial] = useState<Denial | null>(null);
+  const [assigning, setAssigning] = useState<string | null>(null);
+  const canWrite = !!grant && canRole(grant.role, 'task:write');
+  const canAssign = !!grant && canRole(grant.role, 'task:assign');
+  const nameOf = (id: string) => members.find((m) => m.userId === id)?.name ?? id;
   /** form tạo dự án tại chỗ khi chưa có dự án nào (EmptyState — làm được việc NGAY TẠI ĐÂY). */
   const [creatingProject, setCreatingProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
@@ -177,12 +192,18 @@ export function TaskBoardScreen() {
     setError(null);
     setStates(null);
     setTasks(null);
+    setDenial(null);
     try {
-      const res = await fetch(`/api/tasks?projectId=${encodeURIComponent(pid)}`);
+      const res = await fetch(`/api/tasks?projectId=${encodeURIComponent(pid)}`, { cache: 'no-store' });
       const j = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(j?.error || `HTTP ${res.status}`);
+      if (!res.ok) {
+        if (j?.denied) { setDenial({ denied: true, reason: j.reason, capability: j.capability, role: j.role }); setStates([]); setTasks([]); setGrant(null); setMembers([]); return; }
+        throw new Error(j?.error || `HTTP ${res.status}`);
+      }
       setStates(j.states ?? []);
       setTasks(j.tasks ?? []);
+      setGrant(j.grant ?? null);
+      setMembers(Array.isArray(j.members) ? j.members : []);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
       setStates([]);
@@ -207,6 +228,15 @@ export function TaskBoardScreen() {
 
   /* ── hành động qua API thật ─────────────────────────────────────────────── */
   const apiError = (e: unknown) => setError(e instanceof Error ? e.message : String(e));
+  /** Đọc phản hồi lỗi: từ chối quyền → DeniedState; giao sai người → nêu tên; còn lại → thông điệp server. */
+  const throwApi = (res: Response, j: { error?: string; denied?: boolean; reason?: Denial['reason']; capability?: Denial['capability']; role?: Denial['role']; ineligible?: { userId: string; reason: string }[] } | null): never => {
+    if (j?.denied && j.reason) { setDenial({ denied: true, reason: j.reason, capability: j.capability, role: j.role }); }
+    if (Array.isArray(j?.ineligible) && j.ineligible.length > 0) {
+      const names = j.ineligible.map((x) => `${nameOf(x.userId)} (${x.reason === 'not-member' ? tr('không phải thành viên', 'not a member') : tr('không nhận việc được', 'cannot be assigned')})`).join(', ');
+      throw new Error(tr(`Không giao được: ${names}`, `Cannot assign: ${names}`));
+    }
+    throw new Error(j?.error || `HTTP ${res.status}`);
+  };
 
   /** Gieo template = POST tuần tự từng việc vào cột đầu (statusId bỏ trống → server tự chọn
    *  cột order thấp nhất). Tuần tự chứ không Promise.all để giữ đúng THỨ TỰ trong cột. */
@@ -222,7 +252,7 @@ export function TaskBoardScreen() {
           body: JSON.stringify({ projectId, title: tr(vi, en) }),
         });
         const j = await res.json().catch(() => null);
-        if (!res.ok) throw new Error(j?.error || `HTTP ${res.status}`);
+        if (!res.ok) throwApi(res, j);
         created.push(j.task);
       }
       setTasks((prev) => [...(prev ?? []), ...created]);
@@ -240,7 +270,7 @@ export function TaskBoardScreen() {
         body: JSON.stringify({ projectId, title, statusId }),
       });
       const j = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(j?.error || `HTTP ${res.status}`);
+      if (!res.ok) throwApi(res, j);
       setTasks((prev) => [...(prev ?? []), j.task]);
       setNewTitle('');
       // giữ ô nhập mở — nhập liên tiếp nhiều việc là ca thường gặp
@@ -257,7 +287,7 @@ export function TaskBoardScreen() {
         body: JSON.stringify({ projectId, ...patch }),
       });
       const j = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(j?.error || `HTTP ${res.status}`);
+      if (!res.ok) throwApi(res, j);
       setTasks((prev) => (prev ? prev.map((x) => (x.id === t.id ? j.task : x)) : prev));
     } catch (e) { apiError(e); } finally { setBusy(false); }
   };
@@ -277,7 +307,7 @@ export function TaskBoardScreen() {
     try {
       const res = await fetch(`/api/tasks/${encodeURIComponent(t.id)}?projectId=${encodeURIComponent(projectId)}`, { method: 'DELETE' });
       const j = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(j?.error || `HTTP ${res.status}`);
+      if (!res.ok) throwApi(res, j);
       setTasks((prev) => (prev ? prev.filter((x) => x.id !== t.id) : prev));
     } catch (e) { apiError(e); } finally { setBusy(false); }
   };
@@ -387,7 +417,9 @@ export function TaskBoardScreen() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={tr('Tìm việc', 'Search tasks')}
-            style={{ flex: 1, background: 'transparent', border: 0, outline: 'none', fontSize: 12.5, color: 'var(--t1)' }}
+            /* ring TRONG: ô nằm trong vỏ pill — ring ngoài đè viền vỏ */
+            className="if-focus-inset"
+            style={{ flex: 1, background: 'transparent', border: 0, fontSize: 12.5, color: 'var(--t1)' }}
           />
         </div>
 
@@ -398,20 +430,25 @@ export function TaskBoardScreen() {
           </span>
         )}
 
+        {grant && <RoleBadge role={grant.role} storedRole={grant.storedRole} size="md" />}
+
         <div style={{ marginLeft: 'auto' }}>
           <button
             type="button"
-            disabled={!firstStateId}
-            onClick={() => { if (firstStateId) { setAdding(firstStateId); setNewTitle(''); } }}
+            disabled={!firstStateId || !canWrite}
+            onClick={() => { if (firstStateId && canWrite) { setAdding(firstStateId); setNewTitle(''); } }}
+            title={!canWrite && grant ? tr('Vai Chỉ xem không tạo việc được', 'Viewer role cannot create tasks') : undefined}
             style={{
-              height: 30, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 6, cursor: firstStateId ? 'pointer' : 'not-allowed',
-              border: 0, borderRadius: 10, fontSize: 12, fontWeight: 600, background: 'var(--accent)', color: '#fff', opacity: firstStateId ? 1 : 0.5,
+              height: 30, padding: '0 14px', display: 'flex', alignItems: 'center', gap: 6, cursor: firstStateId && canWrite ? 'pointer' : 'not-allowed',
+              border: 0, borderRadius: 10, fontSize: 12, fontWeight: 600, background: 'var(--accent)', color: '#fff', opacity: firstStateId && canWrite ? 1 : 'var(--mo-vo-hieu, .5)',
             }}
           >
             <Plus size={13} /> {tr('Thêm việc', 'Add task')}
           </button>
         </div>
       </div>
+
+      {denial && <DeniedState denial={denial} />}
 
       {error && (
         <div style={{ margin: '10px 14px 0', padding: '8px 12px', borderRadius: 10, background: 'color-mix(in srgb, var(--danger) 14%, var(--panel))', fontSize: 13, color: 'var(--t1)' }}>
@@ -450,7 +487,7 @@ export function TaskBoardScreen() {
                   value={newProjectName}
                   onChange={(e) => setNewProjectName(e.target.value)}
                   placeholder={tr('Tên dự án', 'Project name')}
-                  style={{ height: 32, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, outline: 'none', minWidth: 220 }}
+                  style={{ height: 32, padding: '0 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)', fontSize: 12.5, minWidth: 220 }}
                 />
                 <button type="submit" disabled={busy || !newProjectName.trim()} style={{ height: 32, padding: '0 14px', border: 0, borderRadius: 10, background: 'var(--accent)', color: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: busy || !newProjectName.trim() ? 0.5 : 1 }}>
                   {tr('Tạo dự án', 'Create project')}
@@ -569,7 +606,7 @@ export function TaskBoardScreen() {
                         onChange={(e) => setNewTitle(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Escape') setAdding(null); }}
                         placeholder={tr('Tên việc, Enter để lưu', 'Task title, Enter to save')}
-                        style={{ border: 0, outline: 'none', background: 'transparent', fontSize: 12.5, fontWeight: 600, color: 'var(--t1)' }}
+                        style={{ border: 0, background: 'transparent', fontSize: 12.5, fontWeight: 600, color: 'var(--t1)' }}
                       />
                       <div style={{ display: 'flex', gap: 6 }}>
                         <button type="submit" disabled={busy || !newTitle.trim()} style={{ height: 24, padding: '0 10px', border: 0, borderRadius: 6, background: 'var(--accent)', color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer', opacity: busy || !newTitle.trim() ? 0.5 : 1 }}>
@@ -605,7 +642,7 @@ export function TaskBoardScreen() {
                             if (e.key === 'Enter') commitEdit(t);
                             if (e.key === 'Escape') setEditingId(null);
                           }}
-                          style={{ border: 0, outline: 'none', background: 'transparent', fontSize: 12.5, fontWeight: 600, color: 'var(--t1)', borderBottom: '1px dashed var(--accent)' }}
+                          style={{ border: 0, background: 'transparent', fontSize: 12.5, fontWeight: 600, color: 'var(--t1)', borderBottom: '1px dashed var(--accent)' }}
                         />
                       ) : (
                         <div
@@ -617,21 +654,40 @@ export function TaskBoardScreen() {
                         </div>
                       )}
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
                         <span style={{ flex: 1, minWidth: 0 }} />
-                        {t.assigneeIds.length > 0 ? (
-                          <span
-                            title={t.assigneeIds.join(', ')}
-                            style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff', flex: 'none' }}
-                          >
-                            {initialsOf(t.assigneeIds[0])}
-                          </span>
-                        ) : (
-                          <span
-                            title={tr('Chưa giao ai', 'Unassigned')}
-                            aria-label={tr('Chưa giao ai', 'Unassigned')}
-                            style={{ width: 20, height: 20, borderRadius: '50%', border: '1.5px dashed var(--border-strong)', flex: 'none' }}
-                          />
+                        {/* Người phụ trách: TÊN THẬT từ roster (không phải id), bấm mở picker theo năng lực. */}
+                        <button
+                          type="button"
+                          disabled={!canAssign || busy}
+                          onClick={() => setAssigning(assigning === t.id ? null : t.id)}
+                          aria-haspopup="dialog"
+                          aria-expanded={assigning === t.id}
+                          title={t.assigneeIds.length > 0 ? t.assigneeIds.map(nameOf).join(', ') : canAssign ? tr('Chưa giao ai — bấm để giao', 'Unassigned — click to assign') : tr('Chưa giao ai', 'Unassigned')}
+                          aria-label={t.assigneeIds.length > 0 ? tr(`Phụ trách: ${t.assigneeIds.map(nameOf).join(', ')}`, `Assignees: ${t.assigneeIds.map(nameOf).join(', ')}`) : tr('Chưa giao ai', 'Unassigned')}
+                          style={{ display: 'flex', alignItems: 'center', gap: 4, border: 0, background: 'transparent', padding: 0, cursor: canAssign ? 'pointer' : 'default', fontFamily: 'inherit' }}
+                        >
+                          {t.assigneeIds.length > 0 ? (
+                            <>
+                              <span style={{ width: 20, height: 20, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff', flex: 'none' }}>
+                                {initialsOf(nameOf(t.assigneeIds[0]))}
+                              </span>
+                              {t.assigneeIds.length > 1 && <span style={{ fontSize: 10, color: 'var(--t3)' }}>+{t.assigneeIds.length - 1}</span>}
+                            </>
+                          ) : (
+                            <span aria-hidden style={{ width: 20, height: 20, borderRadius: '50%', border: '1.5px dashed var(--border-strong)', flex: 'none' }} />
+                          )}
+                        </button>
+                        {assigning === t.id && (
+                          <div style={{ position: 'absolute', right: 0, top: 24, zIndex: 20 }}>
+                            <AssigneePicker
+                              members={members}
+                              value={t.assigneeIds}
+                              disabled={busy}
+                              onChange={(ids) => void patchTask(t, { assigneeIds: ids })}
+                              onClose={() => setAssigning(null)}
+                            />
+                          </div>
                         )}
                       </div>
 

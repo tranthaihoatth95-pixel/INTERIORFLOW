@@ -142,7 +142,7 @@ function LevelRow({ storey, entityId }: { storey?: string; entityId?: string }) 
           const level = levels.find((l) => l.id === e.target.value);
           if (level) assignLevelToEntities([entity.id], level);
         }}
-        className="mt-0.5 h-[var(--tap)] w-full rounded-[10px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--accent-ring)] focus:outline-none"
+        className="mt-0.5 h-[var(--tap)] w-full rounded-[10px] border border-[var(--border)] bg-[var(--panel)] px-1.5 text-[11px] leading-[1.6] text-[var(--t1)] focus:border-[var(--focus-ring)]"
       >
         <option value="">{storey ? tr(`— nhãn "${storey}", chưa gắn tầng —`, `— label "${storey}", no level —`) : tr('— chưa xếp tầng —', '— unassigned —')}</option>
         {levels.map((l) => (

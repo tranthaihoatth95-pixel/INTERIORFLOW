@@ -1,0 +1,408 @@
+<!-- @dsCard group="Experience System" title="EXS-R · IDFC — Real Asset Quality Pass" -->
+<!--
+  EXS-R v2 — REAL ASSET QUALITY PASS. DESIGN ONLY, không đụng shell/stage đã duyệt.
+  v1 bị Hoà chê XẤU, gốc bệnh: hình asset vẽ ở cỡ 86-164px ⇒ ra clipart, tức board tự phạm đúng
+  điều nó đang cấm. v2 làm lại theo hướng Hoà chốt: ÍT MÓN · TO · THỞ.
+  MỘT asset chủ (daybed hospitality) vẽ khổ lớn đủ thấy nét thật + MỘT ca entourage khó nhất.
+  Chữ tụt xuống hàng phụ. Nét theo grammar EXS-N, không đẻ thang mới.
+-->
+<div class="exr-root">
+<style>
+  .exr-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#161619; --field:#1e1e22;
+    --border:#232329; --border-strong:#34343c;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.13); --accent-ring:rgba(106,87,245,.5);
+    --success:#46b876; --warning:#d9a34a; --danger:#e5674f;
+    background:var(--bg); color:var(--t2); padding:56px 52px 64px;
+    font:13px/1.6 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .exr-root *{box-sizing:border-box}
+  .h1{font-size:26px;font-weight:600;letter-spacing:-.01em;color:var(--t1);margin:0 0 6px}
+  .sub{color:var(--t3);margin:0;max-width:720px;font-size:13.5px}
+  .sec{margin:64px 0 22px;display:flex;align-items:baseline;gap:14px}
+  .sec b{font-size:12px;font-weight:600;letter-spacing:.16em;color:var(--t4);text-transform:uppercase}
+  .sec span{font-size:12px;color:var(--t5)}
+  .cap{font-size:11px;letter-spacing:.13em;text-transform:uppercase;color:var(--t5);margin:0 0 14px}
+  .note{font-size:12px;color:var(--t4);max-width:640px;margin:14px 0 0}
+  /* CAD stroke grammar — y hệt EXS-N/O */
+  .p{stroke:#f5f5f7;stroke-width:2.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .v{stroke:#e2e2e6;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .s{stroke:#b6b6be;stroke-width:.95;fill:none;stroke-linecap:round}
+  .m{stroke:#8e8e98;stroke-width:.6;fill:none;stroke-linecap:round}
+  .hid{stroke:#7e7e88;stroke-width:.85;fill:none;stroke-dasharray:6 4}
+  .ax{stroke:#5c5c66;stroke-width:.6;fill:none;stroke-dasharray:12 3 2 3}
+  .dim{stroke:#8b86c9;stroke-width:.65;fill:none}
+  .dimt{font:10px ui-monospace,monospace;fill:#9b96d6;letter-spacing:.04em}
+  .anno{font:10.5px -apple-system,sans-serif;fill:#6e6e78}
+  /* hero */
+  .hero{display:grid;grid-template-columns:1.32fr 1fr;gap:46px;align-items:start}
+  .drw{padding:0}
+  .drw svg{display:block;width:100%;height:auto}
+  .stack{display:flex;flex-direction:column;gap:42px}
+  .idcard{display:flex;flex-direction:column;gap:16px}
+  .idrow{display:flex;gap:16px;font-size:12px;color:var(--t3);align-items:baseline}
+  .idrow i{font-style:normal;color:var(--t5);width:96px;flex:none;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+  .idrow b{color:var(--t1);font-weight:500}
+  .mat{display:flex;gap:14px;align-items:center;font-size:12px;color:var(--t3)}
+  .mat i{width:38px;height:38px;border-radius:99px;flex:none;box-shadow:inset 0 -6px 12px rgba(0,0,0,.35),0 0 0 1px var(--border-strong)}
+  .mat u{display:block;text-decoration:none;color:var(--t1);font-size:12.5px}
+  .mat s{display:block;text-decoration:none;color:var(--t5);font:10.5px ui-monospace,monospace}
+  .lux{display:grid;grid-template-columns:repeat(5,1fr);gap:30px}
+  .lx svg{display:block;width:100%;height:auto;background:var(--card);border-radius:10px;margin-bottom:12px}
+  .lx .cap{margin-bottom:10px}
+  /* provenance */
+  .prov{display:flex;gap:34px;flex-wrap:wrap}
+  .pv{flex:1 1 178px;min-width:168px}
+  .bdg{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:600;letter-spacing:.05em;padding:5px 12px;border-radius:99px;border:1px solid;margin-bottom:12px}
+  .pv p{margin:0;font-size:12px;color:var(--t4);line-height:1.55}
+  .flow{display:flex;align-items:stretch;gap:0;margin-top:6px}
+  .fs{flex:1;padding:0 22px 0 0;position:relative}
+  .fs:not(:last-child):after{content:'';position:absolute;right:11px;top:14px;width:1px;height:calc(100% - 20px);background:var(--border)}
+  .fs em{font-style:normal;font:10.5px ui-monospace,monospace;color:var(--accent);letter-spacing:.1em}
+  .fs b{display:block;color:var(--t1);font-size:13.5px;font-weight:500;margin:5px 0 6px}
+  .fs p{margin:0;font-size:11.5px;color:var(--t4);line-height:1.55}
+  /* entourage compare */
+  .cmp{display:grid;grid-template-columns:repeat(2,minmax(0,1fr)) 1fr;gap:40px;align-items:start}
+  .cmp .fig{position:relative}
+  .cmp .fig svg{display:block;width:100%;height:auto}
+  .flag{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 12px;display:flex;align-items:center;gap:7px}
+  .flag.no{color:var(--danger)} .flag.ok{color:var(--success)}
+  .flag em{font-style:normal;width:7px;height:7px;border-radius:99px;background:currentColor}
+  .flag.no em{border-radius:1px}
+  .rule{font-size:12.5px;color:var(--t3);line-height:1.65;margin:0}
+  .rule b{color:var(--t1);font-weight:500}
+</style>
+
+  <div class="h1">IDFC Library — Real Asset Quality Pass</div>
+  <p class="sub">Một asset chỉ là “thật” khi bốn mặt của nó — mặt bằng · mặt đứng · khối 3D · vật liệu — là <b style="color:var(--t2)">cùng một vật</b>, chứ không phải bốn bản vẽ giống giống nhau. Dưới đây là mức chấm, đo trên một món hospitality.</p>
+
+  <div class="sec"><b>Asset chủ</b><span>Daybed hồ bơi · teak ngoài trời · 2000 × 900 × 320 (+ tựa 620)</span></div>
+  <div class="hero">
+    <div class="drw">
+      <svg viewBox="0 0 660 700" role="img" aria-label="Bản vẽ daybed: mặt bằng và mặt đứng">
+        <!-- ================= MẶT BẰNG ================= -->
+        <text class="anno" x="40" y="28" style="letter-spacing:.14em;font-size:10.5px" fill="#4e4e57">MẶT BẰNG · LOD 2</text>
+
+        <!-- trục -->
+        <path class="ax" d="M330 40 v330"/>
+        <path class="ax" d="M22 205 h616"/>
+
+        <!-- khung teak bao ngoài (đường cắt / bao chạm đất) -->
+        <path class="p" d="M56 82 h548 a10 10 0 0 1 10 10 v226 a10 10 0 0 1 -10 10 h-548 a10 10 0 0 1 -10 -10 v-226 a10 10 0 0 1 10 -10z"/>
+        <!-- mép trong khung, lộ 60mm -->
+        <path class="v" d="M72 98 h516 a5 5 0 0 1 5 5 v204 a5 5 0 0 1 -5 5 h-516 a5 5 0 0 1 -5 -5 v-204 a5 5 0 0 1 5 -5z"/>
+        <!-- nan sàn nằm dưới nệm — nét khuất -->
+        <path class="hid" d="M96 98 v214 M120 98 v214 M144 98 v214 M168 98 v214 M192 98 v214 M216 98 v214 M240 98 v214 M264 98 v214 M288 98 v214 M312 98 v214 M336 98 v214 M360 98 v214 M384 98 v214 M408 98 v214 M432 98 v214 M456 98 v214 M480 98 v214 M504 98 v214 M528 98 v214 M552 98 v214 M576 98 v214"/>
+
+        <!-- nệm chính -->
+        <path class="v" d="M84 110 h230 a9 9 0 0 1 9 9 v172 a9 9 0 0 1 -9 9 h-230 a9 9 0 0 1 -9 -9 v-172 a9 9 0 0 1 9 -9z"/>
+        <path class="v" d="M346 110 h230 a9 9 0 0 1 9 9 v172 a9 9 0 0 1 -9 9 h-230 a9 9 0 0 1 -9 -9 v-172 a9 9 0 0 1 9 -9z"/>
+        <!-- đường may viền nệm -->
+        <path class="s" d="M92 120 h214 a4 4 0 0 1 4 4 v162 a4 4 0 0 1 -4 4 h-214 a4 4 0 0 1 -4 -4 v-162 a4 4 0 0 1 4 -4z"/>
+        <path class="s" d="M354 120 h214 a4 4 0 0 1 4 4 v162 a4 4 0 0 1 -4 4 h-214 a4 4 0 0 1 -4 -4 v-162 a4 4 0 0 1 4 -4z"/>
+        <!-- chần nệm: nhịp 3 ô, đường mềm -->
+        <path class="m" d="M198 124 q6 78 0 158 M462 124 q6 78 0 158"/>
+        <path class="m" d="M96 205 q108 7 214 0 M354 205 q108 -7 214 0"/>
+
+        <!-- gối tựa đầu giường (nét khuất phần bị nệm che) -->
+        <path class="v" d="M84 110 h116 v82 h-116z" />
+        <path class="s" d="M92 118 h100 v66 h-100z"/>
+        <path class="m" d="M100 128 q46 10 84 0 M100 172 q46 -10 84 0"/>
+        <path class="v" d="M84 216 h116 v76 h-116z"/>
+        <path class="s" d="M92 224 h100 v60 h-100z"/>
+        <path class="m" d="M100 232 q46 10 84 0 M100 274 q46 -10 84 0"/>
+
+        <!-- gối ôm trụ -->
+        <path class="v" d="M226 142 h96 a26 26 0 0 1 0 52 h-96 a26 26 0 0 1 0 -52z"/>
+        <path class="s" d="M226 148 v40 M322 148 v40"/>
+        <path class="m" d="M244 152 v32 M268 152 v32 M292 152 v32"/>
+
+        <!-- chân, nét khuất dưới khung -->
+        <path class="hid" d="M62 88 h26 v22 h-26z M572 88 h26 v22 h-26z M62 300 h26 v22 h-26z M572 300 h26 v22 h-26z"/>
+
+        <!-- anchor -->
+        <g>
+          <circle cx="330" cy="326" r="5" fill="none" stroke="#6a57f5" stroke-width="1.4"/>
+          <path d="M330 313 v26 M317 326 h26" stroke="#6a57f5" stroke-width=".8"/>
+          <text class="anno" x="342" y="343" fill="#8b86c9">anchor · back-center</text>
+        </g>
+
+        <!-- kích thước mặt bằng -->
+        <path class="dim" d="M46 358 h568 M46 350 v16 M614 350 v16"/>
+        <text class="dimt" x="303" y="354" text-anchor="middle">2000</text>
+        <path class="dim" d="M638 82 v246 M630 82 h16 M630 328 h16"/>
+        <text class="dimt" x="634" y="200" text-anchor="middle" transform="rotate(-90 634 205)">900</text>
+        <path class="dim" d="M96 74 h24 M96 66 v16 M120 66 v16"/>
+        <text class="dimt" x="130" y="71">nan @90</text>
+
+        <!-- ================= MẶT ĐỨNG ================= -->
+        <text class="anno" x="40" y="424" style="letter-spacing:.14em;font-size:10.5px" fill="#4e4e57">MẶT ĐỨNG TRƯỚC</text>
+
+        <!-- cốt sàn -->
+        <path class="p" d="M28 640 h616"/>
+        <path class="m" d="M40 646 l-8 8 M70 646 l-8 8 M100 646 l-8 8 M130 646 l-8 8 M160 646 l-8 8 M190 646 l-8 8 M220 646 l-8 8 M250 646 l-8 8 M280 646 l-8 8 M310 646 l-8 8 M340 646 l-8 8 M370 646 l-8 8 M400 646 l-8 8 M430 646 l-8 8 M460 646 l-8 8 M490 646 l-8 8 M520 646 l-8 8 M550 646 l-8 8 M580 646 l-8 8 M610 646 l-8 8"/>
+
+        <!-- chân -->
+        <path class="v" d="M62 616 h30 v24 h-30z M568 616 h30 v24 h-30z"/>
+        <!-- rail teak -->
+        <path class="p" d="M46 586 h568 v30 h-568z"/>
+        <!-- đầu nan lộ trên rail -->
+        <path class="m" d="M96 586 v-6 M120 586 v-6 M144 586 v-6 M168 586 v-6 M192 586 v-6 M216 586 v-6 M240 586 v-6 M264 586 v-6 M288 586 v-6 M312 586 v-6 M336 586 v-6 M360 586 v-6 M384 586 v-6 M408 586 v-6 M432 586 v-6 M456 586 v-6 M480 586 v-6 M504 586 v-6 M528 586 v-6 M552 586 v-6 M576 586 v-6"/>
+        <!-- nệm -->
+        <path class="v" d="M56 534 h258 a10 10 0 0 1 10 10 v26 a10 10 0 0 1 -10 10 h-258 a10 10 0 0 1 -10 -10 v-26 a10 10 0 0 1 10 -10z"/>
+        <path class="v" d="M346 534 h258 a10 10 0 0 1 10 10 v26 a10 10 0 0 1 -10 10 h-258 a10 10 0 0 1 -10 -10 v-26 a10 10 0 0 1 10 -10z"/>
+        <path class="s" d="M64 546 h250 M356 546 h250"/>
+        <path class="m" d="M198 534 v46 M462 534 v46"/>
+        <!-- gối ôm ở mặt đứng -->
+        <path class="v" d="M226 500 h96 a17 17 0 0 1 0 34 h-96 a17 17 0 0 1 0 -34z"/>
+        <path class="s" d="M226 508 v18 M322 508 v18"/>
+
+        <!-- gối tựa -->
+        <path class="v" d="M62 404 h134 a10 10 0 0 1 10 10 v110 a10 10 0 0 1 -10 10 h-134 a10 10 0 0 1 -10 -10 v-110 a10 10 0 0 1 10 -10z"/>
+        <path class="s" d="M70 414 h118 a4 4 0 0 1 4 4 v98 a4 4 0 0 1 -4 4 h-118 a4 4 0 0 1 -4 -4 v-98 a4 4 0 0 1 4 -4z"/>
+        <path class="m" d="M78 462 q50 12 102 0"/>
+        <!-- khung đỡ tựa, khuất -->
+        <path class="hid" d="M52 528 v-104 M206 528 v-104"/>
+
+        <!-- kích thước mặt đứng -->
+        <path class="dim" d="M46 668 h568 M46 660 v16 M614 660 v16"/>
+        <text class="dimt" x="303" y="664" text-anchor="middle">2000</text>
+        <path class="dim" d="M638 534 v106 M630 534 h16 M630 640 h16"/>
+        <text class="dimt" x="634" y="590" text-anchor="middle" transform="rotate(-90 634 590)">320</text>
+        <path class="dim" d="M28 404 v236 M20 404 h16 M20 640 h16"/>
+        <text class="dimt" x="24" y="524" text-anchor="middle" transform="rotate(-90 24 524)">620</text>
+      </svg>
+      <p class="cap" style="margin-top:18px">2000 ở mặt bằng và 2000 ở mặt đứng là <b style="color:var(--t3)">một con số</b>, không phải hai con số bằng nhau</p>
+    </div>
+
+    <div class="stack">
+      <div class="drw">
+        <svg viewBox="0 0 620 420" role="img" aria-label="Khối 3D daybed">
+  <defs><radialGradient id="rShadow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#000" stop-opacity=".6"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient></defs>
+  <ellipse cx="320" cy="342" rx="236" ry="29" fill="url(#rShadow)"/>
+  <path d="M153.3 328.1 L434.5 328.1 L487.2 289.7 L206.0 289.7 Z" fill="#2a2119" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M153.3 343.3 L434.5 343.3 L434.5 328.1 L153.3 328.1 Z" fill="#201a13" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M434.5 343.3 L487.2 304.9 L487.2 289.7 L434.5 328.1 Z" fill="#171208" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M92.0 295.0 L472.0 295.0 L548.5 239.2 L168.5 239.2 Z" fill="#bd9760" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M92.0 336.8 L472.0 336.8 L472.0 295.0 L92.0 295.0 Z" fill="#8c6b42" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M472.0 336.8 L548.5 281.0 L548.5 239.2 L472.0 295.0 Z" fill="#664d2e" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M92.0 295.0 L472.0 295.0 L548.5 239.2" fill="none" stroke="#e2be86" stroke-width="1.1" opacity=".6"/>
+  <g stroke="#775b34" stroke-width="1" opacity=".75"><path d="M110.0 295.0 L186.6 239.2 M128.1 295.0 L204.6 239.2 M146.2 295.0 L222.7 239.2 M164.2 295.0 L240.7 239.2 M182.2 295.0 L258.8 239.2 M200.3 295.0 L276.8 239.2 M218.4 295.0 L294.9 239.2 M236.4 295.0 L312.9 239.2 M254.4 295.0 L330.9 239.2 M272.5 295.0 L349.0 239.2 M290.6 295.0 L367.1 239.2 M308.6 295.0 L385.1 239.2 M326.6 295.0 L403.1 239.2 M344.7 295.0 L421.2 239.2 M362.8 295.0 L439.2 239.2 M380.8 295.0 L457.3 239.2 M398.9 295.0 L475.4 239.2 M416.9 295.0 L493.4 239.2 M434.9 295.0 L511.4 239.2 M453.0 295.0 L529.5 239.2 M471.1 295.0 L547.5 239.2" fill="none"/></g>
+  <path d="M114.0 269.1 L288.8 269.1 L351.7 223.3 L176.9 223.3 Z" fill="#ece5d7" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M114.0 290.0 L288.8 290.0 L288.8 269.1 L114.0 269.1 Z" fill="#d3cab8" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M288.8 290.0 L351.7 244.2 L351.7 223.3 L288.8 269.1 Z" fill="#b0a695" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M114.0 269.1 L288.8 269.1 L351.7 223.3" fill="none" stroke="#fdf8ee" stroke-width="1.1" opacity=".6"/>
+  <path d="M118.2 274.1 L284.6 274.1" stroke="#f7f2e8" stroke-width=".8" opacity=".85" fill="none"/>
+  <path d="M118.2 277.1 L284.6 277.1" stroke="#a89e8b" stroke-width=".8" opacity=".9" fill="none"/>
+  <path d="M300.2 269.1 L463.6 269.1 L526.5 223.3 L363.1 223.3 Z" fill="#ece5d7" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M300.2 290.0 L463.6 290.0 L463.6 269.1 L300.2 269.1 Z" fill="#d3cab8" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M463.6 290.0 L526.5 244.2 L526.5 223.3 L463.6 269.1 Z" fill="#b0a695" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M300.2 269.1 L463.6 269.1 L526.5 223.3" fill="none" stroke="#fdf8ee" stroke-width="1.1" opacity=".6"/>
+  <path d="M304.4 274.1 L459.4 274.1" stroke="#f7f2e8" stroke-width=".8" opacity=".85" fill="none"/>
+  <path d="M304.4 277.1 L459.4 277.1" stroke="#a89e8b" stroke-width=".8" opacity=".9" fill="none"/>
+  <path d="M169.4 183.3 L258.7 183.3 L285.9 163.5 L196.6 163.5 Z" fill="#e6dfd2" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M161.3 244.3 L250.6 244.3 L258.7 183.3 L169.4 183.3 Z" fill="#d0c8b6" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M250.6 244.3 L277.8 224.5 L285.9 163.5 L258.7 183.3 Z" fill="#aca293" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M132.0 205.1 L221.3 205.1 L249.4 184.6 L160.1 184.6 Z" fill="#f0eae0" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M124.0 266.0 L213.2 266.0 L221.3 205.1 L132.0 205.1 Z" fill="#dcd4c4" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M213.2 266.0 L241.3 245.6 L249.4 184.6 L221.3 205.1 Z" fill="#bab1a0" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M132.0 205.1 L221.3 205.1 L249.4 184.6" fill="none" stroke="#fefbf4" stroke-width="1.1" opacity=".6"/>
+  <path d="M132.7 242.9 L210.6 242.9" stroke="#c3baa8" stroke-width=".8" opacity=".65" fill="none"/>
+  <path d="M135.2 224.0 L213.1 224.0" stroke="#c3baa8" stroke-width=".8" opacity=".65" fill="none"/>
+  <path d="M242.8 225.1 L311.2 225.1 L306.8 218.5 L238.4 218.5 Z" fill="#a4ada3" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M238.4 218.5 L306.8 218.5 L300.6 223.0 L232.2 223.0 Z" fill="#a4ada3" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M232.2 223.0 L300.6 223.0 L296.2 236.0 L227.8 236.0 Z" fill="#8d968c" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M227.8 236.0 L296.2 236.0 L296.2 249.8 L227.8 249.8 Z" fill="#767f76" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M227.8 249.8 L296.2 249.8 L300.6 256.4 L232.2 256.4 Z" fill="#767f76" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M232.2 256.4 L300.6 256.4 L306.8 251.9 L238.4 251.9 Z" fill="#767f76" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M238.4 251.9 L306.8 251.9 L311.2 238.9 L242.8 238.9 Z" fill="#8d968c" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M242.8 238.9 L311.2 238.9 L311.2 225.1 L242.8 225.1 Z" fill="#a4ada3" stroke="#00000044" stroke-width="0.7"/>
+  <path d="M311.2 225.1 L306.8 218.5 L300.6 223.0 L296.2 236.0 L296.2 249.8 L300.6 256.4 L306.8 251.9 L311.2 238.9 Z" fill="#b6bdb4" stroke="#00000044" stroke-width="0.7"/>
+</svg>
+        <p class="cap" style="margin-top:16px">Khối 3D — hai tấm nệm hở khe, hai gối tựa ngả, gối ôm, đế lùi: từng thứ đều có mặt ở hai bản vẽ bên trái</p>
+      </div>
+
+      <div class="idcard">
+        <p class="cap" style="margin:0">Vật liệu — ba khe, ba cái tên dùng chung cả ba mặt</p>
+        <div class="mat"><i style="background:linear-gradient(155deg,#c39a63,#664d2c)"></i><span><u>Frame</u><s>MAT-TEAK-OUT-04</s></span></div>
+        <div class="mat"><i style="background:linear-gradient(155deg,#f2ece0,#bab09c)"></i><span><u>Cushion</u><s>MAT-FAB-OUT-11</s></span></div>
+        <div class="mat"><i style="background:linear-gradient(155deg,#5b452e,#2c2018)"></i><span><u>Foot</u><s>MAT-PE-BLK-02</s></span></div>
+        <p class="note" style="margin-top:4px">Ba khe này là ba mảng hatch ở mặt bằng, ba vật liệu PBR ở 3D, ba dòng ở bảng vật liệu. Một tên duy nhất chạy suốt — đổi ở kho là ba nơi đổi theo.</p>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="sec"><b>Ngôn ngữ hạng cao</b><span>năm dấu hiệu đo được — thứ tách đồ nội thất thật khỏi khối hộp bọc vải</span></div>
+  <div class="lux">
+    <div class="lx">
+      <p class="cap">01 · Tỉ lệ thấp — dài</p>
+      <svg viewBox="0 0 250 120" role="img" aria-label="So sánh tỉ lệ">
+        <path class="m" d="M12 100 h108 M130 100 h108"/>
+        <path d="M24 56 h84 v40 h-84z" fill="none" stroke="#6e6e78" stroke-width="1.4"/>
+        <path d="M24 34 h20 v22 h-20z" fill="none" stroke="#6e6e78" stroke-width="1.4"/>
+        <text class="anno" x="24" y="116" fill="#6e6e78">SH 450 · nặng nề</text>
+        <path d="M140 74 h92 v22 h-92z" fill="none" stroke="#e2e2e6" stroke-width="1.6"/>
+        <path d="M140 46 h22 v28 h-22z" fill="none" stroke="#e2e2e6" stroke-width="1.6"/>
+        <path class="dim" d="M136 74 v22"/><text class="dimt" x="112" y="90">380</text>
+        <text class="anno" x="140" y="116" fill="#9e9ea8">SH 380 · nằm dài</text>
+      </svg>
+      <p class="rule">Ghế nghỉ hạng cao ngồi thấp và ngả: mặt ngồi 320–430, lưng ngả 100–110°. Cùng một món, hạ 60 mm là đổi hẳn dáng.</p>
+    </div>
+    <div class="lx">
+      <p class="cap">02 · Mép đệm bo + đường may viền</p>
+      <svg viewBox="0 0 250 120" role="img" aria-label="So sánh mép đệm">
+        <path d="M18 44 h96 v50 h-96z" fill="#3a3a41" stroke="#6e6e78" stroke-width="1.2"/>
+        <text class="anno" x="18" y="112" fill="#6e6e78">mép vuông · như tấm ván</text>
+        <path d="M136 46 q52 -6 100 0 q6 26 0 48 q-52 7 -100 0 q-6 -24 0 -48z" fill="#cfc6b3" stroke="#8e8e98" stroke-width=".8"/>
+        <path d="M142 56 q46 -5 88 0" stroke="#f3eee3" stroke-width="1.1" fill="none"/>
+        <path d="M142 62 q46 -5 88 0" stroke="#9d9483" stroke-width=".8" fill="none"/>
+        <text class="anno" x="136" y="112" fill="#9e9ea8">bo + welt · thấy được độ mềm</text>
+      </svg>
+      <p class="rule">Đường may viền chạy song song mép là chi tiết rẻ nhất mà nói được nhiều nhất: nó cho mắt biết đây là <b>vải bọc mút</b>, không phải khối tô màu.</p>
+    </div>
+    <div class="lx">
+      <p class="cap">03 · Đế lùi, khối nổi khỏi sàn</p>
+      <svg viewBox="0 0 250 120" role="img" aria-label="So sánh chân đế">
+        <path class="m" d="M14 98 h100 M134 98 h100"/>
+        <path d="M18 58 h92 v40 h-92z" fill="#4a3c28" stroke="#6e6e78" stroke-width="1"/>
+        <text class="anno" x="18" y="114" fill="#6e6e78">khối chạm sàn · thô</text>
+        <path d="M138 56 h92 v30 h-92z" fill="#8f6f45"/>
+        <path d="M150 86 h68 v10 h-68z" fill="#241d15"/>
+        <ellipse cx="184" cy="99" rx="52" ry="5" fill="#000" opacity=".5"/>
+        <text class="anno" x="138" y="114" fill="#9e9ea8">đế thụt 120 · bóng ăn vào</text>
+      </svg>
+      <p class="rule">Thụt đế vào rồi để bóng luồn dưới — mẹo cũ của đồ cao cấp: khối nặng mà nhìn như đang lơ lửng.</p>
+    </div>
+    <div class="lx">
+      <p class="cap">04 · Nan đều, thưa, có nhịp</p>
+      <svg viewBox="0 0 250 120" role="img" aria-label="So sánh nan gỗ">
+        <path d="M16 44 h96 v52 h-96z" fill="#8f6f45"/>
+        <path d="M16 44 h96 v52 h-96z" fill="none" stroke="#6e6e78" stroke-width="1"/>
+        <text class="anno" x="16" y="114" fill="#6e6e78">mảng gỗ đặc · không đọc được gì</text>
+        <path d="M136 44 h100 v52 h-100z" fill="#6a5030"/>
+        <g fill="#b08a56"><rect x="140" y="44" width="10" height="52"/><rect x="154" y="44" width="10" height="52"/><rect x="168" y="44" width="10" height="52"/><rect x="182" y="44" width="10" height="52"/><rect x="196" y="44" width="10" height="52"/><rect x="210" y="44" width="10" height="52"/><rect x="224" y="44" width="10" height="52"/></g>
+        <path class="dim" d="M140 38 h14 M140 32 v12 M154 32 v12"/><text class="dimt" x="158" y="37">@90</text>
+        <text class="anno" x="136" y="114" fill="#9e9ea8">nan @90 · thoát nước, thoáng</text>
+      </svg>
+      <p class="rule">Nan không phải hoa văn — nó là cách đồ ngoài trời thoát nước. Khoảng cách nan là <b>thông tin thi công</b>, phải vẽ đúng bước.</p>
+    </div>
+    <div class="lx">
+      <p class="cap">05 · Một chi tiết mềm phá nhịp thẳng</p>
+      <svg viewBox="0 0 250 120" role="img" aria-label="Chi tiết mềm">
+        <path d="M18 52 h96 v44 h-96z" fill="#cfc6b3"/>
+        <text class="anno" x="18" y="114" fill="#6e6e78">toàn đường thẳng · cứng</text>
+        <path d="M136 52 h100 v44 h-100z" fill="#cfc6b3"/>
+        <path d="M186 52 q22 -4 40 -16 q10 10 -4 20 l-16 12 q6 20 -10 26 q-18 8 -26 -6 q-6 -12 16 -36z" fill="#b8a894"/>
+        <path d="M192 58 q20 -4 34 -14" stroke="#cbbca8" stroke-width="1" fill="none"/>
+        <text class="anno" x="136" y="114" fill="#9e9ea8">một khăn vắt · lập tức có người ở</text>
+      </svg>
+      <p class="rule">Đúng một vật mềm vắt lệch là đủ để khung hình thôi trông như bản dựng. Nhiều hơn một là bừa.</p>
+    </div>
+  </div>
+
+  <div class="sec"><b>Asset khai thật mình đến từ đâu</b><span>nối cờ ba nấc đã sống trong code: measured · inferred · verified</span></div>
+  <div class="prov">
+    <div class="pv">
+      <span class="bdg" style="border-color:var(--accent-ring);color:#c9c1fb;background:var(--accent-soft)">
+        <svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 1 l4.4 2.1 v3.4 c0 2.4 -1.9 4 -4.4 4.9 C3.5 10.5 1.6 8.9 1.6 6.5 V3.1z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4 6.2 l1.5 1.5 L8.3 4.6" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+        TỪ NHÀ SẢN XUẤT</span>
+      <p>Hình học và số đo lấy thẳng từ file NCC, có mã hàng và khoảng giá. Chảy được vào mọi nơi.</p>
+    </div>
+    <div class="pv">
+      <span class="bdg" style="border-color:rgba(70,184,118,.5);color:var(--success);background:rgba(70,184,118,.09)">
+        <svg width="12" height="12" viewBox="0 0 12 12"><rect x="1.4" y="1.4" width="9.2" height="9.2" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M3.6 6.1 l1.7 1.7 L8.6 4.3" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+        STUDIO ĐÃ ĐO LẠI</span>
+      <p>Studio dựng theo bản vẽ xưởng và đã đối chiếu vật thật. Ngang hàng để tính toán.</p>
+    </div>
+    <div class="pv">
+      <span class="bdg" style="border-color:rgba(217,163,74,.5);color:var(--warning);background:rgba(217,163,74,.09)">
+        <svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 1.3 L11 10.4 H1z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M6 4.6 v2.7" stroke="currentColor" stroke-width="1.2"/><circle cx="6" cy="8.7" r=".7" fill="currentColor"/></svg>
+        SUY TỪ ẢNH</span>
+      <p>Dựng lại từ ảnh sản phẩm. Đủ để trình bày, nhưng số là ước tính nên <b style="color:var(--t2)">không vào bảng khối lượng</b>.</p>
+    </div>
+    <div class="pv">
+      <span class="bdg" style="border-color:var(--border-strong);color:var(--t3);background:var(--field)">
+        <svg width="12" height="12" viewBox="0 0 12 12"><rect x="1.4" y="1.4" width="9.2" height="9.2" rx="2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2.6 2"/></svg>
+        CHỖ GIỮ CHỖ</span>
+      <p>Biết cần một cái ghế ở đây, chưa chọn mẫu. Hiện rõ là chưa xong, không giả vờ đã dựng.</p>
+    </div>
+    <div class="pv">
+      <span class="bdg" style="border-color:rgba(229,103,79,.5);color:var(--danger);background:rgba(229,103,79,.09)">
+        <svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.6" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M3.4 8.6 L8.6 3.4" stroke="currentColor" stroke-width="1.2"/></svg>
+        NCC ĐÃ NGỪNG</span>
+      <p>Dự án cũ vẫn mở được, chỗ đang dùng đều báo, và Library đề nghị bản thay giữ nguyên vị trí.</p>
+    </div>
+  </div>
+  <p class="note">Mỗi hạng có hình riêng và chữ riêng, không chỉ có màu — ảnh in đen trắng hay màn để sáng thấp vẫn đọc đúng. Hạng nâng được: suy-từ-ảnh mà đo lại tại xưởng thì thành studio-đã-đo, và lần nâng đó vào bản R.</p>
+
+  <div class="sec"><b>Đường vào của vật thật</b><span>file NCC → nắn về hệ IF → .idfc</span></div>
+  <div class="flow">
+    <div class="fs"><em>01</em><b>Nhận</b><p>DWG · SKP · FBX · GLB · IFC · catalogue PDF. Bản gốc bất biến, nằm ở ngăn Nhà cung cấp.</p></div>
+    <div class="fs"><em>02</em><b>Đọc</b><p>Đơn vị gì · trục lên nào · gốc toạ độ ở đâu · bao nhiêu tam giác · NCC đặt tên vật liệu ra sao.</p></div>
+    <div class="fs"><em>03</em><b>Nắn</b><p>Về mm, Z-up, anchor về gốc, nét phân vai, khe vật liệu đặt tên lại, dựng bản proxy nhẹ. Máy làm, người duyệt.</p></div>
+    <div class="fs"><em>04</em><b>Sinh</b><p>Từ một khối đã nắn mới sinh ra mặt bằng, mặt đứng, mặt cắt, thumbnail — nên chúng <b style="color:var(--t2)">không thể lệch nhau</b>.</p></div>
+    <div class="fs"><em>05</em><b>Lên kệ</b><p>Thành .idfc có bản R, có Where-Used, có đường quay về đúng file NCC kèm ngày nhận.</p></div>
+  </div>
+  <p class="note">Nắn không phải sửa vật của nhà sản xuất — file họ gửi không sai, nó chỉ không cùng hệ với mình.</p>
+
+  <div class="sec"><b>Nhóm hay bị làm ẩu nhất</b><span>cây · xe · đèn · decor — cùng một luật: phải mang thông tin, không chỉ mang hình</span></div>
+  <div class="cmp">
+    <div>
+      <p class="flag no"><em></em>Loại</p>
+      <div class="fig">
+        <svg viewBox="0 0 300 300" role="img" aria-label="Cây vẽ sai: vệt xanh">
+          <ellipse cx="150" cy="120" rx="92" ry="76" fill="#4b7a45"/>
+          <rect x="138" y="188" width="24" height="74" fill="#6b5a42"/>
+          <ellipse cx="150" cy="268" rx="46" ry="10" fill="#000" opacity=".3"/>
+        </svg>
+      </div>
+      <p class="rule" style="margin-top:14px">Không đọc ra loài, không có chậu đúng bầu rễ, mặt bằng không có đường tán đè. Đặt vào hồ sơ là lộ ngay.</p>
+    </div>
+    <div>
+      <p class="flag ok"><em></em>Đạt</p>
+      <div class="fig">
+        <svg viewBox="0 0 300 300" role="img" aria-label="Cau cảnh vẽ đúng">
+          <defs>
+            <linearGradient id="rLeafA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6d8f57"/><stop offset="1" stop-color="#3c5a33"/></linearGradient>
+            <linearGradient id="rPot" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#6b563e"/><stop offset=".45" stop-color="#8f7454"/><stop offset="1" stop-color="#5b4832"/></linearGradient>
+          </defs>
+          <ellipse cx="150" cy="278" rx="58" ry="11" fill="#000" opacity=".35"/>
+          <!-- chậu -->
+          <path d="M116 214 h68 l-9 60 a6 6 0 0 1 -6 5 h-38 a6 6 0 0 1 -6 -5z" fill="url(#rPot)"/>
+          <path d="M112 210 h76 v10 h-76z" fill="#9c8163"/>
+          <ellipse cx="150" cy="212" rx="34" ry="6" fill="#3b3227"/>
+          <!-- thân bẹ -->
+          <path d="M144 210 q-4 -46 4 -78 q3 -14 8 -26" stroke="#7e6b47" stroke-width="5" fill="none" stroke-linecap="round"/>
+          <path d="M152 210 q6 -40 16 -66" stroke="#8b7750" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <path d="M147 178 h12 M149 152 h12 M152 126 h11" stroke="#6b5a3d" stroke-width="1.6"/>
+          <!-- tàu lá: cuống cong + lá chét -->
+          <g fill="none" stroke="url(#rLeafA)" stroke-width="2.6" stroke-linecap="round">
+            <path d="M156 106 q-30 -22 -68 -22"/><path d="M156 106 q-24 -34 -30 -66"/>
+            <path d="M156 106 q10 -40 42 -58"/><path d="M158 118 q38 -14 72 -6"/>
+            <path d="M158 130 q34 12 56 40"/><path d="M150 122 q-34 6 -58 34"/>
+          </g>
+          <g stroke="#5d7f4a" stroke-width="1.5" stroke-linecap="round">
+            <path d="M124 96 l-8 -12 M110 90 l-10 -12 M96 86 l-11 -10 M138 82 l-4 -14 M132 62 l-6 -13 M126 44 l-3 -12"/>
+            <path d="M172 76 l4 -14 M182 62 l7 -13 M194 52 l9 -10 M196 108 l4 -13 M212 104 l6 -12 M226 102 l9 -9"/>
+            <path d="M186 150 l11 -6 M200 164 l12 -5 M212 178 l12 -4 M118 138 l-12 -5 M104 152 l-12 -4 M96 166 l-13 -2"/>
+          </g>
+          <g stroke="#42603a" stroke-width="1.1" stroke-linecap="round" opacity=".9">
+            <path d="M118 92 l-6 -10 M104 88 l-8 -9 M134 70 l-5 -11 M178 68 l5 -11 M190 56 l6 -10 M204 106 l6 -10 M220 102 l7 -8 M194 158 l10 -5 M206 172 l11 -4 M110 146 l-11 -4 M98 160 l-11 -3"/>
+          </g>
+        </svg>
+      </div>
+      <p class="rule" style="margin-top:14px">Cau cảnh — <b>đọc ra loài</b>: cuống cong đúng dáng, lá chét thưa dần về ngọn, bẹ có đốt, chậu đúng tỷ lệ bầu.</p>
+    </div>
+    <div>
+      <p class="cap">Luật chung của nhóm này</p>
+      <p class="rule"><b>Cây</b> — tán là hữu cơ có kiểm soát, không phải vệt xanh. Mặt bằng phải có đường tán đè vẽ nét khuất, vì nó che đồ bên dưới.</p>
+      <p class="rule" style="margin-top:14px"><b>Xe</b> — trong hồ sơ nội thất, xe bán <i>chỗ nó chiếm</i>: đúng 4900 × 1850, đúng chiều cao capo cho tầm mắt sảnh đón, đúng vệt bán kính quay. Đẹp là phụ.</p>
+      <p class="rule" style="margin-top:14px"><b>Đèn</b> — mang dữ liệu chiếu sáng chứ không chỉ mang hình: tâm treo là anchor, chiều thả, đui, góc mở. Chưa có IES thì ghi rõ là ước tính, không vẽ quầng sáng giả.</p>
+      <p class="rule" style="margin-top:14px"><b>Decor</b> — thứ khách nhìn gần nhất trong ảnh, nên phải có chất men, miệng, chân đế. Nhưng vẫn phải có mặt bằng và kích thước, vì nó vào bảng styling và vào giá.</p>
+    </div>
+  </div>
+
+  <p class="note" style="margin-top:52px;max-width:700px">Cửa nghiệm thu: cầm một asset bất kỳ trong kệ, hỏi ba câu — <b style="color:var(--t2)">nó đến từ đâu</b> · <b style="color:var(--t2)">bốn mặt có phải một vật không</b> · <b style="color:var(--t2)">nó được phép chảy vào đâu</b>. Trả lời được cả ba mà không phải mở file gốc thì asset đó đạt hạng thật.</p>
+</div>

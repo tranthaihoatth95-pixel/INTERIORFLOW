@@ -34,8 +34,13 @@ const NGAN_ICON = { duAn: FolderOpen, thoChung: Boxes } as const;
    `RawStyle` — đúng cách repo đã dùng cho lib G4, và là lý do nó tồn tại. Nút đây `border:none;
    background:transparent` nên vòng mặc định của trình duyệt mờ trên nền tối; khai tường minh để
    người dùng bàn phím luôn thấy mình đang ở đâu (WCAG 2.4.7). */
+/* SỬA 05/09 — bản cũ ghi "outline: var(--focus-ring)", tức CHỈ đặt MÀU: outline-style vẫn là
+   none nên trình duyệt KHÔNG vẽ gì, dù luật trông như đã có ring. Đo bằng Tab thật: nút này là
+   chỗ DUY NHẤT trong 183 chặng dừng mất hẳn vòng focus. Máy soi không bắt được (tệp có
+   focus-visible, lại có outline:var) — chỉ bàn phím thật mới lộ. Nay khai đủ BA phần
+   (dày · kiểu · màu), giống 15 chỗ khác trong repo. */
 const CSS_NGAN = `
-.if-ngan:focus-visible{outline:var(--focus-ring);outline-offset:-2px;border-radius:var(--r-1)}
+.if-ngan:focus-visible{outline:var(--stroke-focus) solid var(--focus-ring);outline-offset:-2px;border-radius:var(--r-1)}
 `;
 
 /** Nhớ theo MÁY, không vào `.idf` (§6.4 hợp đồng: nấc và cách bày là chuyện của từng máy). */

@@ -1,0 +1,119 @@
+<!-- @dsCard group="Experience System" title="EXS-N · IDFC — chuẩn visual" -->
+<!--
+  EXS-N — IDFC MASTER LIBRARY VISUAL STANDARD (phiếu 20/08). DESIGN ONLY.
+  LOOK INSIDE: thang lineweight ĐÃ SỐNG trong UI lớp (0.13→1.0mm) + CHUAN-THIET-KE-v7.6 (ISO 128)
+  → grammar dưới đây là EXTEND chuẩn có sẵn, không token mới. Anatomy = UX representation của
+  .idfc v3 (12 kind, meta/body/commerce) — KHÔNG bịa schema field.
+-->
+<div class="exn-root">
+<style>
+  .exn-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --success:#46b876; --warning:#d9a34a; --danger:#e5674f;
+    background:var(--bg); color:var(--t2); padding:36px;
+    font:13px/1.5 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .exn-root *{box-sizing:border-box}
+  .h1{font-size:22px;font-weight:700;color:var(--t1);margin:0 0 4px}
+  .sub{color:var(--t3);margin:0 0 22px;max-width:940px}
+  .sec{margin:28px 0 10px;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--t4);text-transform:uppercase}
+  .two{display:grid;grid-template-columns:1.15fr 1fr;gap:14px;align-items:start}
+  .pane{border:1px solid var(--border);border-radius:13px;background:var(--panel);padding:13px;font-size:11.5px;color:var(--t3)}
+  .pane b{color:var(--t1)}
+  .lw{display:flex;align-items:center;gap:12px;padding:6px 4px;border-bottom:1px dashed var(--border)}
+  .lw:last-child{border-bottom:0}
+  .lw svg{flex:none}
+  .lw .n{width:170px;color:var(--t1);font-size:11.5px}
+  .lw .mm{width:120px;font:11px ui-monospace,monospace;color:var(--t3)}
+  .lw .d{flex:1;font-size:10.5px;color:var(--t4)}
+  .lodrow{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .lod{border:1px solid var(--border);border-radius:11px;background:var(--card);padding:9px;text-align:center}
+  .lod h6{margin:0 0 6px;font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--t4)}
+  .lod p{margin:5px 0 0;font-size:10px;color:var(--t4);text-align:left}
+  .anat{display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:start}
+  .anatcard{border:1px solid var(--border-strong);border-radius:14px;background:var(--card);padding:12px;text-align:center}
+  .arow{display:flex;gap:8px;align-items:flex-start;padding:6px 8px;border-radius:9px;background:var(--card);border:1px solid var(--border);margin-bottom:6px;font-size:11px;color:var(--t3)}
+  .arow b{color:var(--t1);width:130px;flex:none;font-size:11px}
+  .gate{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .gate ul{margin:6px 0 0;padding-left:16px;font-size:11px;color:var(--t3)}
+  .gate li{margin-bottom:3px}
+  .chip{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);background:var(--card);font-size:10px;color:var(--t3);margin:2px 3px 0 0}
+</style>
+
+  <div class="h1">EXS-N · IDFC — CHUẨN VISUAL của Master Library</div>
+  <p class="sub"><b style="color:var(--t1)">Library của IF không phải bộ icon — là kho VẬT THIẾT KẾ THẬT với nhiều representation nghề.</b> Cùng một vật phải "đúng" ở plan · elevation · 3D · material · project use. KTS nhìn asset phải thấy: <i>"đủ chuẩn để đặt vào bản vẽ và model thật."</i></p>
+
+  <div class="sec">① Line-weight grammar — EXTEND thang nét ĐÃ SỐNG của IF (0.13→1.0mm, UI lớp + ISO 128 v7.6)</div>
+  <div class="two">
+    <div class="pane">
+      <div class="lw"><svg width="90" height="8"><line x1="0" y1="4" x2="90" y2="4" stroke="#f5f5f7" stroke-width="3.2"/></svg><span class="n">PRIMARY CUT / OUTER PROFILE</span><span class="mm">0.50–0.70</span><span class="d">đường cắt · bao ngoài chạm đất — mạnh nhất</span></div>
+      <div class="lw"><svg width="90" height="8"><line x1="0" y1="4" x2="90" y2="4" stroke="#f5f5f7" stroke-width="1.9"/></svg><span class="n">VISIBLE OBJECT EDGE</span><span class="mm">0.25–0.35</span><span class="d">cạnh thấy của vật — thân, tay, chân</span></div>
+      <div class="lw"><svg width="90" height="8"><line x1="0" y1="4" x2="90" y2="4" stroke="#d6d6db" stroke-width="1.1"/></svg><span class="n">SECONDARY DETAIL</span><span class="mm">0.18</span><span class="d">nệm, chia khoang, nan, joint</span></div>
+      <div class="lw"><svg width="90" height="8"><line x1="0" y1="4" x2="90" y2="4" stroke="#9e9ea8" stroke-width="0.8"/></svg><span class="n">MATERIAL / SOFT DETAIL</span><span class="mm">0.13</span><span class="d">vân, đan, mềm — nhẹ, thưa, có kỷ luật</span></div>
+      <div class="lw"><svg width="90" height="8"><line x1="0" y1="4" x2="90" y2="4" stroke="#9e9ea8" stroke-width="1" stroke-dasharray="6 4"/></svg><span class="n">HIDDEN / OVERHEAD / REF</span><span class="mm">0.18 dash</span><span class="d">tán cây đè, cánh tủ mở, khuất</span></div>
+      <div class="lw"><svg width="90" height="8"><line x1="0" y1="4" x2="90" y2="4" stroke="#6e6e78" stroke-width="0.7" stroke-dasharray="10 3 2 3"/></svg><span class="n">CENTER / AXIS / GUIDE</span><span class="mm">0.13 chain</span><span class="d">tâm, trục, gióng — rất nhẹ</span></div>
+    </div>
+    <div class="pane"><b>Luật dùng:</b> lineweight đổi theo representation · scale · LOD · mục đích — <b>cấm một stroke cho mọi nét</b> (đúng lỗi "CAD lineweight bằng nhau" trong quality gate).<br><br><b>[Đ2] Neo vào cái có sẵn:</b> 6 vai trên map vào đúng 7 nấc mm của combobox lớp hiện hành — KHÔNG đẻ thang mới; hatch/pattern tiết chế theo `CHUAN-THIET-KE-v7.6` (ISO 128).<br><br>Kỷ luật: ISO-like DISCIPLINE + ARCHITECTURAL READABILITY + INTERIOR QUALITY — không biến Library thành giáo trình kỹ thuật, cũng không sketch illustration.</div>
+  </div>
+
+  <div class="sec">② LOD — một vật, bốn mức đọc (không rối ở scale nhỏ, không nghèo ở scale gần)</div>
+  <div class="lodrow">
+    <div class="lod"><h6>LOD 0 · Symbol</h6>
+      <svg width="120" height="78" viewBox="0 0 120 78"><rect x="34" y="18" width="52" height="42" rx="8" fill="none" stroke="#d6d6db" stroke-width="1.6"/></svg>
+      <p>overview xa: bao + hướng, hết. Không chi tiết nào.</p></div>
+    <div class="lod"><h6>LOD 1 · Technical plan ★</h6>
+      <svg width="120" height="78" viewBox="0 0 120 78"><rect x="34" y="16" width="52" height="46" rx="9" fill="none" stroke="#f5f5f7" stroke-width="2"/><path d="M40 22 h40 a6 6 0 0 1 6 6 v6 h-52 v-6 a6 6 0 0 1 6 -6z" fill="none" stroke="#d6d6db" stroke-width="1"/><rect x="42" y="38" width="36" height="18" rx="4" fill="none" stroke="#d6d6db" stroke-width="1"/></svg>
+      <p>mặc định bố trí: silhouette thật + tựa/nệm chính.</p></div>
+    <div class="lod"><h6>LOD 2 · Detailed plan</h6>
+      <svg width="120" height="78" viewBox="0 0 120 78"><rect x="34" y="16" width="52" height="46" rx="9" fill="none" stroke="#f5f5f7" stroke-width="2"/><path d="M40 22 h40 a6 6 0 0 1 6 6 v6 h-52 v-6 a6 6 0 0 1 6 -6z" fill="none" stroke="#d6d6db" stroke-width="1"/><rect x="42" y="38" width="36" height="18" rx="4" fill="none" stroke="#d6d6db" stroke-width="1"/><path d="M44 40 q14 5 32 0 M44 46 q14 5 32 0" stroke="#9e9ea8" stroke-width=".7" fill="none"/><circle cx="38" cy="60" r="1.6" fill="#9e9ea8"/><circle cx="82" cy="60" r="1.6" fill="#9e9ea8"/></svg>
+      <p>scale gần: đường may/đan nhẹ, chân, khoang.</p></div>
+    <div class="lod"><h6>LOD 3 · Presentation</h6>
+      <svg width="120" height="78" viewBox="0 0 120 78"><rect x="34" y="16" width="52" height="46" rx="9" fill="none" stroke="#f5f5f7" stroke-width="2"/><path d="M40 22 h40 a6 6 0 0 1 6 6 v6 h-52 v-6 a6 6 0 0 1 6 -6z" fill="#202024" stroke="#d6d6db" stroke-width="1"/><rect x="42" y="38" width="36" height="18" rx="4" fill="#1a1a1e" stroke="#d6d6db" stroke-width="1"/><path d="M44 40 q14 5 32 0 M44 46 q14 5 32 0 M44 52 q14 4 32 0" stroke="#9e9ea8" stroke-width=".7" fill="none"/></svg>
+      <p>đọc cấu tạo/vật liệu: fill nhẹ + material break.</p></div>
+  </div>
+
+  <div class="sec">③ Anatomy của MỘT asset — UX representation của .idfc (12 kind — không bịa field)</div>
+  <div class="anat">
+    <div class="anatcard">
+      <svg width="150" height="110" viewBox="0 0 150 110">
+        <defs><linearGradient id="nsh" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a3f47"/><stop offset="1" stop-color="#1c1f24"/></linearGradient></defs>
+        <ellipse cx="75" cy="96" rx="44" ry="7" fill="#000" opacity=".35"/>
+        <path d="M38 52 q0 -26 37 -26 q37 0 37 26 l0 26 q0 8 -9 8 l-56 0 q-9 0 -9 -8 z" fill="url(#nsh)" stroke="#4e4e57" stroke-width="1"/>
+        <path d="M44 62 q31 12 62 0 l0 14 q0 6 -7 6 l-48 0 q-7 0 -7 -6 z" fill="#2b2f36" stroke="#4e4e57" stroke-width=".8"/>
+        <line x1="50" y1="84" x2="47" y2="98" stroke="#8a7a5c" stroke-width="2.4"/><line x1="100" y1="84" x2="103" y2="98" stroke="#8a7a5c" stroke-width="2.4"/>
+      </svg>
+      <div style="font-size:11px;color:var(--t1);margin-top:4px">Ghế lounge · <span style="color:var(--t4)">IDFC-FUR-0142</span></div>
+    </div>
+    <div>
+      <div class="arow"><b>IDENTITY</b>meta.id bất biến · meta.code business · tên VI/EN — instance TRỎ về, không copy mất gốc (`srcInsertId` đã có)</div>
+      <div class="arow"><b>SEMANTIC</b>kind `furniture` · category ghế lounge · phòng dùng · tags</div>
+      <div class="arow"><b>REPRESENTATIONS</b>Plan · Elev Front · Elev Side · Section (chỉ khi có nghĩa) · Proxy 3D · Design 3D · Presentation 3D — plan/elevation/3D KHÔNG được mâu thuẫn hình học</div>
+      <div class="arow"><b>MATERIALS</b>slot có tên: Frame · Upholstery · Leg — mỗi slot trỏ matId, không bake một texture chết</div>
+      <div class="arow"><b>PARAMETERS</b>W 680 · D 760 · H 820 · SH 400 — số đo được, cờ measured/inferred/verified</div>
+      <div class="arow"><b>ANCHORS</b>center · back-center — semantic, nuôi snap khi đặt (§⑤ board P)</div>
+      <div class="arow"><b>BUILDRECIPE</b>khi có: stack revolve/mirror… — visual object thật (đã có evaluator)</div>
+      <div class="arow"><b>SOURCE / PROVENANCE · REVISION · WHERE USED</b>gốc NCC/chụp/dựng · bản R · đang dùng ở view/slide/BOQ nào — Go to Source ↗</div>
+    </div>
+  </div>
+
+  <div class="sec">④ Quality gate — máy + mắt chấm từng asset</div>
+  <div class="gate">
+    <div class="pane" style="border-color:var(--danger)"><b style="color:var(--danger)">FAIL nếu</b><ul>
+      <li>nhìn như clipart · silhouette generic · sai tỷ lệ</li>
+      <li>CAD một stroke đều nhau · quá rối ở scale nhỏ</li>
+      <li>plan/elevation/3D không khớp hình học</li>
+      <li>material sai logic · thumbnail render màu mè</li>
+      <li>cây = blob xanh · người = cartoon · xe = capsule 4 bánh</li>
+      <li>thiếu anchor logic · mất source identity khi place</li></ul></div>
+    <div class="pane" style="border-color:var(--success)"><b style="color:var(--success)">PASS nếu</b><ul>
+      <li>dân nội thất nhìn ra ĐỒ THẬT · plan/elevation usable</li>
+      <li>3D believable (không cần automotive-viz nặng)</li>
+      <li>material đọc được character · identity semantic rõ</li>
+      <li>đặt vào bản vẽ là chuẩn anchor "đúng nghề"</li>
+      <li>toàn Library một giọng visual</li></ul>
+      <span class="chip">Khai thật: asset chưa đủ data → hiện trạng thái placeholder RÕ, không giả production-ready</span></div>
+  </div>
+</div>

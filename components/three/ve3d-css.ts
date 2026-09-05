@@ -32,6 +32,8 @@ export const VE3D_CSS = `
 .if-ve3d .search{display:flex;align-items:center;gap:7px;border:1px solid var(--border);
   border-radius:var(--radius-sm);padding:8px 10px;font-size:var(--fs-xs);color:var(--t3);background:var(--field);flex:none}
 .if-ve3d .search input{flex:1;min-width:0;border:0;background:none;outline:none;color:var(--t1);font:inherit}
+/* Ring TRONG: ô nằm trong vỏ pill — ring ngoài đè viền vỏ. Cùng khuôn .gal-search input. */
+.if-ve3d .search input:focus-visible{outline:var(--stroke-focus) solid var(--focus-ring);outline-offset:calc(-1 * var(--stroke-focus))}
 .if-ve3d .search input::placeholder{color:var(--t4)}
 
 /* engine chips — pill, hover đổi nền (không scale: nằm trong hàng lặp) */
@@ -103,6 +105,8 @@ export const VE3D_CSS = `
 .if-ve3d .fld .box{display:flex;align-items:center;gap:4px;border:1px solid var(--border);border-radius:var(--radius-sm);
   background:var(--field);padding:6px 8px}
 .if-ve3d .fld input{flex:1;min-width:0;border:0;background:none;outline:none;color:var(--t1);font:inherit;
+/* Ring TRONG: ô nằm trong vỏ pill — ring ngoài đè viền vỏ. Cùng khuôn .gal-search input. */
+.if-ve3d .fld input:focus-visible{outline:var(--stroke-focus) solid var(--focus-ring);outline-offset:calc(-1 * var(--stroke-focus))}
   font-size:var(--fs-xs);font-variant-numeric:tabular-nums}
 .if-ve3d .fld .u{font-size:var(--fs-3xs);color:var(--t4);flex:none}
 .if-ve3d .fld .box:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
@@ -126,6 +130,14 @@ export const VE3D_CSS = `
 /* ══════ VIEWPORT 3D (ổ ③ canvas) ══════ */
 .if-ve3d.vp3d{position:relative;width:100%;height:100%;overflow:hidden;background:var(--bg)}
 .if-ve3d .vpscene{position:absolute;inset:0}
+/* 21/08 — GỐC BỆNH "3D không dùng được" trên màn retina: Scene3DViewer gọi renderer.setSize(w,h,
+   FALSE) (không ghi style, :742) + setPixelRatio(min(dpr,1.5)) (:225) ⇒ buffer canvas = container
+   × 1.5, và vì KHÔNG có luật CSS nào ghim cỡ HIỂN THỊ, trình duyệt vẽ canvas Ở ĐÚNG CỠ BUFFER —
+   tràn 50% ra ngoài container rồi bị .vp3d overflow:hidden cắt cụt: chỉ thấy 2/3 khung hình,
+   raycast/NDC lệch theo. DPR=1 thì buffer=container nên không ai thấy — bệnh CHỈ PHÁT TRÊN RETINA,
+   nên bộ kiểm headless mặc định (DPR=1) không bao giờ bắt được. Đây là khuôn chuẩn three.js cho
+   setSize(…,false): CSS phải tự ghim canvas theo container. */
+.if-ve3d .vpscene>canvas{display:block;width:100%;height:100%}
 /* PHIẾU ĐỢT 7 NHÓM B — 96×96 (spec), khung ViewCube3D thật (renderer riêng, xem ViewCube3D.tsx);
    không còn <button> con — cube tự vẽ nhãn bằng texture, tự bắt pointer trên canvas của nó. */
 .if-ve3d .viewcube{position:absolute;right:14px;top:14px;width:76px;height:76px;z-index:4;overflow:hidden;

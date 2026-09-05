@@ -224,8 +224,10 @@ export function BoqTable({ groups, errors, totalAmount, projectId, specExtra, on
     );
   };
 
+  // ring TRONG: chính vùng này `overflow:auto` — ring ngoài bị cắt ngay bởi mép cuộn của nó.
+  // Đây là vùng nhận phím mũi tên nên vòng focus là thứ bắt buộc thấy được.
   return (
-    <div ref={wrapRef} tabIndex={0} onKeyDown={onKeyDown} style={{ flex: 1, minHeight: 0, overflow: 'auto', outline: 'none' }}>
+    <div ref={wrapRef} tabIndex={0} onKeyDown={onKeyDown} className="if-focus-inset" style={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, fontSize: 13 }}>
         <thead>
           <tr style={{ position: 'sticky', top: 0, background: 'var(--panel)', zIndex: 2 }}>

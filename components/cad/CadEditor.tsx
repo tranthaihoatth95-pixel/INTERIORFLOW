@@ -24,6 +24,7 @@ import {
 import IOMenu from '@/components/ui/IOMenu';
 import MenuButton from '@/components/ui/MenuButton';
 import { useCadStore } from '@/lib/cad/store';
+import { useChinhLenh } from '@/lib/commands/chinh-lenh-store';
 import { useT } from '@/lib/i18n';
 import { useCadLiveStatus } from '@/lib/cad/live-status';
 import type { HatchPattern } from '@/lib/cad/model';
@@ -828,7 +829,12 @@ export default function CadEditor() {
               <div style={{ fontSize: 12, color: 'var(--t3)', lineHeight: 1.5 }}>
                 {/* W = cad.draw.wall (lib/commands/registry.ts:274, alias 'W'/'WALL'). KHÔNG đổi lại
                     thành L — L là cad.draw.line ("Đường thẳng", registry.ts:258), không phải tường. */}
-                {t('Gõ W để vẽ tường ngay tại chỗ, hoặc mở file có sẵn (.idf · .dxf · .dwg).', 'Type W to draw a wall right here, or open an existing file (.idf · .dxf · .dwg).')}
+                {/* 🔴 04/09 — THÊM "↵" vì đo được trên app thật: gõ chữ trần chỉ NẠP vào dòng
+                    lệnh (nhánh type-anywhere của `CadCanvas.tsx` bắn `cad:cmd-key`), phải ENTER
+                    mới chạy. Trước sửa: gõ W ⇒ ô lệnh hiện "W", công cụ vẫn "Chọn" ⇒ người dùng
+                    làm đúng lời dặn mà không có gì xảy ra. Sau Enter ⇒ công cụ đổi thành "Tường"
+                    và vẽ được thật (bằng chứng `.nen-kiem/out/2d-D-enter.png`). */}
+                {t('Gõ W ↵ để vẽ tường ngay tại chỗ, hoặc mở file có sẵn (.idf · .dxf · .dwg).', 'Type W ↵ to draw a wall right here, or open an existing file (.idf · .dxf · .dwg).')}
               </div>
               <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
                 <button
@@ -2615,6 +2621,9 @@ function CommandLine({ status }: { status: string }) {
         setTool('lengthen');
       },
       LENGTHEN: () => setTool('lengthen'),
+      // B4 — gõ ADJ/ADJUST = F9: focus mặt tiền "Chỉnh lệnh vừa chạy" (cùng store với registry `cad.edit.adjustlast`).
+      ADJ: () => useChinhLenh.getState().yeuCauFocus(),
+      ADJUST: () => useChinhLenh.getState().yeuCauFocus(),
       DIMTXT: () => {
         if (arg && Number.isFinite(parseFloat(arg))) setDimStyle({ textHeight: parseFloat(arg) });
       },
@@ -2741,7 +2750,16 @@ function CommandLine({ status }: { status: string }) {
   };
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, height: 34, flex: '0 0 auto', padding: '0 12px', borderTop: '1px solid var(--border)', background: 'var(--panel)' }}>
+    /* 🔴 `position:relative; zIndex:7` — sửa lỗi ĐO ĐƯỢC 04/09, không phải trang trí.
+       Slot toolbelt của `AppShell` là `absolute bottom-4 z-[6]`, và hộp `.pointer-events-auto`
+       bên trong nó cao đúng bằng dock (gồm cả 34px margin dock dùng để "né" thanh này) ⇒ hộp đó
+       neo đáy tại y=852 trong khi thanh lệnh chiếm y 834–868. Kết quả đo trên app thật: bấm vào
+       TÂM ô nhập lệnh (y=852) rơi trúng `div` rỗng của dock, KHÔNG vào ô lệnh — gõ lệnh bằng
+       chuột là bất khả.
+       Dock ở lớp nổi phía trên MẶT VẼ; thanh lệnh là nội dung in-flow của Stage. Ở đúng dải hai
+       thứ chồng nhau, nội dung phải thắng. Không đụng `AppShell` (bố cục chung, nhiều chặng dùng)
+       và không đổi bố cục chặng Vẽ — chỉ nói rõ ai đứng trên ai ở đúng 18px chồng lấn. */
+    <div style={{ position: 'relative', zIndex: 7, display: 'flex', alignItems: 'center', gap: 10, height: 34, flex: '0 0 auto', padding: '0 12px', borderTop: '1px solid var(--border)', background: 'var(--panel)' }}>
       <Command size={14} style={{ color: 'var(--t4)' }} />
       <div style={{ position: 'relative', width: 340 }}>
         {acOpen && suggestions.length > 0 && (
@@ -2775,7 +2793,7 @@ function CommandLine({ status }: { status: string }) {
           onKeyDown={onInputKeyDown}
           onBlur={() => setAcOpen(false)}
           placeholder="Gõ lệnh: L · PL · REC · C · W 200 · ROOM · D · WIN · M · CO · RO · MI · O 150 · DIM · T · E · U…"
-          style={{ width: '100%', background: 'var(--field)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 8px', fontSize: 12, color: 'var(--t1)', outline: 'none', fontFamily: 'ui-monospace, monospace' }}
+          style={{ width: '100%', background: 'var(--field)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 8px', fontSize: 12, color: 'var(--t1)', fontFamily: 'ui-monospace, monospace' }}
         />
       </div>
       <span style={{ fontSize: 11.5, color: 'var(--t3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{status}</span>

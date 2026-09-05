@@ -42,6 +42,7 @@ import { Check } from 'lucide-react';
 import { ToolbarChip, ToolbarBar } from '@/components/ui/ToolbarChip';
 import { useCadStore } from '@/lib/cad/store';
 import { useT } from '@/lib/i18n';
+import { modKey, coPhimHeThong } from '@/lib/kbd'; // nhãn phím theo hệ: Mac ⌘ · Windows Ctrl
 import {
   useTool3D,
   TOOL3D_HOTKEYS,
@@ -142,7 +143,7 @@ export default function Tool3DBar({ selectedEntityId, bottomPx = 130 }: Tool3DBa
       return Number.isFinite(n) ? n : NaN;
     };
     const store = useCadStore.getState();
-    const undoHint = tr(' — Ctrl+Z để lùi', ' — Ctrl+Z to undo');
+    const undoHint = tr(` — ${modKey('Z')} để lùi`, ` — ${modKey('Z')} to undo`);
 
     if (active === 'line' || active === 'rect' || active === 'circle') {
       const h = num('h');
@@ -196,7 +197,7 @@ export default function Tool3DBar({ selectedEntityId, bottomPx = 130 }: Tool3DBa
    */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (coPhimHeThong(e) || e.altKey) return;
       const el = e.target;
       const typing = el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName));
       const inBar = el instanceof HTMLElement && !!barRef.current?.contains(el);
@@ -303,7 +304,7 @@ export default function Tool3DBar({ selectedEntityId, bottomPx = 130 }: Tool3DBa
                         // RADIUS.full kẹp về nửa cạnh ngắn ⇒ tự đồng tâm với vỏ capsule (ghi chú ToolbarBar).
                         width: 58, padding: '3px 8px', borderRadius: RADIUS.full, border: '1px solid var(--border-strong)',
                         background: 'var(--field)', color: 'var(--t1)', fontSize: 11, lineHeight: 1.5,
-                        fontVariantNumeric: 'tabular-nums', outline: 'none', fontFamily: 'inherit',
+                        fontVariantNumeric: 'tabular-nums', fontFamily: 'inherit',
                       }}
                     />
                   </label>

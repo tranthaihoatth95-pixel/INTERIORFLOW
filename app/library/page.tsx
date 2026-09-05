@@ -1,33 +1,41 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { markOpenLibraryOnLoad } from '@/lib/library/use-library-sheet';
-
 /**
- * `/library` KHÔNG còn là trang (Hoà chốt 03/08 — "Thư viện là MỘT NƠI DUY NHẤT, và nó là SHEET").
+ * app/library/page.tsx — TRANG TỔNG THƯ VIỆN (mặt thứ nhất của Master Library).
  *
- * Lý do bỏ trang: thư viện chỉ có nghĩa khi KÉO được vào chỗ đang làm. Trang riêng không có chỗ để
- * kéo — bằng chứng là chính nó phải chế ra "Vùng thả mô phỏng (demo)". Sheet thì luôn có bàn làm
- * việc thật nằm ngay dưới.
+ * LỊCH SỬ ROUTE NÀY, để phiên sau không lật qua lật lại:
+ *   · 03/08 Hoà chốt "Thư viện là MỘT nơi duy nhất, và nó là SHEET" ⇒ route thành redirect
+ *     `router.back()` + mở tấm (`markOpenLibraryOnLoad`).
+ *   · 10/08 Hoà chốt "Master Library có 2 MẶT: TRANG TỔNG là gallery/collection; trong mỗi chặng
+ *     là sidebar tự lọc theo ngữ cảnh" — mặt trang tổng ĐÈ chốt 03/08 ở đúng điểm này.
+ *   · 16/08 rail điều hướng có mục "Thư viện" → `/library` (`components/nav/muc-dieu-huong.ts`),
+ *     nhưng tới 02/09 bấm vào vẫn bị redirect đẩy ngược về trang trước — bản đồ trỏ vào chỗ trống.
+ * ⇒ 02/09: route là TRANG THẬT. Tấm `LibrarySheet` vẫn là nơi kéo-thả (AppShell mount sẵn, nút
+ * "Mở tấm Thư viện" + phím L trên trang này mở nó); trang tổng là nơi đứng nhìn toàn kho.
  *
- * Deep-link cũ (bookmark, link trong doc) không được rơi vào trang trắng: quay lại trang trước rồi
- * MỞ SHEET. Không có lịch sử để quay lại (mở tab mới thẳng vào `/library`) thì về `/`.
+ * Bọc `<AppShell active="render">` như `/files`, `/materials`, `/library/gallery` — route không
+ * phải 1-trong-3-chặng, mặc định về Render để tấm Thư viện + segmented control có nghĩa.
  */
-export default function LibraryRedirect() {
+import { useRouter } from 'next/navigation';
+import { AppShell } from '@/components/studio/AppShell';
+import { LibraryOverviewNavigator } from '@/components/library/LibraryOverviewNavigator';
+import { LibraryOverview } from '@/components/library/LibraryOverview';
+import { useT } from '@/lib/i18n';
+
+export default function LibraryPage() {
+  const tr = useT();
   const router = useRouter();
-
-  useEffect(() => {
-    // Ý ĐỊNH "mở Thư viện" ghi vào sessionStorage TRƯỚC khi điều hướng, sheet đọc lúc mount.
-    //
-    // Vì sao không hẹn giờ rồi gọi `openLibrarySheet()`: gõ thẳng `/library` (bookmark, link ngoài)
-    // là TẢI TRANG CỨNG, `router.back()` cũng tải cứng trang trước ⇒ mọi timer/listener của trang
-    // này chết theo trang, sự kiện không bao giờ tới. Đã bắt được đúng ca này khi verify (bật về
-    // `/files` nhưng sheet im). `sessionStorage` sống xuyên cả 2 kiểu điều hướng.
-    markOpenLibraryOnLoad();
-    if (window.history.length > 1) router.back();
-    else router.replace('/');
-  }, [router]);
-
-  return null;
+  return (
+    <AppShell
+      active="render"
+      navigator={<LibraryOverviewNavigator trang="tong" />}
+      navigatorAddLabel={tr('Nhập tài sản', 'Ingest assets')}
+      navigatorCollapsedLabel={tr('Thư viện', 'Library')}
+      onNavigatorAdd={() => router.push('/library/ingest')}
+    >
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <LibraryOverview />
+      </div>
+    </AppShell>
+  );
 }

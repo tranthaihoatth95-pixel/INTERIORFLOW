@@ -15,6 +15,7 @@
 
 import type { ScopeLevel, StageKey } from './types';
 import type { ThumbKind } from './thumb-kinds';
+import { VAT_LIEU_HAT_GIONG } from '../materials/hat-giong';
 
 /**
  * VIỆC 7b (07/08) → ĐÓNG 12/08 (`library-data-that`): kệ đã nối kho THẬT — món đọc từ DB
@@ -148,6 +149,12 @@ export interface SheetItem {
   imageUrl?: string;
   /** Dùng gần đây — cho chip "Gần đây". */
   recent?: boolean;
+  /**
+   * 05/09 — con trỏ tới KHỐI 3D XEM ĐƯỢC của món, đọc từ kho (tag `mo3d:<id biểu diễn>`) chứ
+   * không suy từ tên. Trước đó tấm Thư viện nhận ra món-có-3D bằng một bảng regex TÊN gõ cứng
+   * (`object-3d-models.ts`), nên món thứ hai không bao giờ hiện được. Vắng mặt = món không có khối.
+   */
+  model3d?: { glbUrl: string; mtlUrl?: string };
 }
 
 type Row = [name: string, code: string, kind: ThumbKind];
@@ -162,7 +169,27 @@ type Row = [name: string, code: string, kind: ThumbKind];
  * của `itemsFor`), kệ `.idfc` đọc `idfc-store`. Kho rỗng → UI hiện empty-state có nút nhập,
  * KHÔNG bịa món cho đầy kệ.
  */
+/**
+ * ⚡ 04/09 — CẮM ĐIỆN TẦNG HẠT GIỐNG VÀO KỆ VẬT LIỆU. Kệ `common-atlas` trước lượt này chỉ đọc
+ * `LibraryAsset` từ DB ⇒ **máy sạch mở kệ ra là rỗng**, dù repo đã ship sẵn vật liệu render được.
+ * Dòng dưới SINH TỪ `VAT_LIEU_HAT_GIONG` chứ không chép tay tên/mã — chép tay là đẻ nguồn thứ
+ * hai, và nó sẽ lệch ngay lần đầu ai đó thêm một vật liệu.
+ *
+ * `code` = mã nghề (`v.code`), KHÔNG phải `matId`: cột mã trên thẻ là thứ người dùng đọc và gõ
+ * khi tìm; danh tính máy vẫn là UUID, sống ở `lib/materials/hat-giong.ts`.
+ *
+ * `ThumbKind` suy từ `hoPbr` — họ vật liệu đã khai sẵn ở tầng hạt giống, không đoán lại từ tên.
+ */
+const THUMB_THEO_HO_PBR: Record<string, ThumbKind> = {
+  go: 'wood', da: 'stone', kimloai: 'metal', son: 'paint', vai: 'fabric', kinh: 'glass',
+};
+
+function hangVatLieuHatGiong(): Row[] {
+  return VAT_LIEU_HAT_GIONG.map((v) => [v.name, v.code, THUMB_THEO_HO_PBR[v.hoPbr] ?? 'paint'] as Row);
+}
+
 const BUILTIN_ITEMS: Record<string, Row[]> = {
+  'common-atlas': hangVatLieuHatGiong(),
   'cad-kyhieu': [
     ['Cửa 1 cánh 800', 'DOOR-S-800', 'block'], ['Cửa 2 cánh 1600', 'DOOR-D-1600', 'block'],
     ['Cửa sổ trượt', 'WIN-SL-1800', 'block'], ['Sofa 3 chỗ', 'SOFA-3S', 'furniture'],

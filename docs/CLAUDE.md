@@ -13,9 +13,24 @@
 ## Nguồn sự thật — ĐỌC TRƯỚC KHI LÀM BẤT KỲ VIỆC GÌ
 0. `docs/memory/LATEST.md` — bản NÉN trí nhớ phiên gần nhất (đọc trước tiên, rẻ nhất) — cần chi
    tiết đầy đủ 1 nhánh việc thì mở đúng thư mục `docs/memory/sessions/<ngày>/<nhánh>/`
-1a. ⭐⭐ **`docs/IF-KIEN-TRUC-OS.md` — HIẾN PHÁP KIẾN TRÚC GỐC (Hoà chốt 18/08).**
+1a. ⭐⭐ **`docs/IF-KIEN-TRUC-OS.md` — HIẾN PHÁP GỐC + NORTH STAR SẢN PHẨM. Trên mọi chốt khác.**
    IF = Local-first Design Operating System, AI chỉ là engine bên trong. 4 nguyên tắc:
-   *Own your data · Own your workflow · Own your memory · Replace your AI*. Trên mọi chốt khác.
+   *Own your data · Own your workflow · Own your memory · Replace your AI* (Hoà chốt 18/08).
+   ⭐ **Bổ sung 04/09 — NORTH STAR SẢN PHẨM/TRẢI NGHIỆM `N-1…N-20`** (§ ngay đầu tệp): IF là
+   **hệ điều hành sáng tạo cho thiết kế nội thất**, lời hứa *"từ ý tưởng tới sự thật thiết kế —
+   không đánh rơi ngữ cảnh"*. Đọc ít nhất **N-8** (Home), **N-10** (13 cờ đỏ), **N-16/N-17**
+   (máy không phán được gu · bố cục trước đánh bóng sau) và **N-20** (cổng hai câu: *chạy được?*
+   **và** *có đẩy về north star không?*) TRƯỚC KHI chạm bất kỳ bề mặt lớn nào.
+0b. 🎨🎨 **PHIÊN LÀM GIAO DIỆN: ĐỌC `docs/ACTIVE-DESIGN-CONTEXT.md` TRƯỚC, VÀ CHỈ NÓ.**
+   Lệnh CONTEXT DETOX của Hoà 04/09. `docs/` có **761 tệp `.md` · 78 MB** và **148 bản vẽ**, phần
+   lớn là *lịch sử* chứ không phải *thẩm quyền* — crawl kho đó để tìm hướng thị giác chính là cơ
+   chế đã làm nhiễm mấy đợt Home vừa rồi. ⛔ Bốn câu cấm đọc ngược: **giao diện đang chạy ≠ thẩm
+   quyền · component đang có ≠ khuôn mẫu · code đang có ≠ lý do giữ bố cục · đã qua mắt trong quá
+   khứ ≠ đang được duyệt** (nếu thẩm quyền mới đã đè). **NO-REBUILD (B25) bảo vệ NĂNG LỰC · HỢP
+   ĐỒNG · DỮ LIỆU — KHÔNG bảo vệ bố cục thị giác lỗi thời.** Tài liệu/bản vẽ cũ chỉ mở khi việc đòi
+   **truy nguyên · cứu vốn · giữ hành vi · điều tra xung đột**; nhãn ở
+   `docs/delivery/LEGACY-DESIGN-QUARANTINE.md`.
+
 1. ⭐ **`docs/INTERIORFLOW-ARCHITECTURE-MAP.md` — BẢN ĐỒ KIẾN TRÚC CHÍNH TẮC (19/08). ĐỌC THẬT, KHÔNG LƯỚT.**
    (Tên cũ `IF-KIEN-TRUC.md` đã đóng dấu chuyển hướng 19/08, giữ làm dấu vết.)
 1b. ⭐ **`docs/IF-ARCHITECTURE-BLUEPRINT.md` — CANONICAL BLUEPRINT v1.0 (19/08, gate MISSING=0).**

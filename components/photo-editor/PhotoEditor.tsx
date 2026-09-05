@@ -38,6 +38,7 @@ import LayersPanel from './LayersPanel';
 import AdjustPanel from './AdjustPanel';
 import LibraryPickerModal from './LibraryPickerModal';
 import ImageSpecPanel from './ImageSpecPanel';
+import { laPhimChinh, coPhimHeThong } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 
 interface Props {
   initialDoc: PhotoDoc;
@@ -80,25 +81,25 @@ export default function PhotoEditor({ initialDoc, onWriteBack }: Props) {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return; // đang gõ tên lớp / URL ảnh…
 
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z') {
+      if (laPhimChinh(e) && e.key.toLowerCase() === 'z') {
         e.preventDefault();
         if (e.shiftKey) ed.redo();
         else ed.undo();
         return;
       }
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'y') {
+      if (laPhimChinh(e) && e.key.toLowerCase() === 'y') {
         e.preventDefault();
         ed.redo();
         return;
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === '9') {
+      if (laPhimChinh(e) && e.key === '9') {
         e.preventDefault();
         setFitSignal((s) => s + 1);
         return;
       }
 
       // phím chọn tool / cỡ cọ — CHỈ khi không giữ modifier (tránh đụng phím tắt hệ thống).
-      if (!e.metaKey && !e.ctrlKey && !e.altKey) {
+      if (!coPhimHeThong(e) && !e.altKey) {
         const t = toolForHotkey(e.key);
         if (t) {
           e.preventDefault();

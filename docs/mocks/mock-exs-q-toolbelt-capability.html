@@ -1,0 +1,82 @@
+<!-- @dsCard group="Experience System" title="EXS-Q · Adaptive Toolbelt — Master Capability" -->
+<!--
+  EXS-Q — ADAPTIVE TOOLBELT / MASTER CAPABILITY SURFACES (dựng 20/08 theo yêu cầu lane A).
+  Luật nguồn: CHOT-EXPERIENCE-SYSTEM điều 10 (capability 4 độ sâu · toolbar = working set 4–8)
+  + MOTION-VISUAL-LAW §V (capability không đổi theo stage, chỉ đổi representation).
+  Khớp vocabulary code lane A: `workingSet()` (lib/capabilities/compound.ts) + ToolbarBar/ToolbarChip
+  KB-1 + commonCommandsFor. TRẠNG THÁI: DESIGNED — CHƯA qua mắt Hoà (dựng sau đợt pass sáng nay).
+-->
+<div class="exq-root">
+<style>
+  .exq-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --success:#46b876; --warning:#d9a34a;
+    --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+    background:var(--bg); color:var(--t2); padding:36px;
+    font:13px/1.5 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .exq-root *{box-sizing:border-box}
+  .h1{font-size:22px;font-weight:700;color:var(--t1);margin:0 0 4px}
+  .sub{color:var(--t3);margin:0 0 22px;max-width:940px}
+  .sec{margin:26px 0 10px;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--t4);text-transform:uppercase}
+  .depths{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .dp{border:1px solid var(--border);border-radius:12px;background:var(--panel);padding:11px;font-size:10.5px;color:var(--t3);text-align:center}
+  .dp b{display:block;color:var(--t1);font-size:11.5px;margin:8px 0 3px}
+  .dp p{margin:0;text-align:left;color:var(--t4);font-size:10px}
+  .stagevis{height:64px;display:grid;place-items:center}
+  .halo{display:inline-flex;gap:4px;padding:4px 7px;border-radius:999px;background:var(--card);border:1px solid var(--accent-ring);box-shadow:var(--shadow-pop);font-size:9.5px;color:var(--t1);align-items:center}
+  .halo i{width:14px;height:14px;border-radius:5px;background:var(--field);border:1px solid var(--border-strong);display:grid;place-items:center;font-size:8px;font-style:normal}
+  .belt{display:inline-flex;gap:3px;align-items:center;height:38px;border-radius:999px;padding:0 6px;background:var(--panel);border:1px solid var(--border);box-shadow:var(--shadow-pop)}
+  .bc{width:27px;height:27px;border-radius:99px;display:grid;place-items:center;font-size:11px;color:var(--t3)}
+  .bc.on{background:var(--accent-soft);border:1px solid var(--accent-ring);color:var(--t1)}
+  .shelfrow{display:flex;gap:7px;align-items:center;padding:5px 8px;border-radius:8px;background:var(--card);border:1px solid var(--border);font-size:10px;color:var(--t2);width:150px;text-align:left}
+  .shelfrow kbd{margin-left:auto;font:8.5px ui-monospace,monospace;border:1px solid var(--border-strong);border-radius:4px;padding:0 4px;color:var(--t3)}
+  .tw{width:150px;border-radius:11px;background:var(--card);border:1px solid var(--border-strong);box-shadow:var(--shadow-pop);font-size:9px;color:var(--t3);text-align:left}
+  .tw h6{margin:0;padding:5px 9px;border-bottom:1px solid var(--border);font-size:9.5px;color:var(--t1)}
+  .tw .b{padding:7px 9px}
+  .belts{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .bpane{border:1px solid var(--border);border-radius:12px;background:var(--panel);padding:11px;text-align:center}
+  .bpane h6{margin:0 0 8px;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--t4)}
+  .bpane p{margin:8px 0 0;font-size:10px;color:var(--t4);text-align:left}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+  .pane{border:1px solid var(--border);border-radius:13px;background:var(--panel);padding:12px;font-size:11px;color:var(--t3)}
+  .pane b{color:var(--t1)}
+  .chip{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--border);background:var(--card);font-size:10px;color:var(--t3);margin:2px 3px 0 0}
+  .law{border:1px solid var(--warning);border-radius:9px;background:rgba(217,163,74,.07);padding:6px 10px;font-size:10.5px;color:var(--t2);margin-top:8px}
+</style>
+
+  <div class="h1">EXS-Q · Adaptive Toolbelt — MỘT capability, nhiều độ sâu, nhiều stage</div>
+  <p class="sub">Luật §V Motion-Visual + điều 10 Experience System: <b style="color:var(--t1)">Master Capability không đổi theo stage — chỉ đổi representation.</b> Toolbelt = <b style="color:var(--t1)">working set 4–8 capability</b> đúng ngữ cảnh, không chứa toàn bộ feature. Nền code: <code>ToolbarBar/ToolbarChip</code> (KB-1) · <code>commonCommandsFor</code> · <code>workingSet()</code> (lib/capabilities).</p>
+
+  <div class="sec">① Bốn độ sâu của CÙNG một capability — ví dụ `Replace` (cùng icon · cùng tên · cùng phím, morph from-center)</div>
+  <div class="depths">
+    <div class="dp"><span class="stagevis"><span class="halo"><i>⇄</i>Replace<i>▦</i><i>💬</i></span></span><b>1 · Near-pointer capsule</b><p>3–6 action mọc từ selection. Replace đứng đây khi vật đang chọn có nguồn Library.</p></div>
+    <div class="dp"><span class="stagevis"><span class="belt"><span class="bc">▣</span><span class="bc on">⇄</span><span class="bc">◧</span><span class="bc">✎</span><span class="bc">＋</span></span></span><b>2 · Adaptive Toolbelt</b><p>working set 4–8 chip capsule (ToolbarBar). Replace là MỘT chip — active = ghost accent-soft, đúng icon container EXS-L.</p></div>
+    <div class="dp"><span class="stagevis"><span class="shelfrow">⇄ Replace — cùng loại<kbd>⇧R</kbd></span></span><b>3 · Context Shelf / Inspector</b><p>hàng có nhãn + phím + trạng thái; shelf lọc semantic-compatible sẵn (EXS-P §④).</p></div>
+    <div class="dp"><span class="stagevis"><span class="tw"><h6>⇄ Replace</h6><span class="b">footprint preview · giữ anchor/rotation · nguồn ↗ · Áp dụng / Thôi</span></span></span><b>4 · Deep ToolWindow</b><p>tham số đầy đủ khi ca phức tạp (cỡ khác, nhiều instance). Mở = EXPAND từ chip, không teleport.</p></div>
+  </div>
+
+  <div class="sec">② CÙNG một thanh — working set ĐỔI theo ngữ cảnh, ngữ pháp KHÔNG đổi</div>
+  <div class="belts">
+    <div class="bpane"><h6>2D · đang chọn TƯỜNG</h6>
+      <span class="belt"><span class="bc on">⌖</span><span class="bc">⇱</span><span class="bc">⧉</span><span class="bc">▦</span><span class="bc">✎</span><span class="bc">…</span></span>
+      <p>Chọn · Dời · Chép · <b style="color:var(--t2)">Vật liệu/hatch</b> · Ghi chú · Thêm→shelf. Alias gõ hiện ở tooltip (2D = đường GÕ).</p></div>
+    <div class="bpane"><h6>3D · đang chọn GHẾ (instance Library)</h6>
+      <span class="belt"><span class="bc on">⌖</span><span class="bc">⇱</span><span class="bc">↻</span><span class="bc">⇄</span><span class="bc">▦</span><span class="bc">◲</span><span class="bc">…</span></span>
+      <p>Chọn · Dời · Xoay · <b style="color:var(--t2)">Replace</b> · Vật liệu · Array. Phím ĐƠN hiện ở tooltip (3D = directKey). Cùng icon với 2D — học một lần.</p></div>
+    <div class="bpane"><h6>Present · đang chọn 2+ BLOCK</h6>
+      <span class="belt"><span class="bc on">⌖</span><span class="bc">▤</span><span class="bc">⇄</span><span class="bc">🗨</span><span class="bc">…</span></span>
+      <p>Chọn · <b style="color:var(--t2)">Auto Grid</b> (EXS-J) · Replace nguồn · Comment. Ít chip hơn — editorial, ít control thường trực (law I.3).</p></div>
+  </div>
+  <p style="font-size:10.5px;color:var(--t4);margin-top:6px">Chip trong belt = capability ĐỦ ĐIỀU KIỆN ngay lúc này; capability sống-ở-stage-nhưng-chưa-đủ-điều-kiện vẫn hiện MỜ kèm lý do (luật §9 + LY_DO_MO đã có). Quá 8 → dồn vào "…" mở shelf, không nêm chật.</p>
+
+  <div class="sec">③ Ranh giới + máy giữ</div>
+  <div class="two">
+    <div class="pane"><b>Identity xuyên stage — máy đã canh sẵn:</b> icon từ MỘT bảng (`command-icon.tsx` — lane A vừa mở rộng cho năng lực gộp, đúng luật "một năng lực = một icon") · tên/desc/hình từ MỘT sổ (`registry` + R3) · test [7] khoá desc/hinh pass-through · `lenhDamChan()` = 0 giữ lệnh chuyên sâu không tràn ra thanh chung.<br><br><b>Thang chọn chỗ đứng:</b> dùng LIÊN TỤC → belt · theo vật đang chọn → near-pointer · tra thỉnh thoảng → shelf · ca phức tạp → ToolWindow. Một capability có thể đứng NHIỀU chỗ cùng lúc — nhưng là MỘT vật.</div>
+    <div class="pane"><b>Cho lane A bám ngay:</b> <span class="chip">vỏ = ToolbarBar (capsule 44, đệm 6, bo tự đồng tâm)</span><span class="chip">chip = ToolbarChip (ghost khi active, aria-disabled + lý do)</span><span class="chip">working set 4–8, quá thì "…"</span><span class="chip">tooltip = label + desc + hình + phím THẬT của stage</span><span class="chip">mờ ≠ mất — không lọc bỏ</span>
+      <div class="law">⚠ TRẠNG THÁI: DESIGNED — CHƯA QUA MẮT HOÀ (dựng sau đợt pass sáng 20/08). Lane A bám được phần trùng luật ĐÃ pass (KB-1 · working set 4–8 · identity xuyên stage — đều là chốt chữ); phần BỐ CỤC board này chờ Hoà chấm, đổi thì chỉ đổi mặt, không đổi contract.</div></div>
+  </div>
+</div>

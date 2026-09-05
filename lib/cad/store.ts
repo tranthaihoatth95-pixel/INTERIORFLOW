@@ -24,6 +24,7 @@ import { syncHostedOpenings, expandDeleteWithHostedChildren } from './hosting';
 // mutation + nở tập id lúc chọn/xoá), cố ý gọi cạnh nhau ở đúng các điểm dưới đây, KHÔNG dựng
 // đường mutation thứ hai. Xem đầu `lib/cad/poche.ts`.
 import { syncPocheAnchors, expandIdsWithPoche, propagatePocheEdits } from './poche';
+import { replaceMaterialReferences, type MaterialReplaceScope } from '../materials/impact';
 
 // Dev-only: expose store cho debugging (window.__cadStore) — cùng pattern với
 // window.__flowStore trong lib/store.ts, không lọt vào bản build production.
@@ -261,6 +262,21 @@ interface CadState {
   hatchColor: string;
   /** tên vật liệu đang chọn (chỉ để hiện status/tô sáng panel — không lưu vào entity). */
   hatchMaterialId: string | null;
+  /**
+   * G4 · MOAT (04/09) — **DANH TÍNH** vật liệu đang cầm, khác hẳn `hatchMaterialId` phía trên.
+   * `hatchMaterialId` là TÊN để hiện trên panel; trường này là `ProductSpec.id` — khoá BẤT BIẾN mà
+   * `HatchEntity.specId` neo vào (`model.ts:680`), tức thứ BOQ/3D/Trình bày đọc.
+   *
+   * ⛔ VÌ SAO PHẢI CÓ: trước 04/09 `applyMaterial()` chỉ đổi pattern/scale/angle/màu ⇒ đổi vật liệu
+   * thì **hình đổi mà danh tính đứng yên**, và `handleHatch()` vẽ vùng tô mới **không mang mã nào**
+   * (`components/cad/CadCanvas.tsx`) ⇒ `lib/boq/compute.ts` đếm vào `missing-specId`. Máy móc xuôi
+   * dòng (`replaceMaterialReferences` · `inspectMaterialImpact` · `computeBoq`) đã có đủ và có test,
+   * nhưng `grep` trong `app/` + `components/` = **0 nơi gọi** — dây có, chưa cắm điện.
+   *
+   * null = đang cầm một preset THỊ GIÁC chưa nối kho giá (vẽ ra vùng tô không mã — vẫn hợp lệ,
+   * BOQ sẽ báo `missing-specId` chứ KHÔNG tự bịa mã).
+   */
+  hatchSpecId: string | null;
   past: Doc[];
   future: Doc[];
   /** dòng lệnh mini + thông báo trạng thái */
@@ -375,8 +391,26 @@ interface CadState {
   setHatchScale: (n: number) => void;
   setHatchAngle: (n: number) => void;
   setHatchColor: (hex: string) => void;
-  /** áp 1 preset vật liệu: đổi cả pattern/scale/angle/màu cùng lúc + chuyển sang tool Hatch. */
-  applyMaterial: (id: string, pattern: HatchPattern, scale: number, angle: number, color: string) => void;
+  /**
+   * áp 1 preset vật liệu: đổi cả pattern/scale/angle/màu cùng lúc + chuyển sang tool Hatch.
+   *
+   * G4 · MOAT (04/09) — tham số thứ 6 `specId` là **DANH TÍNH** (`ProductSpec.id`). Optional để mọi
+   * nơi gọi cũ chạy y như trước (`undefined` = không đụng tới `specId` của entity, KHÔNG xoá mã
+   * đang có — xoá mã im lặng là mất dữ liệu). Truyền chuỗi ⇒ ghi mã đó xuống entity đang chọn VÀ
+   * giữ lại làm mã cho vùng tô vẽ tiếp theo.
+   */
+  applyMaterial: (id: string, pattern: HatchPattern, scale: number, angle: number, color: string, specId?: string) => void;
+  /**
+   * G4 · MOAT (04/09) — ĐỔI VẬT LIỆU TRONG PHẠM VI RỘNG, qua ĐÚNG engine đã có
+   * (`lib/materials/impact.ts` `replaceMaterialReferences`), không đường thứ hai.
+   *
+   * Đây là chỗ cắm điện cho hàm mà `grep` trước 04/09 trả **0 nơi gọi**. Nơi gọi (UI) PHẢI trình
+   * bảng tác động trước (`MaterialImpactPreview`) — cửa duyệt là việc của UI, hàm này chỉ GHI.
+   * `scope` bỏ trống = toàn dự án (kể cả `wallTypes`); truyền `entityIds` = chỉ đúng những vật đó.
+   * Không có gì đổi ⇒ KHÔNG snapshot (khỏi tốn một nấc Undo rỗng).
+   * Trả về số tham chiếu đã đổi để UI báo đúng con số, không đoán.
+   */
+  replaceMaterial: (fromSpecId: string, toSpecId: string, scope?: MaterialReplaceScope) => number;
 
   importDoc: (d: Doc, mode: 'replace' | 'merge') => void;
   scaleAll: (factor: number) => void;
@@ -467,6 +501,7 @@ export const useCadStore = create<CadState>((set, get) => ({
   hatchAngle: 0,
   hatchColor: '',
   hatchMaterialId: null,
+  hatchSpecId: null,
   past: [],
   future: [],
   status: 'Sẵn sàng — chọn công cụ hoặc gõ lệnh (L, PL, REC, C…).',
@@ -804,28 +839,67 @@ export const useCadStore = create<CadState>((set, get) => ({
   setChamferDist: (chamferD1, chamferD2) => set({ chamferD1, chamferD2 }),
   setLengthenDelta: (lengthenDelta) => set({ lengthenDelta }),
   setDimStyle: (patch) => set((s) => ({ dimStyle: { ...s.dimStyle, ...patch } })),
-  setHatchPattern: (hatchPattern) => set({ hatchPattern, hatchMaterialId: null }),
-  setHatchScale: (hatchScale) => set({ hatchScale, hatchMaterialId: null }),
-  setHatchAngle: (hatchAngle) => set({ hatchAngle, hatchMaterialId: null }),
-  setHatchColor: (hatchColor) => set({ hatchColor, hatchMaterialId: null }),
-  applyMaterial: (hatchMaterialId, hatchPattern, hatchScale, hatchAngle, hatchColor) => {
+  // Bốn setter dưới là nhánh "Pattern kỹ thuật (chỉnh tay)" — người dùng CỐ Ý rời khỏi preset vật
+  // liệu, nên `hatchMaterialId` về null. G4 · MOAT (04/09): `hatchSpecId` cũng về null theo, vì
+  // "nét gạch tự chỉnh" KHÔNG được mang danh tính của vật liệu vừa bỏ — vùng tô vẽ sau đó mà vẫn
+  // khai là gỗ óc chó thì BOQ tính tiền cho thứ người dùng không hề chọn. Bốn setter này chỉ đụng
+  // vật liệu ĐANG CẦM, không sửa entity nào ⇒ không mất mã của vùng tô đã vẽ.
+  setHatchPattern: (hatchPattern) => set({ hatchPattern, hatchMaterialId: null, hatchSpecId: null }),
+  setHatchScale: (hatchScale) => set({ hatchScale, hatchMaterialId: null, hatchSpecId: null }),
+  setHatchAngle: (hatchAngle) => set({ hatchAngle, hatchMaterialId: null, hatchSpecId: null }),
+  setHatchColor: (hatchColor) => set({ hatchColor, hatchMaterialId: null, hatchSpecId: null }),
+  applyMaterial: (hatchMaterialId, hatchPattern, hatchScale, hatchAngle, hatchColor, specId) => {
     // "Đổi vật liệu" trên đối tượng ĐÃ CHỌN (menu chuột phải, VIỆC ①, 28/07) — nếu đang có vùng
     // tô (hatch) trong selection, áp pattern/scale/angle NGAY lên entity đã vẽ, không chỉ đổi
-    // "vật liệu đang cầm để vẽ tiếp" như hành vi applyMaterial cũ. KHÔNG đổi `color` — đó không
-    // phải field per-entity trên HatchEntity (màu đọc theo layer), tránh bịa field không tồn tại.
+    // "vật liệu đang cầm để vẽ tiếp" như hành vi applyMaterial cũ.
+    //
+    // G4 · MOAT (04/09) — nay áp CẢ HAI mặt cùng một thao tác:
+    //   · HÌNH  — pattern/scale/angle (+ `color`, xem ghi chú dưới)
+    //   · DANH TÍNH — `specId` (`ProductSpec.id`), thứ BOQ/3D/Trình bày thật sự đọc.
+    // Thiếu vế danh tính chính là đứt gãy moat đo được: hình đổi ANSI31→ANSI37 mà `specId` đứng yên
+    // ⇒ BOQ vẫn tính theo vật liệu cũ, 3D vẫn mang mã cũ. `specId === undefined` (mọi nơi gọi cũ)
+    // ⇒ GIỮ NGUYÊN mã đang có, KHÔNG xoá — mất mã im lặng còn tệ hơn không đổi.
+    //
+    // `color` GIỜ CÓ ghi xuống entity (khác chú thích cũ "không phải field per-entity"): `Base.color`
+    // tồn tại thật (`model.ts`) và `lib/three/cad-to-obj.ts` `slabMat()` đọc chính nó để mặt sàn 3D
+    // ra đúng màu vật liệu người chọn thay vì màu theme. Chuỗi rỗng = bỏ override, về màu layer.
     const st = get();
     const selectedHatches = st.doc.entities.filter(
       (e): e is Extract<Entity, { type: 'hatch' }> => e.type === 'hatch' && st.selection.includes(e.id),
     );
     if (selectedHatches.length) {
       st.updateEntities(
-        selectedHatches.map((e) => ({ ...e, pattern: hatchPattern, patternScale: hatchScale, patternAngle: hatchAngle })),
+        selectedHatches.map((e) => ({
+          ...e,
+          pattern: hatchPattern,
+          patternScale: hatchScale,
+          patternAngle: hatchAngle,
+          solid: hatchPattern === 'SOLID',
+          ...(hatchColor ? { color: hatchColor } : {}),
+          ...(specId ? { specId } : {}),
+        })),
       );
       // Giữ nguyên tool/selection — user đang sửa vùng tô đã chọn, không phải bắt đầu vẽ mới.
-      set({ hatchMaterialId, hatchPattern, hatchScale, hatchAngle, hatchColor });
+      set({ hatchMaterialId, hatchPattern, hatchScale, hatchAngle, hatchColor, ...(specId ? { hatchSpecId: specId } : {}) });
       return;
     }
-    set({ hatchMaterialId, hatchPattern, hatchScale, hatchAngle, hatchColor, tool: 'hatch', status: toolHint('hatch') });
+    set({
+      hatchMaterialId, hatchPattern, hatchScale, hatchAngle, hatchColor,
+      // Không chọn gì ⇒ đây là "vật liệu đang cầm để vẽ tiếp". Danh tính đi kèm để vùng tô vẽ ra
+      // sau đó MANG SẴN mã (`handleHatch`), thay vì rơi xuống bản vẽ không mã như trước 04/09.
+      hatchSpecId: specId ?? null,
+      tool: 'hatch', status: toolHint('hatch'),
+    });
+  },
+
+  replaceMaterial: (fromSpecId, toSpecId, scope) => {
+    const kq = replaceMaterialReferences(get().doc, fromSpecId, toSpecId, scope);
+    if (kq.changedReferences === 0) return 0;
+    get().snapshot();
+    // `replaceMaterialReferences` trả về Doc MỚI (không sửa tại chỗ) đã gồm cả `wallTypes` — set
+    // thẳng, không đi qua `updateEntities` vì hàm đó chỉ biết `entities`, sẽ bỏ rơi `wallTypes`.
+    set({ doc: kq.doc });
+    return kq.changedReferences;
   },
 
   importDoc: (d, mode) => {

@@ -209,6 +209,44 @@ console.log('bảng loại — bất biến khai báo (chốt 11.4 + preset v3 0
   ok('6 loại bán được đúng chốt — preset KHÔNG bán được', SELLABLE_KINDS.length === 6 && SELLABLE_KINDS.includes('soft') && !SELLABLE_KINDS.includes('page') && !(SELLABLE_KINDS as readonly string[]).includes('preset'));
 }
 
+console.log('commerce · KHOÁ BẤT BIẾN thêm 04/09 — ADDITIVE, tệp ĐÃ GHI RA ĐĨA không được hỏng');
+{
+  // ⚠️ VÌ SAO KHỐI TEST NÀY TỒN TẠI: `.idfc` là TỆP CỦA NGƯỜI DÙNG, có thể đang nằm trên máy họ.
+  // Thêm `specId`/`matId` vào `IdfcCommerce` là ADDITIVE (trường optional, không đổi ngữ nghĩa
+  // trường cũ) ⇒ CỐ Ý KHÔNG bump `IDFC_VERSION`, CỐ Ý không thêm entry `IDFC_MIGRATIONS`.
+  // Bump version ở đây là có hại thật, không phải chuyện phong cách: file v4 sẽ bị bản IF cũ
+  // TỪ CHỐI (`fileVersion > currentIdfcVersion`), đổi lấy một hàm nâng cấp không làm gì cả.
+  // Đánh đổi đó chỉ đúng nếu chứng minh được tệp cũ vẫn mở nguyên vẹn — đó là việc của 4 ca dưới.
+
+  // ① tệp GHI TRƯỚC 04/09: commerce CHỈ có business key, KHÔNG có khoá bất biến.
+  const banCu = JSON.stringify({
+    idfcVersion: 3,
+    meta: { name: 'Ghế cũ', code: 'CHAIR-OLD', kind: 'furniture', createdAt: '2026-08-01T00:00:00Z', modifiedAt: '2026-08-01T00:00:00Z', appVersion: 'cu' },
+    body: { type: 'component', geom2d, geom3d: { heightMm: 720, matId: 'W-102' } },
+    commerce: { brand: 'Thử', sku: 'CHAIR-OLD', unit: 'cái', priceVnd: 1500000 },
+  });
+  const moLai = importIdfc(banCu);
+  ok('tệp bản CŨ (không có specId) vẫn MỞ ĐƯỢC', moLai !== null);
+  ok('tệp bản CŨ giữ NGUYÊN mọi trường commerce cũ — không rơi, không bịa',
+    moLai?.commerce?.sku === 'CHAIR-OLD' && moLai?.commerce?.priceVnd === 1500000 && moLai?.commerce?.brand === 'Thử' && moLai?.commerce?.unit === 'cái');
+  ok('tệp bản CŨ KHÔNG bị bịa thêm specId/matId (thiếu là thiếu, cấm điền hộ)',
+    moLai?.commerce?.specId === undefined && moLai?.commerce?.matId === undefined);
+  ok('tệp bản CŨ giữ nguyên hình học + mã vật liệu 3D',
+    moLai?.body.type === 'component' && moLai.body.geom3d?.matId === 'W-102' && moLai.body.geom2d?.w === 800);
+
+  // ② tệp GHI TỪ 04/09: mang khoá bất biến, phải sống sót round-trip.
+  const banMoi = exportIdfc({
+    meta: { name: 'Ghế mới', code: 'CHAIR-NEW', kind: 'furniture' },
+    body: { type: 'component', geom2d },
+    commerce: { specId: 'ps-chair-new', matId: '2f1c8a44-9b30-4d6e-8f21-77c0b5a1e903', sku: 'CHAIR-NEW' },
+  });
+  const m = importIdfc(banMoi);
+  ok('tệp bản MỚI giữ được khoá bất biến qua round-trip',
+    m?.commerce?.specId === 'ps-chair-new' && m?.commerce?.matId === '2f1c8a44-9b30-4d6e-8f21-77c0b5a1e903');
+  ok('thêm trường KHÔNG đổi version file — vẫn là v3, tệp mới bản IF cũ vẫn đọc được',
+    JSON.parse(banMoi).idfcVersion === 3 && IDFC_VERSION === 3);
+}
+
 console.log('JSON hỏng/thiếu — không throw');
 {
   ok('chuỗi rác ⇒ null', importIdfc('{{{') === null);

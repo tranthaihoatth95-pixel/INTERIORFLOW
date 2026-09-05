@@ -32,6 +32,7 @@ import { wallSegmentOutline, railingPosts } from '@/lib/cad/commands';
 import { translateEntity } from '@/lib/cad/geometry';
 import { useScene3D } from '@/lib/render-studio/use-scene3d';
 import { useTree3DUi } from '@/lib/render-studio/tree3d-ui';
+import { useTool3D } from '@/lib/render-studio/tool3d';
 import { Viewport3D, EMPTY_SCENE_3D } from '@/components/three/Viewport3D';
 import ModeSwitchBar from '@/components/render-studio/ModeSwitchBar';
 import Command3DPanel, { type Command3DTab, type WallDraft3D } from '@/components/render-studio/Command3DPanel';
@@ -46,6 +47,7 @@ import { SECTION_LAYERS } from '@/lib/three/section-entities';
 import { useLevelUi, UNASSIGNED_LEVEL, ROOM_LIGHT_KINDS, ROOM_LIGHT_DEFAULT_Z_MM } from '@/components/render-studio/scene3d-ui';
 import { addLevelToDoc, currentLighting, writeSun, writeRoomLights, patchRoomLight, newRoomLightId } from '@/components/render-studio/doc-catalog';
 import { buildLightRig, type RoomLight } from '@/lib/three/lighting';
+import { laPhimChinh, coPhimHeThong } from '@/lib/kbd'; // MỘT nguồn phím chính: ⌘ trên macOS · Ctrl nơi khác
 
 const WELCOME_HIDDEN_KEY = 'if.ve3d.welcome_hidden_v1';
 
@@ -261,7 +263,7 @@ export default function Render3DModeSkeleton() {
    */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (coPhimHeThong(e) || e.altKey) return;
       const el = e.target;
       if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
 
@@ -311,7 +313,7 @@ export default function Render3DModeSkeleton() {
    */
   useEffect(() => {
     const onUndoKey = (e: KeyboardEvent) => {
-      if (!(e.metaKey || e.ctrlKey) || e.altKey) return;
+      if (!laPhimChinh(e) || e.altKey) return;
       const el = e.target;
       if (el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName))) return;
       const k = e.key.toLowerCase();
@@ -449,6 +451,21 @@ export default function Render3DModeSkeleton() {
     setNhayNutTuong(true);
   }
   void dungKhoiTaiCho; // giữ hàm cho đường quay lại; tránh cảnh báo unused khi lint bật
+
+  /**
+   * LỐI CHÍNH của cửa vào 3D rỗng: đóng card chào, mở tab Tạo, và CẦM SẴN công cụ tường — người
+   * dùng chỉ việc kéo trên mặt sàn là có khối (cử chỉ dựng chạy thật, xem `Viewport3D.cuChiDung`
+   * → `Scene3DViewer.createTool`). KHÔNG mở form gõ số, KHÔNG đụng chặng 2D: đây là đường "vào
+   * thẳng 3D dựng được ngay" mà luật X3 đòi phải NGANG HÀNG với đường đi từ mặt bằng.
+   */
+  function batDauTrong3D() {
+    dongCardChao();
+    setTab('tao');
+    useTool3D.getState().setActive('line');
+    useCadStore
+      .getState()
+      .setStatus(tr('Kéo trên mặt sàn để dựng tường. Esc để bỏ.', 'Drag on the ground to build a wall. Esc to cancel.'));
+  }
 
   function moLenhTuongHaiDiem() {
     setTab('tao');
@@ -617,75 +634,68 @@ export default function Render3DModeSkeleton() {
                 >
                   <X size={13} />
                 </button>
-                {/* M-EMPTY-2 (07/08) — chữ + 2 lối theo mock [BẢN CHỐT] `Bốn trạng thái rỗng.dc.html`
-                    màn 1c: "Dựng khối từ mặt bằng 2D" KHOÁ KÈM LÝ DO NHÌN THẤY khi chưa có bản vẽ
-                    (không chỉ title-hover như bản cũ) · "Vẽ mặt bằng trước" mở chặng 2D qua pickStage.
-                    Nút "Dựng khối đầu tiên" cũ rời card nhưng ĐƯỜNG TẠI CHỖ vẫn còn (Command panel
-                    Tạo → Tường) — X2 thoả ở mức màn, ghi nhận trong M-EMPTY-2-OUT. */}
+                {/* CỬA VÀO 3D KHÔNG CÒN CỔNG 2D.
+                    Bản trước: nút chính "Dựng khối từ mặt bằng 2D" bị KHOÁ kèm cảnh báo vàng khi
+                    chưa có bản vẽ, còn nút được tô đậm lại là "Vẽ mặt bằng trước → mở chặng 2D".
+                    Đọc ra thành "3D là bước 2, phải xong bước 1 đã" — trái LUẬT X2 (`docs/00-CHOT.md`:
+                    *"KHÔNG MÀN NÀO ĐƯỢC CHẶN VÌ chưa-làm-bước-trước"*) và trái X3 (ba đường vào
+                    NGANG NHAU). 2D và 3D là hai MÔI TRƯỜNG nối nhau, không phải hai bước của một
+                    thủ tục.
+                    Nay: lối chính là DỰNG THẲNG TRONG 3D (đóng card, mở tab Tạo, cầm luôn công cụ
+                    tường — kéo trên mặt sàn là ra khối). Mặt bằng 2D tụt xuống lối phụ và CHỈ mời
+                    khi dự án CÓ bản vẽ thật; không có thì nó là một dòng chữ đi tiếp, không phải
+                    nút chết. Bỏ luôn dòng phụ "3D modelling space" — nhắc lại chính tiêu đề bằng
+                    tiếng Anh, không mang thêm tin nào. */}
                 <p style={{ margin: 0, fontSize: 'var(--fs-sm)', fontWeight: 'var(--fw-semi)', color: 'var(--t1)', lineHeight: 1.5 }}>
-                  {tr('Không gian dựng khối', '3D modelling space')}
-                </p>
-                <p style={{ margin: '1px 0 0', fontSize: 10.5, color: 'var(--t4)', lineHeight: 1.5 }}>
-                  {tr('3D modelling space', 'Không gian dựng khối')}
+                  {tr('Bắt đầu dựng', 'Start building')}
                 </p>
                 <p style={{ margin: '6px 0 14px', fontSize: 'var(--fs-2xs)', color: 'var(--t3)', lineHeight: 1.6 }}>
                   {tr(
-                    'Mặt bằng hai chiều nâng thẳng lên thành tường, sàn và trần. Nét vẽ tới đâu, khối dựng tới đó.',
-                    'Walls, floors and ceilings rise straight from the 2D plan.',
+                    'Kéo thẳng trên mặt sàn để dựng tường và khối. Hoặc nâng một mặt bằng 2D lên.',
+                    'Drag on the ground to build walls and blocks — or raise a 2D plan.',
                   )}
                 </p>
-                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'flex-start' }}>
-                  <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+                <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap', alignItems: 'center' }}>
+                  {/* LỐI CHÍNH — luôn bấm được, không phụ thuộc gì. */}
+                  <button
+                    type="button"
+                    onClick={batDauTrong3D}
+                    style={{
+                      height: 32, padding: '0 14px', borderRadius: 999, cursor: 'pointer', border: 0,
+                      background: 'var(--accent)', color: '#fff', fontSize: 'var(--fs-2xs)',
+                      fontWeight: 'var(--fw-semi)', display: 'inline-flex', alignItems: 'center', gap: 6,
+                    }}
+                  >
+                    <Hammer size={13} strokeWidth={1.9} />
+                    {tr('Bắt đầu trong 3D', 'Start in 3D')}
+                  </button>
+
+                  {/* LỐI PHỤ — chỉ mời khi CÓ mặt bằng thật; không có thì chỉ là đường đi tiếp,
+                      không phải nút mờ kèm cảnh báo vàng. */}
+                  {coBanVe ? (
                     <button
                       type="button"
                       onClick={dunTuBanVe}
-                      disabled={!coBanVe}
-                      style={
-                        coBanVe
-                          ? {
-                              height: 32, padding: '0 14px', borderRadius: 999, cursor: 'pointer', border: 0,
-                              background: 'var(--accent)', color: '#fff', fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)',
-                              display: 'inline-flex', alignItems: 'center', gap: 6,
-                            }
-                          : {
-                              height: 32, padding: '0 14px', borderRadius: 999, cursor: 'not-allowed',
-                              border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t4)',
-                              fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)',
-                            }
-                      }
+                      style={{
+                        height: 32, padding: '0 14px', borderRadius: 999, cursor: 'pointer',
+                        border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)',
+                        fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)',
+                      }}
                     >
-                      {coBanVe && <Hammer size={13} strokeWidth={1.9} />}
-                      {tr('Dựng khối từ mặt bằng 2D', 'Build from 2D plan')}
+                      {tr('Dùng mặt bằng này →', 'Use this plan →')}
                     </button>
-                    {!coBanVe && (
-                      <span style={{ fontSize: 10.5, lineHeight: 1.6, color: 'var(--warning)' }}>
-                        {tr('Cần ít nhất một mặt bằng ở chặng Thiết kế 2D', 'Needs at least one plan in the 2D stage')}
-                      </span>
-                    )}
-                  </span>
-                  <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+                  ) : (
                     <button
                       type="button"
                       onClick={veMatBangTruoc}
-                      style={
-                        coBanVe
-                          ? {
-                              height: 32, padding: '0 14px', borderRadius: 999, cursor: 'pointer',
-                              border: '1px solid var(--border)', background: 'var(--field)', color: 'var(--t1)',
-                              fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)',
-                            }
-                          : {
-                              height: 32, padding: '0 14px', borderRadius: 999, cursor: 'pointer', border: 0,
-                              background: 'var(--accent)', color: '#fff', fontSize: 'var(--fs-2xs)', fontWeight: 'var(--fw-semi)',
-                            }
-                      }
+                      style={{
+                        height: 32, padding: '0 10px', borderRadius: 999, cursor: 'pointer', border: 0,
+                        background: 'none', color: 'var(--t3)', fontSize: 'var(--fs-2xs)',
+                      }}
                     >
-                      {tr('Vẽ mặt bằng trước', 'Draw a plan first')}
+                      {tr('Vẽ / nhập mặt bằng →', 'Draw or import a plan →')}
                     </button>
-                    <span style={{ fontSize: 10.5, lineHeight: 1.6, color: 'var(--t4)' }}>
-                      {tr('Mở chặng Thiết kế 2D', 'Opens the 2D stage')}
-                    </span>
-                  </span>
+                  )}
                 </div>
               </div>
             </div>

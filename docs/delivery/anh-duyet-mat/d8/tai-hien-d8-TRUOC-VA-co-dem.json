@@ -1,0 +1,38 @@
+{
+  "theGioi": "co-dem",
+  "gieoDem": true,
+  "userId": "cmtnld99e00007d7vq4c7gcxw",
+  "coONhap": true,
+  "oBiVoHieu": false,
+  "ketCuc": "ghi-duoc",
+  "phutDaGo": 42,
+  "truocKhiGo": {
+    "phutTrenDia": null,
+    "dem": "cmtnld99e00007d7vq4c7gcxw",
+    "moiKhoaPhut": [],
+    "storeUser": null,
+    "coStore": true,
+    "oHienThi": "15"
+  },
+  "sauKhiGo": {
+    "phutTrenDia": "42",
+    "dem": "cmtnld99e00007d7vq4c7gcxw",
+    "moiKhoaPhut": [
+      "interiorflow.lockIdleMinutes.cmtnld99e00007d7vq4c7gcxw"
+    ],
+    "storeUser": null,
+    "coStore": true,
+    "oHienThi": "42"
+  },
+  "sauKhiMoLai": {
+    "phutTrenDia": "42",
+    "dem": "cmtnld99e00007d7vq4c7gcxw",
+    "moiKhoaPhut": [
+      "interiorflow.lockIdleMinutes.cmtnld99e00007d7vq4c7gcxw"
+    ],
+    "storeUser": null,
+    "coStore": true,
+    "oHienThi": "42"
+  },
+  "dat": true
+}

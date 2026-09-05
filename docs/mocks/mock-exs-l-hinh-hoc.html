@@ -1,0 +1,121 @@
+<!-- @dsCard group="Experience System" title="EXS-L · Ngữ pháp hình học — luật cứng" -->
+<!--
+  EXS-L — DESIGN SYSTEM GEOMETRY HARD RULE (Hoà ban 20/08, 14 mục — toàn văn 00-CHOT).
+  Board này là NGỮ PHÁP: 4 primitive + corner logic (token thật) + from-the-center + morph giữ
+  identity + 4 mật độ + icon container + hard test. Phần lớn ĐÃ có máy giữ (thang bo 12/08 ·
+  đồng tâm §2d · soi:hinh-hoc) — board gom về một chỗ nhìn được. 0 hex mới.
+-->
+<div class="exl-root">
+<style>
+  .exl-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --success:#46b876; --warning:#d9a34a;
+    --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+    --r1:6px; --r2:10px; --r3:14px; --r4:20px;
+    background:var(--bg); color:var(--t2); padding:36px;
+    font:13px/1.5 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+  }
+  .exl-root *{box-sizing:border-box}
+  .h1{font-size:22px;font-weight:700;color:var(--t1);margin:0 0 4px}
+  .sub{color:var(--t3);margin:0 0 22px;max-width:920px}
+  .sec{margin:28px 0 10px;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--t4);text-transform:uppercase}
+  .row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .cell{border:1px solid var(--border);border-radius:13px;background:var(--panel);padding:13px;font-size:11px;color:var(--t3);text-align:center}
+  .cell b{display:block;color:var(--t1);font-size:12px;margin:8px 0 3px;text-align:left}
+  .cell p{margin:0;text-align:left;font-size:10.5px;color:var(--t4)}
+  .shape{height:52px;display:grid;place-items:center}
+  .sq{width:74px;height:40px;background:var(--field);border:1px solid var(--border-strong)}
+  .note{font-size:11px;color:var(--t4);margin-top:7px}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+  .pane{border:1px solid var(--border);border-radius:13px;background:var(--panel);padding:13px;font-size:11.5px;color:var(--t3)}
+  .pane b{color:var(--t1)}
+  .chip{display:inline-block;padding:2px 9px;border-radius:999px;border:1px solid var(--border);background:var(--card);font-size:10.5px;color:var(--t3);margin:2px 3px 0 0}
+  /* corner ladder */
+  .ladder{display:flex;gap:10px;align-items:flex-end}
+  .lstep{flex:1;text-align:center;font-size:10px;color:var(--t4)}
+  .lbox{margin:0 auto 6px;background:var(--field);border:1px solid var(--border-strong)}
+  /* from center */
+  .fc{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  .fcc{border:1px solid var(--border);border-radius:11px;background:var(--panel);padding:10px;font-size:10px;color:var(--t4);text-align:center}
+  .fcv{height:64px;position:relative;margin-bottom:6px}
+  .dotc{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:99px;background:var(--accent-soft);border:1px solid var(--accent-ring)}
+  .halo1{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:1.2px dashed var(--accent-ring);border-radius:999px;opacity:.7}
+  .halo2{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);border:1.2px dashed var(--border-strong);border-radius:14px;opacity:.6}
+  /* morph strips */
+  .morph{display:flex;gap:8px;align-items:center}
+  .m{background:var(--field);border:1px solid var(--border-strong);display:grid;place-items:center;color:var(--t3);font-size:9px}
+  .arr{color:var(--t5)}
+  /* density */
+  .dens{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .dcell{border:1px solid var(--border);border-radius:11px;background:var(--card);padding:9px;font-size:10px;color:var(--t4)}
+  .dcell h6{margin:0 0 6px;font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--t3)}
+  .drow{border-radius:7px;background:var(--field);border:1px solid var(--border);margin-bottom:5px}
+</style>
+
+  <div class="h1">EXS-L · Ngữ pháp hình học — luật cứng của IF</div>
+  <p class="sub"><b style="color:var(--t1)">Rectangles define space · rounded corners soften interaction · capsules express compact action · circles express points, people & states.</b> Mọi surface sinh từ CÙNG một hệ. Học kỷ luật Apple — không copy skin. Máy giữ: thang bo + đồng tâm + <code>soi:hinh-hoc</code> đã chạy.</p>
+
+  <div class="sec">① Bốn primitive — mỗi hình CÓ VIỆC, không trang trí</div>
+  <div class="row">
+    <div class="cell"><span class="shape"><span class="sq"></span></span><b>RECTANGLE — định KHÔNG GIAN</b><p>vùng, khung, canvas, chia trục. Cấm blob/góc xiên vô nghĩa/organic card.</p></div>
+    <div class="cell"><span class="shape"><span class="sq" style="border-radius:var(--r3)"></span></span><b>ROUNDED RECT — chủ đạo</b><p>card · panel · shelf · ToolWindow · widget. Radius theo THANG, không theo cảm hứng.</p></div>
+    <div class="cell"><span class="shape"><span class="sq" style="border-radius:999px;width:88px;height:34px"></span></span><b>CAPSULE — compact action</b><p>mode · status · tool group · Vitals · segmented · contextual control. KHÔNG biến card thành pill.</p></div>
+    <div class="cell"><span class="shape"><span class="sq" style="border-radius:999px;width:40px;height:40px"></span></span><b>CIRCLE — điểm · người · trạng thái</b><p>avatar · icon action · progress ring · anchor/snap point · semantic dot.</p></div>
+  </div>
+
+  <div class="sec">② Corner logic — token THẬT của DS (globals.css), nested đồng tâm rInner = rOuter − pad</div>
+  <div class="two">
+    <div class="pane">
+      <div class="ladder">
+        <div class="lstep"><span class="lbox" style="width:44px;height:26px;border-radius:var(--r1)"></span>--r-1 · 6<br>control nhỏ, chip, ô nhập</div>
+        <div class="lstep"><span class="lbox" style="width:52px;height:30px;border-radius:var(--r2)"></span>--r-2 · 10<br>nút, hàng list, field</div>
+        <div class="lstep"><span class="lbox" style="width:62px;height:36px;border-radius:var(--r3)"></span>--r-3 · 14<br>card, popover, panel con</div>
+        <div class="lstep"><span class="lbox" style="width:72px;height:42px;border-radius:var(--r4)"></span>--r-4 · 20<br>sheet, modal, khối lớn</div>
+        <div class="lstep"><span class="lbox" style="width:72px;height:30px;border-radius:999px"></span>--r-full<br>capsule/tròn</div>
+      </div>
+      <div class="note">Đồng tâm §2d ĐÃ là luật + đã tự đúng trong <code>ToolbarBar</code> (RADIUS.full kẹp về nửa cạnh ⇒ vỏ 44/r22 → nút 32/r16 với đệm 6). Cấm parent 12 / child 30 không lý do.</div>
+    </div>
+    <div class="pane" style="display:grid;place-items:center;min-height:130px">
+      <span style="width:190px;height:76px;border-radius:var(--r4);border:1px solid var(--border-strong);background:var(--card);display:grid;place-items:center">
+        <span style="width:158px;height:44px;border-radius:calc(var(--r4) - 8px);border:1px dashed var(--accent-ring);background:var(--field);display:grid;place-items:center;font-size:10px;color:var(--t3)">rInner = rOuter − pad</span>
+      </span>
+    </div>
+  </div>
+
+  <div class="sec">③ FROM THE CENTER — surface mới luôn mở từ TÂM/NGUỒN của nó (user hiểu "nó đến từ đâu")</div>
+  <div class="fc">
+    <div class="fcc"><div class="fcv"><span class="dotc"></span><span class="halo1" style="width:56px;height:26px"></span></div>button → capsule NỞ từ chính nó</div>
+    <div class="fcc"><div class="fcv"><span class="dotc"></span><span class="halo2" style="width:58px;height:52px"></span></div>icon → palette expand quanh TÂM icon</div>
+    <div class="fcc"><div class="fcv"><span class="halo1" style="width:44px;height:12px;top:22%"></span><span class="halo2" style="width:64px;height:40px;top:62%"></span></div>Aperture → Peek mở XUỐNG từ aperture</div>
+    <div class="fcc"><div class="fcv"><span class="halo2" style="width:34px;height:26px;left:30%"></span><span class="halo2" style="width:56px;height:50px;left:64%;border-color:var(--accent-ring)"></span></div>card → inspector nở TỪ VỊ TRÍ card</div>
+    <div class="fcc"><div class="fcv"><span class="dotc" style="border-radius:5px"></span><span class="halo2" style="width:70px;height:54px"></span></div>Auto Grid: cell hình thành từ composition frame — KHÔNG teleport</div>
+  </div>
+  <div class="note">Tuyến tính đi kèm: align theo trục · snap grid · spacing có nhịp · panel mở theo hướng logic. Ngoại lệ duy nhất: canvas authoring — nơi USER chủ động đặt content.</div>
+
+  <div class="sec">④ Morph GIỮ IDENTITY — cùng một vật nở qua các state, không hard-cut</div>
+  <div class="two">
+    <div class="pane">
+      <div class="morph" style="margin-bottom:9px"><span class="m" style="width:26px;height:26px;border-radius:8px">▤</span><span class="arr">→</span><span class="m" style="width:74px;height:26px;border-radius:8px">▤ Layers</span><span class="arr">→</span><span class="m" style="width:120px;height:38px;border-radius:10px">Shelf: Lớp · Views…</span></div>
+      <div class="morph" style="margin-bottom:9px"><span class="m" style="width:34px;height:10px;border-radius:99px"></span><span class="arr">→</span><span class="m" style="width:86px;height:22px;border-radius:99px">2 điều đáng chú ý</span><span class="arr">→</span><span class="m" style="width:120px;height:38px;border-radius:12px">Engage card</span></div>
+      <div class="morph"><span class="m" style="width:26px;height:26px;border-radius:99px">✎</span><span class="arr">→</span><span class="m" style="width:74px;height:26px;border-radius:99px">✎ 3 action</span><span class="arr">→</span><span class="m" style="width:120px;height:38px;border-radius:12px">ToolWindow</span></div>
+    </div>
+    <div class="pane"><b>Ba chuỗi chuẩn:</b> Rail icon → label reveal → Shelf · Vitals Aperture → Peek → Engage · Tool icon → capsule → ToolWindow (+ Library: asset card → inspect → deep).<br><br>Geometry morph LIÊN TỤC — bán kính/kích thước nội suy, không đổi sang một hình học khác hẳn. Reduce-motion: hard-cut được phép.<div class="note">Khớp verb REVEAL/EXPAND của motion grammar EXS-A — luật này cho verb một RÀNG BUỘC hình học.</div></div>
+  </div>
+
+  <div class="sec">⑤ Một hệ — BỐN mật độ (khác density, KHÔNG khác DS) &nbsp;·&nbsp; ⑥ Icon container thống nhất</div>
+  <div class="two">
+    <div class="dens">
+      <div class="dcell"><h6>Home · roomy</h6><span class="drow" style="height:26px"></span><span class="drow" style="height:26px;width:70%"></span></div>
+      <div class="dcell"><h6>Files/Library · balanced</h6><span class="drow" style="height:18px"></span><span class="drow" style="height:18px"></span><span class="drow" style="height:18px;width:80%"></span></div>
+      <div class="dcell"><h6>2D/3D · compact pro</h6><span class="drow" style="height:12px"></span><span class="drow" style="height:12px"></span><span class="drow" style="height:12px"></span><span class="drow" style="height:12px;width:85%"></span></div>
+      <div class="dcell"><h6>Present · editorial</h6><span class="drow" style="height:34px"></span><span class="drow" style="height:14px;width:60%"></span></div>
+    </div>
+    <div class="pane"><b>Density đi qua token sẵn có</b> (<code>--tap/--row/--gap/--pad-card/--fs-ui</code>) — không viết media/kích thước riêng từng màn.<br><br><b>Icon container:</b> active state chỉ được là <span class="chip">rounded-square</span><span class="chip">circle</span><span class="chip">capsule ghost</span> THEO RULE (ToolbarChip đã chuẩn: ghost --accent-soft + ring) — cấm mỗi toolbar tự chế nền icon.<div class="note">Visual calm: không sci-fi · không neon · không stroke chồng chất · kính đúng chỗ (vỏ, không ruột) · depth chỉ khi cần hierarchy (thang +1…+4 EXS-A).</div></div>
+  </div>
+
+  <div class="sec">⑦ HARD TEST</div>
+  <div class="pane">Đặt cạnh nhau <b>Home · Files · Library · 2D · 3D · Review · Present · Vitals · ToolWindow</b>, che logo IF: vẫn phải nhận ra CÙNG MỘT HỆ SẢN PHẨM. Một màn nhìn như app khác = <b style="color:var(--warning)">FAIL</b>. Máy soi <code>soi:hinh-hoc</code> giữ phần đo được (radius/thang); phần from-center + morph bổ tiêu chí khi thi công; phần "cảm giác cùng hệ" = mắt Hoà chấm trên board EXS-B.</div>
+</div>

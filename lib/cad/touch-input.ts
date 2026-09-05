@@ -35,12 +35,23 @@ export function shouldUseTouchForNavigation(input: Pick<TouchGuardInput, 'pointe
 
 export function readFingerDrawPreference(): boolean {
   if (typeof window === 'undefined') return false;
-  return window.localStorage.getItem(FINGER_DRAW_STORAGE_KEY) === '1';
+  // Kho bị chặn hẳn thì `getItem` NÉM chứ không trả null (ca 3 nghiệm thu G1). Một tuỳ chọn
+  // vẽ bằng ngón tay không đáng để làm sập màn — không đọc được thì lấy mặc định.
+  try {
+    return window.localStorage.getItem(FINGER_DRAW_STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
 }
 
 export function writeFingerDrawPreference(enabled: boolean): void {
   if (typeof window === 'undefined') return;
-  window.localStorage.setItem(FINGER_DRAW_STORAGE_KEY, enabled ? '1' : '0');
+  try {
+    window.localStorage.setItem(FINGER_DRAW_STORAGE_KEY, enabled ? '1' : '0');
+  } catch {
+    /* kho bị chặn — lựa chọn chỉ sống trong phiên này, KHÔNG chặn sự kiện bên dưới:
+       giao diện vẫn phải đổi theo cú bấm, chỉ là lần mở sau không nhớ. */
+  }
   window.dispatchEvent(new CustomEvent(FINGER_DRAW_EVENT, { detail: enabled }));
 }
 

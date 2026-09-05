@@ -189,7 +189,6 @@ export default function ShortcutsPanel({
               borderRadius: 10,
               background: 'var(--field)',
               color: 'var(--t1)',
-              outline: 'none',
             }}
           />
         </div>

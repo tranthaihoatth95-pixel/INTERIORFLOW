@@ -52,6 +52,11 @@ const CSS = `
 .pib-input, .pib-select { height: 32px; padding: 0 10px; border-radius: var(--r-2, 10px); font-size: 12.5px;
   border: 1px solid var(--border); background: var(--field); color: var(--t1); outline: none; }
 .pib-input:focus, .pib-select:focus { border-color: var(--accent); }
+/* "outline: none" ở trên nằm trong <style> của component (đứng SAU globals.css, cùng đặc hiệu
+   0-1-0) ⇒ nó THẮNG luật :where(...):focus-visible toàn app — đo trên Chromium: outline 0px none.
+   Đổi màu viền là affordance, KHÔNG thay được vòng focus (SPEC-HOVER-FOCUS-IDF §3.6). */
+.pib-input:focus-visible, .pib-select:focus-visible {
+  outline: var(--stroke-focus) solid var(--focus-ring); outline-offset: 2px; }
 .pib-tpl { display: flex; align-items: flex-start; gap: 9px; padding: 8px 10px; border-radius: var(--r-2, 10px);
   border: 1px solid var(--border); background: var(--card); cursor: pointer; }
 .pib-tpl:hover { background: var(--hover); }

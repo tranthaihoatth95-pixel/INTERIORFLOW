@@ -1,0 +1,16 @@
+{
+  "theGioi": "deep-link",
+  "userId": "cmtni3y5y00007dmzemcuqp31",
+  "duAn": "cmtnii12800027du4hyt327q5",
+  "sauKhiVe": {
+    "raw": "{\"route\":\"/cad-editor\",\"flowId\":\"cmtnii12800027du4hyt327q5\",\"sheetId\":\"cadsheet-0\",\"ts\":1788560100418}",
+    "lastUserId": "cmtni3y5y00007dmzemcuqp31",
+    "coFlowId": true
+  },
+  "oHome": {
+    "raw": "{\"route\":\"/cad-editor\",\"flowId\":\"cmtnii12800027du4hyt327q5\",\"sheetId\":\"cadsheet-0\",\"ts\":1788560100418}",
+    "lastUserId": "cmtni3y5y00007dmzemcuqp31",
+    "coFlowId": true
+  },
+  "dat": true
+}

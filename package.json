@@ -21,17 +21,20 @@
     "soi:contract": "node scripts/soi-contract.mjs",
     "soi:that": "node scripts/soi-that.mjs",
     "soi:cam-dien": "node scripts/soi-cam-dien.mjs",
+    "soi:cong-cu-chet": "node scripts/soi-cong-cu-chet.mjs",
+    "soi:mat-tu-cham": "node scripts/soi-mat-tu-cham.mjs",
+    "soi:mat-tien": "node scripts/soi-mat-tien.mjs",
     "release:preflight": "node scripts/release-preflight.mjs",
     "license:check": "license-checker-rseidelsohn --production --onlyAllow 'MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;CC0-1.0;OFL-1.1;LGPL-3.0-or-later;Zlib;BlueOak-1.0.0;0BSD;Python-2.0' --excludePackages 'interiorflow@0.1.0;@mlightcad/libredwg-web@0.7.7;caniuse-lite@1.0.30001800' --summary",
     "tsc": "tsc --noEmit",
-    "test": "npm run tsc && npm run license:check && npm run check:chot && find . -name '*.test.ts' -not -path '*/node_modules/*' -not -path '*/.worktrees/*' -not -path '*/.claude/worktrees/*' -not -name 'edgecase-concurrency.test.ts' -print0 | xargs -0 -n1 -P8 sh -c 'node_modules/.bin/sucrase-node \"$0\"'",
+    "test": "npm run tsc && npm run license:check && npm run check:chot && find . -name '*.test.ts' -not -path '*/node_modules/*' -not -path '*/.worktrees/*' -not -path '*/.claude/worktrees/*' -not -path './app/api/*' -not -path './lib/server/*' -not -name 'edgecase-concurrency.test.ts' -print0 | xargs -0 -n1 -P8 sh -c 'set -a; [ -f .env ] && . ./.env; set +a; node_modules/.bin/sucrase-node \"$0\"' && find ./app/api ./lib/server -name '*.test.ts' -not -name 'edgecase-concurrency.test.ts' -print0 | xargs -0 -n1 -P1 sh -c 'set -a; [ -f .env ] && . ./.env; set +a; node_modules/.bin/sucrase-node \"$0\"'",
     "postinstall": "prisma generate",
     "electron": "electron .",
     "electron:dev": "cross-env ELECTRON_START_URL=http://localhost:3000 concurrently -k -n NEXT,ELECTRON -c blue,magenta \"next dev\" \"wait-on tcp:3000 && electron .\"",
-    "electron:build": "next build && electron-builder --win --x64",
+    "electron:build": "next build && electron-builder",
     "electron:build:win": "next build && electron-builder --win --x64",
     "electron:pack:win": "electron-builder --win --x64",
-    "electron:build:mac": "next build && electron-builder --mac",
+    "electron:build:mac": "next build && electron-builder --mac --arm64",
     "electron:publish": "next build && electron-builder --win --x64 --publish always"
   },
   "dependencies": {
@@ -91,7 +94,8 @@
       {
         "provider": "github",
         "owner": "tranthaihoatth95-pixel",
-        "repo": "INTERIORFLOW"
+        "repo": "INTERIORFLOW",
+        "releaseType": "release"
       }
     ],
     "directories": {
@@ -114,18 +118,26 @@
       "!prisma/*.db*",
       "!**/*.map",
       "!node_modules/.prisma/client/libquery_engine-linux-*",
-      "!node_modules/@prisma/engines/*linux*"
-    ],
-    "extraResources": [
-      {
-        "from": "node_modules/.prisma",
-        "to": "app/node_modules/.prisma",
-        "filter": [
-          "**/*",
-          "!**/*.db",
-          "!**/*.db-journal"
-        ]
-      }
+      "!node_modules/@prisma/engines/*linux*",
+      "!node_modules/.prisma/client/libquery_engine-*",
+      "!node_modules/.prisma/client/query_engine-*",
+      "!node_modules/prisma/libquery_engine-*",
+      "!node_modules/prisma/query_engine-*",
+      "!.env",
+      "!.env.*",
+      "!**/.env",
+      "!**/.env.*",
+      "!**/*.db",
+      "!**/*.db-journal",
+      "!**/*.db-wal",
+      "!**/*.db-shm",
+      "!.claude/**",
+      "!.git/**",
+      "!dist-installer/**",
+      "!docs/**",
+      "!.nen-*/**",
+      "!node_modules/@prisma/engines/*query_engine*",
+      "!node_modules/@prisma/engines/*libquery*"
     ],
     "asar": false,
     "extraMetadata": {
@@ -140,7 +152,21 @@
           ]
         }
       ],
-      "icon": "electron/icons/icon.png"
+      "icon": "electron/icons/icon.png",
+      "extraResources": [
+        {
+          "from": "node_modules/.prisma",
+          "to": "app/node_modules/.prisma",
+          "filter": [
+            "**/*",
+            "!**/*.db",
+            "!**/*.db-journal",
+            "!**/libquery_engine-linux-*",
+            "!**/libquery_engine-darwin-*",
+            "!**/*debian*"
+          ]
+        }
+      ]
     },
     "mac": {
       "target": [
@@ -151,9 +177,27 @@
           ]
         }
       ],
-      "icon": "electron/icons/icon.png",
+      "icon": "electron/icons/icon-mac.png",
       "category": "public.app-category.graphics-design",
-      "identity": null
+      "notarize": false,
+      "hardenedRuntime": true,
+      "entitlements": "electron/entitlements.mac.plist",
+      "entitlementsInherit": "electron/entitlements.mac.inherit.plist",
+      "gatekeeperAssess": false,
+      "extraResources": [
+        {
+          "from": "node_modules/.prisma",
+          "to": "app/node_modules/.prisma",
+          "filter": [
+            "**/*",
+            "!**/*.db",
+            "!**/*.db-journal",
+            "!**/query_engine-windows.dll.node",
+            "!**/libquery_engine-linux-*",
+            "!**/*debian*"
+          ]
+        }
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -161,7 +205,23 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "InteriorFlow"
+      "shortcutName": "InteriorFlow",
+      "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "extraResources": [
+        {
+          "from": "node_modules/.prisma",
+          "to": "app/node_modules/.prisma",
+          "filter": [
+            "**/*",
+            "!**/*.db",
+            "!**/*.db-journal",
+            "!**/query_engine-windows.dll.node",
+            "!**/libquery_engine-darwin-*"
+          ]
+        }
+      ]
     }
   }
 }

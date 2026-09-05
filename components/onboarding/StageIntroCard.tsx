@@ -28,7 +28,18 @@ const COPY: Record<OnboardingStage, StageCopy> = {
   cad: {
     lines: [
       { vi: 'Vẽ mặt bằng ở đây.', en: 'Draft your floor plan here.' },
-      { vi: 'Gõ L vẽ tường · F8 khoá ngang dọc', en: 'Press L to draw walls · F8 locks horizontal/vertical' },
+      /* 🔴 04/09 — SỬA HAI LỖI ĐO ĐƯỢC TRÊN APP THẬT, không phải chuyện chữ nghĩa.
+         ① SAI PHÍM: dòng này từng ghi "Gõ L vẽ tường". Sổ lệnh chuẩn nói ngược:
+            `lib/commands/registry.ts:288` L = `cad.draw.line` (Đường thẳng) ·
+            `:304` W = `cad.draw.wall` (Tường). Gõ L ra ĐƯỜNG, không ra TƯỜNG.
+            `components/cad/CadEditor.tsx` đã sửa đúng thành W và để lại chú thích cấm
+            đổi ngược — nhưng thẻ này bị bỏ sót, nên HAI thẻ trên CÙNG MỘT MÀN đang dạy
+            hai phím khác nhau cho cùng một việc (chụp được ở `.nen-kiem/out/2d-D-enter.png`).
+         ② THIẾU MỘT NHỊP: gõ chữ trần chỉ NẠP vào dòng lệnh (`CadCanvas.tsx` nhánh
+            type-anywhere bắn `cad:cmd-key`), phải ENTER mới chạy. Đo thật: gõ W ⇒ ô lệnh
+            hiện "W", công cụ vẫn là "Chọn"; W rồi Enter ⇒ công cụ đổi thành "Tường".
+            Chỉ dẫn thiếu Enter là chỉ dẫn làm theo không ra kết quả. */
+      { vi: 'Gõ W ↵ vẽ tường · F8 khoá ngang dọc', en: 'Type W ↵ to draw walls · F8 locks horizontal/vertical' },
       { vi: 'Xong bấm Đưa sang Thiết kế 3D', en: 'When done, press "Send to 3D Design"' },
     ],
     before: '/onboarding/cad-before.svg',
@@ -99,11 +110,26 @@ export function StageIntroCard({ stage, userId }: { stage: OnboardingStage; user
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 6, scale: 0.97 }}
           transition={{ duration: 0.28, ease: easeApple }}
-          className="fixed bottom-4 right-4 z-[45] w-[min(300px,calc(100vw-32px))] rounded-[14px] border p-3.5"
+          /* 🔴 04/09 — `pointer-events-none` KHÔNG PHẢI trang trí: nó làm cho lời hứa ở
+             docstring ("Thẻ nhỏ, KHÔNG chặn thao tác") thành SỰ THẬT. Đo trên app thật:
+             thẻ này `fixed bottom-4 right-4` chiếm hộp (1284,756,300×128) trên màn 1600×900,
+             mà công tắc "Vẽ 3D" của dock chặng 3D nằm ở (1296,817,112×34) — NẰM TRỌN BÊN
+             TRONG. `document.elementFromPoint` tại tâm nút, tại núm, tại nhãn đều trả về
+             `DIV.mt-2.5` của chính thẻ này ⇒ bấm vào công tắc KHÔNG có gì xảy ra, im lặng,
+             không báo gì. Tức lối vào mode Vẽ 3D bị chặn cho tới khi người dùng bấm ✕.
+             Đúng ba câu chuẩn vi-tương-tác: "công cụ bấm vào im lặng không làm gì".
+             Ruột thẻ chỉ có CHỮ + 2 ảnh minh hoạ (không bấm được) ⇒ trả pointer về cho lớp
+             dưới KHÔNG mất chức năng nào của thẻ; đúng một thứ cần bấm là nút ✕, và nó được
+             bật lại `pointer-events-auto` riêng. Cách này giữ NGUYÊN pixel (0 delta cho mắt).
+             ⚠️ z: 45 là số trần NGOÀI thang z đã khai ở globals.css (canvas 0 · rail/inspector
+             30 · dock 31 · sheet 40 · popover 60 · toast 80). Đổi sang --z-sheet (40): vẫn
+             đứng trên dock (31) nên nhìn y hệt, mà thôi là số tự chế. */
+          className="pointer-events-none fixed bottom-4 right-4 w-[min(300px,calc(100vw-32px))] rounded-[14px] border p-3.5"
           style={{
             background: 'var(--panel, var(--card))',
             borderColor: 'var(--border)',
             boxShadow: '0 20px 48px -16px rgba(0,0,0,0.35)',
+            zIndex: 'var(--z-sheet)',
           }}
           data-stage-intro-card={stage}
         >
@@ -111,7 +137,11 @@ export function StageIntroCard({ stage, userId }: { stage: OnboardingStage; user
             type="button"
             onClick={() => setVisible(false)}
             aria-label={tr('Bỏ qua', 'Skip')}
-            className="absolute right-2.5 top-2.5 text-[var(--t4)] transition-colors hover:text-[var(--t1)]"
+            /* `pointer-events-auto` bù lại cho `pointer-events-none` của vỏ: đây là thứ DUY
+               NHẤT trong thẻ cần bấm được. Ô chạm nới lên --tap (đang là icon 13px trần —
+               dưới ngưỡng chạm, và đây lại là đường thoát duy nhất của thẻ). */
+            className="pointer-events-auto absolute right-2.5 top-2.5 grid place-items-center text-[var(--t4)] transition-colors hover:text-[var(--t1)]"
+            style={{ width: 'var(--tap)', height: 'var(--tap)', margin: 'calc(var(--tap) / -2 + 10px)' }}
           >
             <X size={13} />
           </button>

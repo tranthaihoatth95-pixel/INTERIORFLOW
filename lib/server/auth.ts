@@ -41,6 +41,25 @@ const IS_WORKTREE = (() => {
   }
 })();
 
+/**
+ * ⛔ Ở PRODUCTION, THIẾU `AUTH_SECRET` LÀ TỪ CHỐI KHỞI ĐỘNG — không rơi về hằng số dưới.
+ *
+ * Vì sao phải chặn cứng thay vì cảnh báo: `'dev-secret-change-me'` nằm CÔNG KHAI trong mã
+ * nguồn. Server nào ký phiên đăng nhập bằng nó thì bất kỳ ai đọc được repo cũng tự làm ra
+ * cookie hợp lệ. Đây là loại hỏng KHÔNG có triệu chứng — app chạy trơn tru, đăng nhập bình
+ * thường, và không ai biết cho tới lúc bị lợi dụng.
+ *
+ * Bê từ nhánh checkpoint 05/09. Bản desktop KHÔNG bị chặn: `electron/main.js` tự sinh và lưu
+ * `AUTH_SECRET` vào `<userData>/config.json` trước khi bật server, nên mỗi máy có khoá riêng.
+ * Máy dựng CI phải cấp khoá dùng-một-lần (xem `.github/workflows/dung-ban-mac.yml`).
+ */
+if (process.env.NODE_ENV === 'production' && !HAS_AUTH_SECRET) {
+  throw new Error(
+    'AUTH_SECRET chưa cấu hình ở production — TỪ CHỐI khởi động thay vì ký JWT bằng hằng số ' +
+      'công khai trong mã. Tạo: openssl rand -base64 32',
+  );
+}
+
 const COOKIE = !HAS_AUTH_SECRET ? 'if_session_noenv' : IS_WORKTREE ? 'if_session_wt' : 'if_session';
 // `||` chứ không `??`: AUTH_SECRET= rỗng phải rơi về fallback, khớp với HAS_AUTH_SECRET ở trên.
 const secret = () => new TextEncoder().encode(process.env.AUTH_SECRET || 'dev-secret-change-me');

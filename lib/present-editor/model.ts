@@ -531,6 +531,38 @@ export interface EditorSlide {
   transition?: SlideTransition;
   /** kiểu build-in cho phần tử của slide (mặc định kế thừa deck.reveal). */
   reveal?: ElementReveal;
+  /**
+   * PHỤ LỤC BOQ (02/09, slice "Present + BOQ" — `lib/present-editor/boq-appendix.ts`): slide này
+   * là MỘT TRANG bảng khối lượng dựng TỪ nguồn (Doc 2D + Kho giá + sửa-tay `boq-overrides`),
+   * không phải trang tự do. Meta ghi vân tay Doc lúc dựng để Inspector báo "đã cũ so với bản vẽ"
+   * + nút "Làm mới" thay đúng cụm trang này (một lượt undo). Bỏ trống = slide thường (mọi deck
+   * cũ, HÀNH VI CŨ). Element bên trong là text/shape thường — người dùng sửa tay tự do, nhưng
+   * "Làm mới" sẽ DỰNG LẠI (sửa tay trên trang mất, số sửa-tay trong BOQ thì KHÔNG mất vì nó
+   * sống ở `boq-overrides`, không ở trang).
+   */
+  boqAppendix?: BoqAppendixMeta;
+}
+
+/** Meta 1 trang phụ lục BOQ — THUẦN, serialize được (đi theo `.idfp`). Xem `EditorSlide.boqAppendix`. */
+export interface BoqAppendixMeta {
+  /** dự án NGUỒN (Doc 2D + override) — trang neo theo dự án lúc dựng, như `LinkedAssetRecipe.projectId`. */
+  projectId: string;
+  /** vân tay NGẮN của Doc lúc dựng (`shortBoqFingerprint(boqFingerprint(doc))`) — so với Doc SỐNG
+   * để báo cũ. Chỉ so bản vẽ; giá đổi trong Kho KHÔNG bắt được (khai thật ở UI). */
+  fingerprint: string;
+  /** epoch ms lúc dựng. */
+  generatedAt: number;
+  /** trang thứ mấy / tổng số trang của CÙNG một lần dựng (1-based). */
+  page: number;
+  pages: number;
+  /** tổng số dòng hạng mục của cả bảng (không đếm dòng nhóm/tổng). */
+  rowCount: number;
+  /** số dòng có ÍT NHẤT 1 ô sửa tay (`countOverrideStatus`). */
+  handEdited: number;
+  /** số lỗi engine (thiếu giá, thiếu mã…) — trang PHẢI lộ, không giấu. */
+  errorCount: number;
+  groupMode?: 'storey' | 'room';
+  lang: 'vi' | 'en';
 }
 
 /**
@@ -607,6 +639,18 @@ export interface EmbeddedFont {
 /* Helpers tạo id + phần tử mặc định (đều serialize được).             */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Nội dung mặc định của ô chữ MỚI (`makeText`) khi người dùng chưa gõ gì.
+ *
+ * Đây là DỮ LIỆU THẬT, không phải chữ mờ lúc hiển thị — ô chữ chưa sửa sẽ in thẳng vào PDF/PPTX
+ * giao khách như mọi nội dung khác. Vì thế cổng xuất phải bắt được nó
+ * (`lib/present-editor/export-checks.ts`, CHUAN-DAU-RA-NGHE §4 "0 placeholder sót").
+ *
+ * ⚠️ MỘT NGUỒN: cổng xuất đọc CHÍNH hằng số này, không khoá cứng chuỗi. Đổi chữ ở đây thì luật
+ * đổi theo — không có đường nào để luật chết âm thầm.
+ */
+export const DEFAULT_TEXT_CONTENT = 'Nhập nội dung';
+
 let _seq = 0;
 /** id ổn định, KHÔNG dùng Math.random ở render body (hydration-safe khi gọi trong handler). */
 export function newId(prefix = 'el'): string {
@@ -619,7 +663,7 @@ export function makeText(partial: Partial<TextElement> = {}): TextElement {
     id: newId('txt'),
     kind: 'text',
     frame: { x: 8, y: 8, w: 50, h: 12, rotation: 0 },
-    text: 'Nhập nội dung',
+    text: DEFAULT_TEXT_CONTENT,
     fontSize: 5,
     color: '#221f1a',
     align: 'left',

@@ -1,0 +1,139 @@
+<!-- @dsCard group="Experience System" title="EXS-A · Luật vật lý của IF" -->
+<!--
+  EXS-A — EXPERIENCE SYSTEM BOARD (deliverable A, phiếu 20/08).
+  Board HỆ THỐNG: 5 vùng trách nhiệm · 3 cụm sidebar · 3 độ sâu · spotlight · depth · motion · truth.
+  Token chép NGUYÊN VĂN app/globals.css (dark :174, light :263) — không tự chế màu.
+  Đây là bản vẽ khái niệm cho mắt Hoà, KHÔNG phải mock port-code.
+-->
+<div class="exs-root">
+<style>
+  .exs-root{
+    --bg:#0c0c0e; --panel:#141417; --card:#1a1a1e; --field:#202024;
+    --border:#2a2a31; --border-strong:#3d3d45;
+    --t1:#f5f5f7; --t2:#d6d6db; --t3:#9e9ea8; --t4:#6e6e78; --t5:#4e4e57;
+    --accent:#6a57f5; --accent-soft:rgba(106,87,245,.14); --accent-ring:rgba(106,87,245,.55);
+    --success:#46b876; --warning:#d9a34a; --danger:#e5674f;
+    --shadow-pop:0 8px 30px -8px rgba(0,0,0,.65);
+    --r1:6px; --r2:10px; --r3:14px; --r4:20px;
+    background:var(--bg); color:var(--t2);
+    font:13px/1.55 -apple-system,'SF Pro Text','Segoe UI',Roboto,sans-serif;
+    padding:36px; letter-spacing:.01em;
+  }
+  .exs-root *{box-sizing:border-box}
+  .exs-h1{font-size:22px;font-weight:700;color:var(--t1);margin:0 0 4px}
+  .exs-sub{color:var(--t3);margin:0 0 28px;max-width:860px}
+  .exs-sec{margin:34px 0 12px;font-size:11px;font-weight:700;letter-spacing:.14em;color:var(--t4);text-transform:uppercase}
+  .exs-grid{display:grid;gap:14px}
+  .exs-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--r3);padding:16px}
+  .exs-k{font-size:11px;font-weight:700;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;margin-bottom:6px}
+  .exs-t{color:var(--t1);font-weight:600;margin-bottom:4px}
+  .exs-d{color:var(--t3);font-size:12px}
+  .chip{display:inline-block;padding:2px 9px;border-radius:999px;border:1px solid var(--border);background:var(--card);color:var(--t3);font-size:11px;margin:2px 3px 2px 0}
+  .chip.on{border-color:var(--accent-ring);background:var(--accent-soft);color:var(--t1)}
+  kbd{border:1px solid var(--border-strong);border-bottom-width:2px;border-radius:5px;padding:0 5px;font:11px ui-monospace,monospace;color:var(--t2);background:var(--card)}
+  /* ── sơ đồ shell ── */
+  .shell{position:relative;height:340px;border:1px solid var(--border-strong);border-radius:var(--r4);background:var(--card);overflow:hidden;display:flex}
+  .zone{display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;color:var(--t3)}
+  .zone b{display:block;color:var(--t1);font-size:13px;margin-bottom:3px}
+  .z-left{width:120px;border-right:1px dashed var(--border-strong);background:var(--panel);flex-direction:column;gap:6px;display:flex;padding:14px 8px}
+  .z-center{flex:1;position:relative}
+  .z-right{width:150px;border-left:1px dashed var(--border-strong);background:var(--panel)}
+  .z-top{position:absolute;top:0;left:0;right:0;height:34px;border-bottom:1px dashed var(--border-strong);display:flex;align-items:center;justify-content:center;color:var(--t4);font-size:11px;background:rgba(20,20,23,.6)}
+  .z-pointer{position:absolute;left:46%;top:52%;padding:6px 10px;border-radius:999px;background:var(--card);border:1px solid var(--accent-ring);box-shadow:var(--shadow-pop);font-size:11px;color:var(--t2)}
+  .island{border:1px solid var(--border);background:var(--card);border-radius:var(--r2);padding:8px 6px;font-size:10.5px;color:var(--t3);text-align:center}
+  .island.on{border-color:var(--accent-ring);background:var(--accent-soft);color:var(--t1)}
+  /* thang độ sâu */
+  .ladder{display:flex;gap:12px;align-items:flex-end}
+  .step{flex:1;border-radius:var(--r2);border:1px solid var(--border);background:var(--panel);padding:10px;font-size:11px;color:var(--t3)}
+  .step b{display:block;color:var(--t1);font-size:12px}
+  /* motion verbs */
+  .verb{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:var(--r2);background:var(--card);border:1px solid var(--border);margin-bottom:8px}
+  .verb .gl{width:44px;height:26px;flex:none;position:relative}
+  .verb .gl i{position:absolute;border:1.4px solid var(--t2);border-radius:4px;width:16px;height:12px}
+  .verb b{color:var(--t1);font-size:12px;width:82px;flex:none}
+  .verb span{color:var(--t3);font-size:11.5px}
+  .truth{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:11px;border:1px solid var(--border);background:var(--card);margin:0 6px 6px 0}
+  .dot{width:7px;height:7px;border-radius:99px;display:inline-block}
+</style>
+
+  <div class="exs-h1">EXS-A · Luật vật lý của InteriorFlow</div>
+  <p class="exs-sub">MỘT app · MỘT mental model · MỘT luật tương tác. Cấu trúc đứng yên — chỉ <b style="color:var(--t1)">spotlight</b> di chuyển theo ngữ cảnh. <i>“IF biết tôi đang ở đâu, đang làm gì, và đưa đúng thứ ra đúng lúc.”</i></p>
+
+  <div class="exs-sec">① Năm vùng · năm trách nhiệm — không vùng nào giành attention của vùng khác</div>
+  <div class="shell">
+    <div class="z-left zone">
+      <b style="font-size:11px;color:var(--t4)">LEFT · TÔI Ở ĐÂU?</b>
+      <div class="island">⌂ Workspace chung<br><span style="color:var(--t5)">Home · Project · Files · Library · Review</span></div>
+      <div class="island on">◫ Ba chặng<br><span>2D · 3D · Present</span></div>
+      <div class="island">◔ Cá nhân<br><span style="color:var(--t5)">Profile · Credits · Settings</span></div>
+    </div>
+    <div class="z-center zone">
+      <div class="z-top">TOP EDGE · TÔI NÊN BIẾT GÌ? — Vitals Aperture (ambient, biết im lặng)</div>
+      <div><b>CENTER · TÔI ĐANG LÀM GÌ?</b>Canvas / Viewport / Story — luôn được BẢO VỆ, không UI nào đè lâu</div>
+      <div class="z-pointer">NEAR POINTER · làm gì tiếp? — 3–6 action</div>
+    </div>
+    <div class="z-right zone"><div><b>RIGHT · ĐIỀU GÌ ĐÁNG CHÚ Ý?</b>Context Intelligence Stack<br>(Selection · Vitals · History · Review · Output)</div></div>
+  </div>
+
+  <div class="exs-sec">② Sidebar = một trục dọc, BA ĐẢO (compact không phải khối chữ nhật kín)</div>
+  <div class="exs-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="exs-card"><div class="exs-k">Đảo 1 · Workspace chung</div><div class="exs-t">Home · Project · Files · Library · Review</div><div class="exs-d">Điểm đi xuyên toàn IF. Flow/Timeline/Tasks/Vitals KHÔNG tràn ra rail — chúng sống trong context shelf. Nền code: <code>RailDieuHuong</code> cụm XƯỞNG hiện có, gọn lại.</div></div>
+    <div class="exs-card" style="border-color:var(--accent-ring)"><div class="exs-k">Đảo 2 · Ba chặng</div><div class="exs-t">2D Kỹ thuật · 3D Thiết kế · Present</div><div class="exs-d">Cụm có visual identity mạnh nhất — trả lời ngay “tôi đang ở chặng nào”. Layers/Scene/Materials/Slides là NỘI DUNG của chặng (vào shelf), không phải điều hướng hệ thống.</div></div>
+    <div class="exs-card"><div class="exs-k">Đảo 3 · Cá nhân / hệ thống</div><div class="exs-t">Profile · Credits · Settings</div><div class="exs-d">Help/Appearance/Account/Logout gom vào Profile. Credits hiện NHẸ — shell không phải billing UI.</div></div>
+  </div>
+  <div class="exs-d" style="margin-top:8px">UI BUDGET rail: <b style="color:var(--t1)">7–9 đích bấm</b> · tách đảo bằng khoảng thở + mặt nền, hạn chế divider cứng.</div>
+
+  <div class="exs-sec">③ Ba độ sâu = BA CÂU HỎI (không phải một panel phóng to ba lần)</div>
+  <div class="ladder">
+    <div class="step" style="min-height:70px"><b>LEVEL 1 · RAIL · 52–56px</b>“Tôi muốn đi đâu?” — icon-first, tooltip = tên + <kbd>phím</kbd> + hint (Tooltip hiện có).</div>
+    <div class="step" style="min-height:96px"><b>LEVEL 2 · CONTEXT SHELF · 220–280px</b>“Trong chỗ này có gì?” — browse · navigate · select. 2D: Layers/Views/Library/Review · 3D: Scene/Objects/Materials/Cameras · Present: Story/Slides/Assets/Release.</div>
+    <div class="step" style="min-height:122px"><b>LEVEL 3 · WORK PANEL · 320–440px</b>“Tôi chỉnh thứ này sâu thế nào?” — Properties · spec · BuildRecipe · provenance · revision · where-used · BOQ impact. Resizable; nhớ theo MÁY (luật lưu chung↔máy).</div>
+  </div>
+
+  <div class="exs-sec">④ Adaptive Spotlight — mỗi ngữ cảnh đúng 1 PRIMARY + 1 SECONDARY</div>
+  <div class="exs-card">
+    <span class="chip on">HOME → Resume</span><span class="chip">Needs attention</span>&nbsp;·&nbsp;
+    <span class="chip on">FILES → Project sources</span><span class="chip">Understand/Promote</span>&nbsp;·&nbsp;
+    <span class="chip on">2D → Canvas</span><span class="chip">Tool/Selection</span>&nbsp;·&nbsp;
+    <span class="chip on">3D → Viewport</span><span class="chip">Selection/Material</span>&nbsp;·&nbsp;
+    <span class="chip on">REVIEW → Thứ đang review</span><span class="chip">Issue/Decision</span>&nbsp;·&nbsp;
+    <span class="chip on">PRESENT → Story canvas</span><span class="chip">Assets/Release</span>
+    <div class="exs-d" style="margin-top:8px">Sidebar KHÔNG đổi cấu trúc theo ngữ cảnh — chỉ đổi visual emphasis.</div>
+  </div>
+
+  <div class="exs-sec">⑤ Thang độ sâu có NGHĨA — không random shadow</div>
+  <div class="exs-grid" style="grid-template-columns:repeat(5,1fr)">
+    <div class="exs-card" style="background:var(--bg)"><div class="exs-k">BASE</div><div class="exs-d">Canvas / Workspace</div></div>
+    <div class="exs-card"><div class="exs-k">+1</div><div class="exs-d">Cards · Shelf</div></div>
+    <div class="exs-card" style="box-shadow:var(--shadow-pop)"><div class="exs-k">+2</div><div class="exs-d">Contextual tool đang active</div></div>
+    <div class="exs-card" style="box-shadow:var(--shadow-pop);border-color:var(--border-strong)"><div class="exs-k">+3</div><div class="exs-d">Popover · Vitals Peek</div></div>
+    <div class="exs-card" style="box-shadow:var(--shadow-pop);border-color:var(--accent-ring)"><div class="exs-k">+4</div><div class="exs-d">Lớp focus tối quan trọng / modal khi THẬT cần</div></div>
+  </div>
+  <div class="exs-d" style="margin-top:8px">Foreground tiến lên ⇒ background <i>recede</i> nhẹ. Depth giúp hiểu hierarchy, không trang trí.</div>
+
+  <div class="exs-sec">⑥ Ngữ pháp chuyển động — 7 động từ, hỗ trợ Reduced Motion</div>
+  <div class="exs-grid" style="grid-template-columns:1fr 1fr">
+    <div>
+      <div class="verb"><span class="gl"><i style="left:0;top:7px;opacity:.35"></i><i style="left:22px;top:7px"></i></span><b>REVEAL</b><span>đi ra từ đúng nguồn của nó</span></div>
+      <div class="verb"><span class="gl"><i style="left:8px;top:7px;width:26px;height:16px"></i></span><b>EXPAND</b><span>mở từ chính phần tử, không nhảy chỗ khác</span></div>
+      <div class="verb"><span class="gl"><i style="left:26px;top:7px"></i></span><b>DOCK</b><span>snap về cạnh, có điểm đến rõ</span></div>
+      <div class="verb"><span class="gl"><i style="left:12px;top:4px;box-shadow:0 4px 8px rgba(0,0,0,.5)"></i></span><b>LIFT</b><span>hover nhấc nhẹ — trả lời “tôi interactive”</span></div>
+    </div>
+    <div>
+      <div class="verb"><span class="gl"><i style="left:12px;top:7px;opacity:.3;transform:scale(.85)"></i></span><b>RECEDE</b><span>nền lùi khi lớp focus nổi lên</span></div>
+      <div class="verb"><span class="gl"><i style="left:0;top:7px;opacity:.5"></i><i style="left:24px;top:7px;border-color:var(--accent)"></i></span><b>TRANSFER</b><span>nguồn → dự án/thư viện, thấy đường đi của VẬT</span></div>
+      <div class="verb"><span class="gl"><i style="left:12px;top:7px;border-style:dashed"></i></span><b>RESUME</b><span>khôi phục ngữ cảnh mềm — “bàn vẫn còn đó”</span></div>
+      <div class="exs-d" style="padding:4px 2px">⛔ Không bounce · không animation dài · không motion làm chậm thao tác lặp.</div>
+    </div>
+  </div>
+
+  <div class="exs-sec">⑦ Ngôn ngữ TRUTH của nghề — nhìn con số là biết tin được không</div>
+  <div class="exs-card">
+    <span class="truth"><span class="dot" style="background:var(--success)"></span>Measured — đo thật</span>
+    <span class="truth"><span class="dot" style="background:var(--accent)"></span>Verified — người xác nhận</span>
+    <span class="truth"><span class="dot" style="background:var(--warning)"></span>Inferred — máy suy, chờ duyệt</span>
+    <span class="truth"><span class="dot" style="background:var(--t4)"></span>External — nguồn ngoài</span>
+    <span class="truth"><span class="dot" style="border:1.5px solid var(--danger);background:transparent"></span>Stale — dựa bản cũ</span>
+    <div class="exs-d" style="margin-top:8px">Nền code THẬT: cờ 3 nấc <code>measured|inferred|verified</code> đã sống trong DNA/FFE/metrology — board này chỉ cho nó MỘT bộ mặt nhìn thấy. Kèm 2 primitive quan hệ: <b style="color:var(--t1)">Go to Source</b> · <b style="color:var(--t1)">Where Used</b> — hiện tự nhiên ở mọi asset/material/render/slide, không chôn trong menu.</div>
+  </div>
+</div>

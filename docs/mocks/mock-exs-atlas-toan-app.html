@@ -1,0 +1,724 @@
+<!-- @dsCard group="Atlas" title="INTERIORFLOW · FULL APP EXPERIENCE ATLAS" -->
+<!--
+  🔴 THAM CHIẾU KỸ THUẬT — KHÔNG PHẢI BẢN DUYỆT THỊ GIÁC.
+  Hoà chốt GATE #4 (20/08): mọi hướng thị giác MỚI/CHƯA CHỐT bắt buộc là artifact NATIVE
+  trong Claude Design. Mock HTML đẩy qua DesignSync vẫn dùng được làm nguyên mẫu kỹ thuật ·
+  thử tương tác · tham chiếu thi công · QA — nhưng KHÔNG còn tính là duyệt thị giác.
+  ⇒ Bản Atlas DUYỆT-ĐƯỢC sẽ do phiên UX/UI mới vẽ native. File này chỉ là khung đối chiếu.
+  ⇒ NGUỒN SỰ THẬT đi kèm (phần đắt nhất): `docs/ATLAS-KIEM-KE-2026-08-20.md` — sổ kiểm kê
+     41 khung, mỗi khung có route thật · component thật · nhãn · bằng chứng · thiếu gì.
+
+  BỨC TƯỜNG ĐỐI CHIẾU SẢN PHẨM — không phải deck trình bày.
+  Mục đích: thấy chỗ nào lệch thế hệ. CẤM giấu màn xấu/legacy.
+  Nhãn lấy từ SỰ THẬT ĐO ĐƯỢC: docs/bao-cao-phien/2026-08-20-*.md + `ls` component + grep.
+  Không tra được ⇒ NEEDS-HOÀ hoặc IN-PROGRESS, không bao giờ APPROVED.
+  Token: app/globals.css. Không hex cứng. 2 theme. Bo 6/10/14/20.
+-->
+<title>INTERIORFLOW · FULL APP EXPERIENCE ATLAS</title>
+
+<style>
+/* ---------- Token cục bộ = BÍ DANH của token thật, không đẻ giá trị mới ---------- */
+.atlas {
+  --nen: var(--bg, #0b0b0d);
+  --tam: var(--panel, #141417);
+  --o: var(--card, #1a1a1f);
+  --vien: var(--border, rgba(255,255,255,.09));
+  --vien-manh: var(--border-strong, rgba(255,255,255,.18));
+  --c1: var(--t1, #f4f4f6);
+  --c2: var(--t2, #c9c9d1);
+  --c3: var(--t3, #9e9ea8);
+  --c4: var(--t4, #6e6e78);
+  --nhan: var(--accent, #6a57f5);
+  --dat: var(--success, #46b876);
+  --nhac: var(--warning, #d9a34a);
+  --sai: var(--danger, #e5484d);
+  --r1: var(--r-1, 6px);
+  --r2: var(--r-2, 10px);
+  --r3: var(--r-3, 14px);
+  --r4: var(--r-4, 20px);
+  --rf: var(--r-full, 999px);
+
+  background: var(--nen);
+  color: var(--c1);
+  font-family: var(--font-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif);
+  font-size: 13px;
+  line-height: 1.55;
+  padding: 22px 20px 56px;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+@media (prefers-color-scheme: light) {
+  .atlas:not([data-theme="dark"]) {
+    --nen: var(--bg, #f2f2f7);
+    --tam: var(--panel, #ffffff);
+    --o: var(--card, #ffffff);
+    --vien: var(--border, rgba(20,20,28,.10));
+    --vien-manh: var(--border-strong, rgba(20,20,28,.20));
+    --c1: var(--t1, #14141c);
+    --c2: var(--t2, #3c3c46);
+    --c3: var(--t3, #6a6a76);
+    --c4: var(--t4, #97979f);
+  }
+}
+.atlas *, .atlas *::before, .atlas *::after { box-sizing: border-box; }
+.atlas h1, .atlas h2, .atlas h3, .atlas p, .atlas ul { margin: 0; }
+
+/* ---------- Đầu tường ---------- */
+.at-dau {
+  display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px 26px;
+  padding: 16px 18px; margin-bottom: 16px;
+  border: 1px solid var(--vien); border-radius: var(--r4); background: var(--tam);
+}
+.at-dau h1 { font-size: 19px; font-weight: 600; letter-spacing: .01em; line-height: 1.5; }
+.at-dau .sub { color: var(--c3); font-size: 12px; max-width: 62ch; line-height: 1.6; }
+.at-canh {
+  border-left: 2px solid var(--sai); padding-left: 10px;
+  color: var(--c2); font-size: 12px; max-width: 46ch; line-height: 1.6;
+}
+
+/* ---------- Chú giải nhãn ---------- */
+.at-chu { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.nh {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 600; letter-spacing: .04em;
+  padding: 3px 8px; border-radius: var(--rf);
+  border: 1px solid var(--vien-manh); color: var(--c2); background: transparent;
+  white-space: nowrap;
+}
+.nh::before { content: ""; width: 6px; height: 6px; border-radius: var(--rf); background: currentColor; flex: none; }
+.nh-approved      { color: var(--dat);  border-color: color-mix(in oklab, var(--dat) 45%, transparent); }
+.nh-ready         { color: var(--nhan); border-color: color-mix(in oklab, var(--nhan) 50%, transparent); }
+.nh-inprogress    { color: var(--nhac); border-color: color-mix(in oklab, var(--nhac) 45%, transparent); }
+.nh-legacy        { color: var(--c4);   border-color: var(--vien); }
+.nh-rejected      { color: var(--sai);  border-color: color-mix(in oklab, var(--sai) 45%, transparent); }
+.nh-needs         { color: var(--c1);   border-color: var(--vien-manh); }
+.nh-needs::before { background: repeating-linear-gradient(45deg, currentColor 0 2px, transparent 2px 4px); }
+
+/* ---------- Nhóm ---------- */
+.at-nhom { margin-top: 22px; }
+.at-nhom > header {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 0 2px 8px; border-bottom: 1px solid var(--vien); margin-bottom: 12px;
+}
+.at-nhom > header .so {
+  font-variant-numeric: tabular-nums; font-size: 11px; font-weight: 600;
+  color: var(--nen); background: var(--c2);
+  border-radius: var(--r1); padding: 2px 6px; line-height: 1.5;
+}
+.at-nhom > header h2 { font-size: 14px; font-weight: 600; letter-spacing: .02em; }
+.at-nhom > header .dem { margin-left: auto; font-size: 11px; color: var(--c4); font-variant-numeric: tabular-nums; }
+
+.at-luoi { display: grid; grid-template-columns: repeat(auto-fill, minmax(228px, 1fr)); gap: 10px; }
+
+/* ---------- Ô ---------- */
+.o {
+  border: 1px solid var(--vien); border-radius: var(--r3);
+  background: var(--o); padding: 8px; display: flex; flex-direction: column; gap: 7px;
+  min-width: 0;
+}
+.o.la-do    { border-color: color-mix(in oklab, var(--sai) 42%, var(--vien)); }
+.o.la-trong { border-style: dashed; background: transparent; }
+.o > .dinh { display: flex; align-items: center; gap: 6px; min-height: 20px; }
+.o > .dinh .ma {
+  font-size: 10px; font-variant-numeric: tabular-nums; color: var(--c4);
+  letter-spacing: .06em; flex: none;
+}
+.o > .dinh .nh { margin-left: auto; }
+.o h3 { font-size: 12.5px; font-weight: 600; line-height: 1.5; color: var(--c1); }
+.o .ghi { font-size: 11px; color: var(--c3); line-height: 1.6; }
+.o .ghi b { color: var(--c2); font-weight: 600; }
+.o .ghi .do { color: var(--sai); }
+.o .bang-chung {
+  font-size: 10px; color: var(--c4); line-height: 1.6;
+  border-top: 1px dashed var(--vien); padding-top: 5px; margin-top: auto;
+  word-break: break-word;
+}
+
+/* ---------- Ảnh khung: wireframe tối giản bằng div ---------- */
+.w {
+  aspect-ratio: 16 / 10; border-radius: var(--r2);
+  border: 1px solid var(--vien); background: var(--tam);
+  padding: 4px; display: flex; gap: 3px; overflow: hidden; position: relative;
+}
+.w i { display: block; background: var(--vien); border-radius: var(--r1); flex: none; }
+.w .col { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+.w .rail { width: 9px; background: var(--vien); border-radius: var(--r1); flex: none; }
+.w .rail.ba { background: linear-gradient(var(--vien) 0 38%, transparent 38% 46%, var(--vien) 46% 78%, transparent 78% 86%, var(--vien) 86% 100%); }
+.w .bar { height: 7px; background: var(--vien); border-radius: var(--r1); }
+.w .bar.nh { background: color-mix(in oklab, var(--nhan) 55%, var(--vien)); }
+.w .fill { flex: 1; background: var(--vien); border-radius: var(--r1); min-height: 0; }
+.w .fill.mo { background: color-mix(in oklab, var(--vien) 55%, transparent); }
+.w .fill.nhan { background: color-mix(in oklab, var(--nhan) 26%, var(--vien)); }
+.w .fill.dat { background: color-mix(in oklab, var(--dat) 26%, var(--vien)); }
+.w .fill.nhac { background: color-mix(in oklab, var(--nhac) 30%, var(--vien)); }
+.w .fill.sai { background: color-mix(in oklab, var(--sai) 26%, var(--vien)); }
+.w .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; flex: 1; min-height: 0; }
+.w .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; flex: 1; min-height: 0; }
+.w .grid4 { display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(2, 1fr); gap: 3px; flex: 1; min-height: 0; }
+.w .panel { width: 30%; background: var(--vien); border-radius: var(--r1); flex: none; }
+.w .apert {
+  position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+  width: 34%; height: 5px; border-radius: var(--rf);
+  background: color-mix(in oklab, var(--nhan) 65%, transparent);
+}
+.w .cham { position: absolute; width: 7px; height: 7px; border-radius: var(--rf); }
+.w .trong {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: 9px; letter-spacing: .1em; color: var(--c4);
+}
+.w.gach {
+  background-image: repeating-linear-gradient(45deg, var(--vien) 0 1px, transparent 1px 7px);
+}
+.w.mo-di { opacity: .45; filter: grayscale(1); }
+
+/* ---------- Chân tường ---------- */
+.at-chan {
+  margin-top: 26px; padding: 14px 16px; border: 1px solid var(--vien);
+  border-radius: var(--r4); background: var(--tam); color: var(--c3);
+  font-size: 11.5px; line-height: 1.7;
+}
+.at-chan h3 { font-size: 12px; color: var(--c1); font-weight: 600; margin-bottom: 6px; }
+.at-chan ul { padding-left: 16px; }
+.at-chan li { margin-bottom: 3px; }
+.at-chan code { font-size: 10.5px; color: var(--c2); }
+
+@media (prefers-reduced-motion: reduce) { .atlas * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="atlas">
+
+  <p style="margin:0 0 12px; padding:9px 14px; border-radius:var(--r2);
+            border:1px solid color-mix(in oklab, var(--sai) 45%, var(--vien));
+            background:color-mix(in oklab, var(--sai) 8%, transparent);
+            color:var(--c2); font-size:11.5px; line-height:1.65">
+    <b style="color:var(--sai)">THAM CHIẾU KỸ THUẬT — không phải bản duyệt thị giác.</b>
+    Theo GATE&nbsp;#4 (Hoà chốt 20/08), bản Atlas duyệt-được phải là artifact <b>native trong Claude
+    Design</b>; trang này là khung đối chiếu để thi công/QA. Sự thật từng khung nằm ở
+    <code>docs/ATLAS-KIEM-KE-2026-08-20.md</code>.
+  </p>
+
+  <header class="at-dau">
+    <div style="flex:1 1 340px; min-width:0">
+      <h1>InteriorFlow · Bản đối chiếu toàn app</h1>
+      <p class="sub">
+        Mỗi ô là một bề mặt thật của sản phẩm, dán nhãn theo <b>sự thật đo được ngày 20/08</b> —
+        báo cáo lane, <code>ls</code> component, grep. Đây là <b>tường đối chiếu</b> để thấy chỗ
+        nào lệch thế hệ, không phải bản trình bày.
+      </p>
+    </div>
+    <p class="at-canh">
+      Màn xấu và màn bị bác <b>vẫn nằm trên tường</b>. Giấu đi là làm hỏng công dụng duy nhất của nó.
+    </p>
+    <div class="at-chu" style="flex:1 1 100%">
+      <span class="nh nh-approved">APPROVED</span>
+      <span class="nh nh-ready">READY-TO-CODE</span>
+      <span class="nh nh-inprogress">IN-PROGRESS</span>
+      <span class="nh nh-legacy">LEGACY</span>
+      <span class="nh nh-rejected">REJECTED</span>
+      <span class="nh nh-needs">NEEDS-HOÀ</span>
+      <span style="font-size:10.5px;color:var(--c4);margin-left:6px">
+        APPROVED = Hoà đã pass mắt <b>và</b> code sống · READY-TO-CODE = luật/bản vẽ chốt, code 0 dòng ·
+        NEEDS-HOÀ = không tra được sự thật hoặc đang chờ cửa người
+      </span>
+    </div>
+  </header>
+
+  <!-- ============ 01 ============ -->
+  <section class="at-nhom">
+    <header><span class="so">01</span><h2>VÀO / LÀM VIỆC</h2><span class="dem">5 khung</span></header>
+    <div class="at-luoi">
+
+      <article class="o">
+        <div class="dinh"><span class="ma">01·A</span><span class="nh nh-approved">APPROVED</span></div>
+        <div class="w">
+          <span class="rail ba"></span>
+          <div class="col"><span class="bar nh" style="width:52%"></span><div class="grid2"><i class="fill nhan"></i><i class="fill mo"></i><i class="fill mo"></i><i class="fill mo"></i></div></div>
+        </div>
+        <h3>Home · Ngày-Số-Không</h3>
+        <p class="ghi">Một cửa vào, không lưới trống. Bốn trạng thái + nền ambient đều sống, đo đủ 2 theme.</p>
+        <p class="bang-chung">LANE-A-home-dayzero: VIỆC 1/2/3 = <b>LIVE</b> · <code>components/home/BatDauNgaySoKhong.tsx</code></p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">01·B</span><span class="nh nh-approved">APPROVED</span></div>
+        <div class="w">
+          <span class="rail ba"></span>
+          <div class="col"><span class="bar" style="width:44%"></span><div class="grid4"><i class="fill nhan"></i><i class="fill"></i><i class="fill dat"></i><i class="fill mo"></i></div></div>
+        </div>
+        <h3>Home · Đang hoạt động (bento)</h3>
+        <p class="ghi">19 dự án, mọi widget nguyên, không regress. Đồng hồ ánh sáng + vật liệu của tuần bắt đúng dữ liệu thật.</p>
+        <p class="bang-chung">LANE-A: Home Active <b>LIVE</b> · <code>DongStudioHome.tsx</code> mount qua <code>HomeScreen.tsx:567</code></p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">01·C</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w">
+          <span class="rail ba"></span>
+          <div class="col"><span class="bar" style="width:60%"></span><div class="grid3"><i class="fill"></i><i class="fill mo"></i><i class="fill mo"></i></div><span class="bar" style="width:30%"></span></div>
+        </div>
+        <h3>Chọn / mở dự án</h3>
+        <p class="ghi"><span class="do">Hai cửa vào cùng tồn tại.</span> Nhãn cửa Home đã sửa, nhưng <b>Dashboard vẫn là cửa thứ hai</b>. Dự án chưa có Flow thì không hiện ở đâu cả.</p>
+        <p class="bang-chung">LANE-A VIỆC 4 = <b>PARTIAL</b>, địa chỉ <code>Dashboard.tsx:416</code> · DEMO-SACH ①</p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">01·D</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w">
+          <span class="apert"></span>
+          <span class="rail ba"></span>
+          <div class="col"><span class="bar" style="width:70%"></span><i class="fill mo"></i></div>
+        </div>
+        <h3>Dải ngữ cảnh (mép trên vỏ app)</h3>
+        <p class="ghi">Header 42px đo được trên app thật. Dải ngữ cảnh mới nói được một phần ngữ cảnh — chưa trọn.</p>
+        <p class="bang-chung">COHERENCE-SHELL: <code>WORKSPACE = PARTIAL</code> · VISUAL COHERENCE PASS · <code>studio/DaiNguCanh.tsx</code></p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">01·E</span><span class="nh nh-approved">APPROVED</span></div>
+        <div class="w">
+          <span class="rail ba"></span>
+          <div class="col"><span class="bar" style="width:36%"></span><div class="grid2"><i class="fill"></i><i class="fill mo"></i><i class="fill mo"></i><i class="fill mo"></i></div></div>
+          <span class="panel"></span>
+        </div>
+        <h3>Files · Tệp nguồn dự án</h3>
+        <p class="ghi">Nhìn là hiểu. Ô xem trước đọc được nội dung tệp đã lưu. Định dạng chưa nhận nói thật (415 có câu server).</p>
+        <p class="bang-chung">COHERENCE-FILES: <code>FILES = LIVE</code> · BROWSER PASS · PF-FILE route nội dung</p>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ============ 02 ============ -->
+  <section class="at-nhom">
+    <header><span class="so">02</span><h2>NỘI DUNG · THƯ VIỆN</h2><span class="dem">7 khung (gồm 3 bị bác)</span></header>
+    <div class="at-luoi">
+
+      <article class="o">
+        <div class="dinh"><span class="ma">02·A</span><span class="nh nh-needs">NEEDS-HOÀ</span></div>
+        <div class="w">
+          <div class="col"><div class="grid2"><i class="fill nhan"></i><i class="fill nhan"></i><i class="fill nhan"></i><i class="fill nhan"></i></div><span class="bar" style="width:26%"></span></div>
+        </div>
+        <h3>Thư viện · BROWSE (tầng 1)</h3>
+        <p class="ghi">Editorial, tĩnh, ảnh sản phẩm/3D <b>thật</b> to, ít metadata — món đồ là nhân vật chính. <b>Chưa có khung nào được dựng.</b></p>
+        <p class="bang-chung">Bàn giao §5a + §7 gate #1 (checkpoint BROWSE đầu tiên chưa diễn ra) · <code>components/library/**</code> đang KHOÁ</p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">02·B</span><span class="nh nh-needs">NEEDS-HOÀ</span></div>
+        <div class="w">
+          <div class="col"><i class="fill nhan" style="flex:2"></i><span class="bar" style="width:70%"></span><span class="bar" style="width:46%"></span></div>
+          <span class="panel"></span>
+        </div>
+        <h3>Object Passport (tầng 2)</h3>
+        <p class="ghi">Hãng · tên · bộ sưu tập · mã · kích thước · vật liệu · CAD · 3D · nguồn · đang dùng ở đâu. <b>0 dòng code</b> — grep <code>Passport</code> toàn repo = 0.</p>
+        <p class="bang-chung">grep 20/08: không có component nào · luật §5a chốt, mặt chưa vẽ</p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">02·C</span><span class="nh nh-needs">NEEDS-HOÀ</span></div>
+        <div class="w gach">
+          <div class="col"><div class="grid4"><i class="fill mo"></i><i class="fill mo"></i><i class="fill mo"></i><i class="fill mo"></i></div></div>
+        </div>
+        <h3>Technical Verify (tầng 3)</h3>
+        <p class="ghi">Plan/front/side/3D · bbox · anchor · slot vật liệu · nguồn/dẫn xuất · revision. <b>Ma trận kỹ thuật CHỈ được ở tầng này.</b> Chưa có.</p>
+        <p class="bang-chung">grep <code>TechnicalVerify</code> = 0 · tham chiếu kỹ thuật kế thừa từ board N/P</p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">02·D</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w">
+          <div class="col"><span class="bar" style="width:50%"></span><div class="grid2"><i class="fill dat"></i><i class="fill"></i><i class="fill nhac"></i><i class="fill mo"></i></div></div>
+        </div>
+        <h3>Duyệt nhập từ hãng (Promote)</h3>
+        <p class="ghi">Siêu dữ liệu + chống trùng theo bytes đã sống. <span class="do">Hợp đồng duyệt BLOCKED</span> — <code>daXem</code> không có chỗ lưu, máy chủ không cưỡng chế được.</p>
+        <p class="bang-chung">LANE-B-promote-quality: metadata <b>LIVE</b> · dedupe <b>LIVE</b> (backfill 1.620/1.621) · review contract <b>BLOCKED</b> (schema = cửa Hoà)</p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">02·E</span><span class="nh nh-legacy">LEGACY</span></div>
+        <div class="w mo-di">
+          <div class="col"><span class="bar" style="width:40%"></span><div class="grid3"><i class="fill"></i><i class="fill"></i><i class="fill"></i></div></div>
+          <span class="panel"></span>
+        </div>
+        <h3>LibrarySheet hiện hành (tấm cũ)</h3>
+        <p class="ghi">Đang sống trong app và vẫn là thứ người dùng thấy. <span class="do">Deep-link <code>/library</code> không mở được sheet</span>; <code>GET /api/library</code> trả 1.621 asset / 850&nbsp;KB một lượt, không phân trang.</p>
+        <p class="bang-chung">DEMO-SACH ③ = <b>PARTIAL</b> · pagination <b>DEFER</b> (14 tệp đọc trọn mảng)</p>
+      </article>
+
+      <article class="o la-do">
+        <div class="dinh"><span class="ma">02·X</span><span class="nh nh-rejected">REJECTED</span></div>
+        <div class="w mo-di gach"><div class="col"><div class="grid4"><i class="fill mo"></i><i class="fill mo"></i><i class="fill mo"></i><i class="fill mo"></i></div></div></div>
+        <h3>Board N · O · P — ngôn ngữ thị giác IDFC</h3>
+        <p class="ghi">Hoà bác 20/08 chiều: <i>“đồ vẽ tay + ma trận mẫu vật + minh hoạ kiểu CAD ≠ trải nghiệm cao cấp”</i>. <b>CẤM thi công visual theo N/O/P.</b> Giữ làm tham chiếu kỹ thuật nội bộ.</p>
+        <p class="bang-chung">Bàn giao §2 · <code>mock-exs-{n,o,p}-*.html</code></p>
+      </article>
+
+      <article class="o la-do">
+        <div class="dinh"><span class="ma">02·Y</span><span class="nh nh-rejected">REJECTED</span></div>
+        <div class="w mo-di gach"><div class="col"><span class="bar" style="width:56%"></span><i class="fill mo"></i></div></div>
+        <h3>Board R/T · “Real Asset Quality Pass”</h3>
+        <p class="ghi">Đã bác, <b>đừng nhặt lại</b>. Thay bằng hướng ba tầng 02·A→C. Ghi ở đây để phiên sau không hồi sinh.</p>
+        <p class="bang-chung">Bàn giao §5 dòng đầu · <code>mock-exs-r-*, mock-exs-t-*</code></p>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ============ 03 ============ -->
+  <section class="at-nhom">
+    <header><span class="so">03</span><h2>SÁNG TÁC · BA CHẶNG</h2><span class="dem">4 khung</span></header>
+    <div class="at-luoi">
+
+      <article class="o">
+        <div class="dinh"><span class="ma">03·A</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w">
+          <span class="rail ba"></span>
+          <div class="col"><span class="bar" style="width:66%"></span><i class="fill mo"></i><span class="bar" style="width:38%"></span></div>
+          <span class="panel"></span>
+        </div>
+        <h3>2D Kỹ thuật · precise-flat</h3>
+        <p class="ghi">Empty-state đúng luật X2, gõ <b>W</b> ăn ngay. <span class="do">Hai lần bấm + Enter chưa sinh tường</span> — chưa quy được lỗi (tab hidden, rAF không chạy, canvas 304×152 trong khung 1057×611). Bug “lựa chọn ma sau xoá layer” đã tìm ra gốc và sửa.</p>
+        <p class="bang-chung">DEMO-SACH ④ = <b>PARTIAL</b> · D4: gốc thật là <code>lib/cad/store.ts:747 removeLayer</code>, không phải ⌘Z</p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">03·B</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w">
+          <span class="rail ba"></span>
+          <div class="col"><span class="bar" style="width:48%"></span><i class="fill mo"></i></div>
+        </div>
+        <h3>3D Thiết kế · Node ↔ Vẽ 3D</h3>
+        <p class="ghi">Mode Node mở đúng (React Flow, rail KHỐI·Tệp·Việc, empty-state làm-được-việc). <b>Mode viewport 3D chưa kiểm được</b> — cần rAF chạy thật.</p>
+        <p class="bang-chung">DEMO-SACH ⑤ = <b>PARTIAL</b></p>
+      </article>
+
+      <article class="o la-do">
+        <div class="dinh"><span class="ma">03·C</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w">
+          <div class="col"><span class="bar" style="width:34%"></span><i class="fill mo"></i></div>
+          <span class="trong">TRỐNG TRƠN</span>
+        </div>
+        <h3>Trình chiếu · editorial-cinematic</h3>
+        <p class="ghi"><span class="do">Chặng duy nhất bỏ trống thân trang</span> — không empty-state, không CTA, không thẻ “＋ Tạo hồ sơ trống”. Trái luật X2 và chốt 10/08, trong khi 2D và 3D đều làm đúng.</p>
+        <p class="bang-chung">DEMO-SACH ⑥ = <b>PARTIAL</b> · <code>/projects/[id]/present</code> · 41 nút hiện, 0 slide</p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">03·D</span><span class="nh nh-ready">READY-TO-CODE</span></div>
+        <div class="w">
+          <div class="col"><div class="grid4"><i class="fill nhan"></i><i class="fill mo"></i><i class="fill mo"></i><i class="fill nhan"></i></div><span class="bar nh" style="width:44%"></span></div>
+        </div>
+        <h3>Auto Grid — capability CỦA Present</h3>
+        <p class="ghi">Board J đã pass mắt: chọn khối → Layout Ghost mọc từ composition frame → alternatives ‹› → Compare/Apply/Undo, không đè vùng custom. <b>Code 0 dòng</b> (grep <code>AutoGrid|LayoutGhost</code> = 0). Không phải năng lực toàn app — đính chính 20/08.</p>
+        <p class="bang-chung">Bàn giao §1 + board <code>mock-exs-j-khung-moc.html</code> APPROVED</p>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ============ 04 ============ -->
+  <section class="at-nhom">
+    <header><span class="so">04</span><h2>SOÁT / HIỂU</h2><span class="dem">6 khung</span></header>
+    <div class="at-luoi">
+
+      <article class="o">
+        <div class="dinh"><span class="ma">04·A</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w">
+          <div class="col"><i class="fill mo"></i></div>
+          <span class="panel" style="width:44%; background:color-mix(in oklab, var(--sai) 20%, var(--vien))"></span>
+        </div>
+        <h3>Review · hai lớp Luật ↔ Góp ý</h3>
+        <p class="ghi">Panel sống, khung <code>lib/review</code> phân đúng hai lớp cho cả ba chặng. Chưa cắm vào <b>mọi</b> cửa chuyển công đoạn.</p>
+        <p class="bang-chung"><code>components/review/ReviewPanel.tsx</code> · <code>lib/review/luat/{cad,rules-3d,deck}.ts</code></p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">04·B</span><span class="nh nh-approved">APPROVED</span></div>
+        <div class="w">
+          <span class="apert"></span>
+          <div class="col" style="padding-top:8px"><i class="fill mo"></i></div>
+        </div>
+        <h3>Vitals Aperture · Ambient → Peek → Engage</h3>
+        <p class="ghi">Mép trên, engage mở từ <b>chính aperture</b> (V3 đã resolve). Biết im. Board E pass mắt, code sống.</p>
+        <p class="bang-chung">COHERENCE-SHELL: <code>VITALS = LIVE</code> · <code>studio/VitalsAperture.tsx</code> + <code>VitalsGesture</code> + <code>vitals-tin-hieu.ts</code></p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">04·C</span><span class="nh nh-ready">READY-TO-CODE</span></div>
+        <div class="w">
+          <div class="col"><i class="fill mo"></i></div>
+          <span class="panel" style="width:40%; background:linear-gradient(var(--vien) 0 18%, transparent 18% 22%, var(--vien) 22% 40%, transparent 40% 44%, var(--vien) 44% 62%, transparent 62% 66%, var(--vien) 66% 84%, transparent 84% 88%, var(--vien) 88% 100%)"></span>
+        </div>
+        <h3>Context Intelligence Stack (trục phải)</h3>
+        <p class="ghi">5 lens Selection/Vitals/History/Review/Output · Peek→Inspect→Deep · 5 mức sự thật. Luật chốt, board E pass. <b>Chưa có stack thật</b> — mới là các mảnh rời.</p>
+        <p class="bang-chung">Bàn giao §1 · grep <code>ContextIntelligence</code> = 0</p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">04·D</span><span class="nh nh-approved">APPROVED</span></div>
+        <div class="w">
+          <div class="col"><i class="fill nhan"></i><span class="bar" style="width:56%"></span><span class="bar" style="width:40%"></span></div>
+        </div>
+        <h3>Đang dùng ở đâu (Where-Used)</h3>
+        <p class="ghi">Trả đúng dự án trên app thật. Nút “Dùng cho dự án này” nay biết trạng thái đã gắn <b>ngay khi mở panel</b>, không phải bấm thử mới biết.</p>
+        <p class="bang-chung"><code>components/library/AssetWhereUsed.tsx</code> · <code>da-gan-du-an.ts</code> · PREFETCH-attach-state · API <code>/api/project-asset-usage</code> (500 đã vá)</p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">04·E</span><span class="nh nh-ready">READY-TO-CODE</span></div>
+        <div class="w">
+          <div class="col"><i class="fill"></i></div>
+          <div class="col"><span class="bar nh" style="width:80%"></span><i class="fill mo"></i></div>
+        </div>
+        <h3>Đi tới nguồn (Go-to-Source)</h3>
+        <p class="ghi">Cầu <code>handoff.ts</code> giữ id ổn định nên quan hệ nguồn <b>còn nguyên trong dữ liệu</b> — nhưng <span class="do">thiếu hẳn mặt hiển thị</span> bên trong Trình chiếu.</p>
+        <p class="bang-chung">LANE-C: Present Bridge = <b>PARTIAL</b>, chờ chốt chỗ ở của provenance cấp element</p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">04·F</span><span class="nh nh-ready">READY-TO-CODE</span></div>
+        <div class="w">
+          <div class="col"><i class="fill nhac"></i><div class="grid3"><i class="fill mo"></i><i class="fill mo"></i><i class="fill mo"></i></div></div>
+        </div>
+        <h3>Cũ / vùng ảnh hưởng (Stale · Blast Radius)</h3>
+        <p class="ghi">Ý niệm “cũ” đã lác đác trong code nhưng <b>chưa thành một ngôn ngữ</b>; vùng ảnh hưởng chưa tồn tại (grep <code>BlastRadius</code> = 0). Đây là điều kiện để Override≠Edit-Definition có nghĩa.</p>
+        <p class="bang-chung">grep <code>Stale|daCu</code> rải ở present-editor/cad · luật ở bàn giao §1</p>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ============ 05 ============ -->
+  <section class="at-nhom">
+    <header><span class="so">05</span><h2>KHOẢNH KHẮC NĂNG LỰC</h2><span class="dem">7 khung</span></header>
+    <div class="at-luoi">
+
+      <article class="o">
+        <div class="dinh"><span class="ma">05·A</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w">
+          <div class="col"><span class="bar nh" style="width:62%"></span><div class="grid2"><i class="fill nhan"></i><i class="fill mo"></i><i class="fill mo"></i><i class="fill mo"></i></div></div>
+        </div>
+        <h3>Dựng ảnh (Visual Generate)</h3>
+        <p class="ghi">Lát cắt dọc P0 chạy trên app thật, 16 nhóm kiểm PASS. <b>Bố cục toolbelt vẫn chờ mắt Hoà</b> (board Q designed, chưa duyệt).</p>
+        <p class="bang-chung">LANE-A-visual-generate: BROWSER PASS 1440×900 · <code>lib/capabilities/visual-generate.ts</code> · gate mở #2</p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">05·B</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w">
+          <div class="col"><div class="grid2"><i class="fill"></i><i class="fill nhan"></i></div><span class="bar" style="width:34%"></span></div>
+        </div>
+        <h3>Sửa có kiểm soát (mask · giữ vùng)</h3>
+        <p class="ghi">Engine transform + mask có thật, nhưng chưa có một khoảnh khắc thống nhất “chọn vùng → sửa → so trước/sau” theo luật Master/Compound.</p>
+        <p class="bang-chung"><code>lib/capabilities/compound.ts</code> (6 năng lực, working set 4–8) · mặt chưa hợp nhất</p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">05·C</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w">
+          <div class="col"><i class="fill"></i></div>
+          <div class="col"><i class="fill nhac"></i><span class="bar" style="width:70%"></span></div>
+        </div>
+        <h3>Ảnh → Khối / Spec (Image→3D)</h3>
+        <p class="ghi">Lõi + cửa duyệt + cổng BOQ chạy, có test, tsc sạch. <span class="do">Hai nửa không cùng hạng</span>: <code>measureObjectTiered</code> chạy từ ảnh trần, <code>idfc.fromPhoto</code> thì không.</p>
+        <p class="bang-chung">LANE-B-image-to-3d = <b>PARTIAL</b> · <code>lib/capabilities/image-to-3d.ts</code></p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">05·D</span><span class="nh nh-approved">APPROVED</span></div>
+        <div class="w">
+          <div class="col"><i class="fill dat" style="flex:2"></i><div class="grid3"><i class="fill mo"></i><i class="fill mo"></i><i class="fill mo"></i></div></div>
+        </div>
+        <h3>Kết xuất (Render + hàng đợi)</h3>
+        <p class="ghi">Chụp khung nhìn sống → bản ghi có gia phả → dải kết quả, thấy tận mắt. Nhánh AI đã nối hàng đợi nhưng <b>chưa tiêu credit lần nào</b> — khai thật.</p>
+        <p class="bang-chung">LANE-C: Render = <b>LIVE</b> · <code>render-queue-store.ts</code> 421 dòng, tiến trình là số thật từ <code>runNode()</code></p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">05·E</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w">
+          <div class="col"><span class="bar" style="width:80%"></span><div class="grid4"><i class="fill mo"></i><i class="fill mo"></i><i class="fill nhac"></i><i class="fill mo"></i></div></div>
+        </div>
+        <h3>Chuyển động (Motion)</h3>
+        <p class="ghi">Dây đủ: ảnh đã Nhận → <code>ai.image2video</code> → hàng đợi, có gia phả và kế thừa <code>sceneRev</code>. <b>Chưa chạy sống lần nào.</b></p>
+        <p class="bang-chung">LANE-C: Motion = <b>PARTIAL</b></p>
+      </article>
+
+      <article class="o la-do">
+        <div class="dinh"><span class="ma">05·F</span><span class="nh nh-needs">NEEDS-HOÀ</span></div>
+        <div class="w gach"><div class="col"><span class="bar" style="width:52%"></span><i class="fill mo"></i></div></div>
+        <h3>Cổng Spec · chuỗi khung (Sequence)</h3>
+        <p class="ghi"><span class="do">BLOCKED, không làm gì được.</span> <code>captureSequence</code> cần <code>CamPathResult</code>, mà <code>CamPathPreview</code>/<code>CamPathControlPanel</code> <b>chưa wire vào chặng nào</b> — nợ cũ từ sổ 00-CHOT. Nối nó là một phiếu riêng.</p>
+        <p class="bang-chung">LANE-C: Sequence = <b>BLOCKED</b></p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">05·G</span><span class="nh nh-ready">READY-TO-CODE</span></div>
+        <div class="w">
+          <div class="col"><div class="grid2"><i class="fill nhan"></i><i class="fill mo"></i><i class="fill mo"></i><i class="fill nhan"></i></div></div>
+          <div class="col" style="max-width:24%"><span class="bar nh"></span><span class="bar"></span><span class="bar"></span></div>
+        </div>
+        <h3>Tự dàn trang (Layout Ghost + alternatives)</h3>
+        <p class="ghi">Mặt tương tác của 03·D. Luật chốt đủ chi tiết để code: ghost mọc từ composition frame, ‹› đổi phương án, Compare/Apply/Undo, <b>không đè vùng người dùng đã sửa tay</b>.</p>
+        <p class="bang-chung">Board J APPROVED · code 0 dòng</p>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ============ 06 ============ -->
+  <section class="at-nhom">
+    <header><span class="so">06</span><h2>HỆ THỐNG</h2><span class="dem">4 khung</span></header>
+    <div class="at-luoi">
+
+      <article class="o">
+        <div class="dinh"><span class="ma">06·A</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w">
+          <span class="rail ba"></span>
+          <div class="col"><i class="fill mo" style="flex:2"></i><div class="grid4"><i class="fill"></i><i class="fill"></i><i class="fill"></i><i class="fill"></i></div></div>
+        </div>
+        <h3>Hồ sơ cá nhân · avatar</h3>
+        <p class="ghi">Mục <b>Cá nhân</b> trên rail trỏ trang thật <code>/settings/avatar</code> (không phải nút giả). Bản thân màn avatar chưa đi qua pass thị giác EXS.</p>
+        <p class="bang-chung">EXS-BUILD-1 · <code>components/avatar/AvatarBuilder.tsx</code></p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">06·B</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w">
+          <div class="col"><span class="bar nh" style="width:30%"></span><div class="grid3"><i class="fill mo"></i><i class="fill mo"></i><i class="fill mo"></i></div></div>
+        </div>
+        <h3>Credit · giá trước khi chạy</h3>
+        <p class="ghi">Phanh đã có: <code>estimateRunCredit</code> nói giá <b>trước</b> khi chạy, node <code>done</code> cache-skip không tính lại. Mặt hiển thị nằm rải ở Dashboard/AccountMenu — chưa có một chỗ ngồi.</p>
+        <p class="bang-chung">grep <code>Credit</code>: <code>Dashboard.tsx</code> · <code>AccountMenu.tsx</code> · <code>MobileMenu.tsx</code></p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">06·C</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w">
+          <span class="rail"></span>
+          <div class="col"><span class="bar" style="width:60%"></span><span class="bar" style="width:44%"></span><span class="bar" style="width:52%"></span><i class="fill mo"></i></div>
+        </div>
+        <h3>Cài đặt (7 màn)</h3>
+        <p class="ghi">Sống và đủ dùng. <span class="do">Còn thiếu đúng một thứ đã chốt:</span> đơn vị đo + tỉ lệ cấp toàn app — không màn nào có, <code>unitSystem</code> grep = 0, mm gõ cứng rải rác.</p>
+        <p class="bang-chung">Sổ 15/08 entry <code>don-vi-ty-le-toan-app</code> · <code>app/settings/**</code></p>
+      </article>
+
+      <article class="o la-do">
+        <div class="dinh"><span class="ma">06·X</span><span class="nh nh-legacy">LEGACY</span></div>
+        <div class="w mo-di"><div class="col"><span class="bar" style="width:70%"></span><div class="grid4"><i class="fill"></i><i class="fill"></i><i class="fill"></i><i class="fill"></i></div></div></div>
+        <h3>Dashboard cũ — cửa vào thứ hai</h3>
+        <p class="ghi">Vẫn mount, vẫn là một đường vào dự án song song với Home. <b>Không giấu:</b> đây là chỗ lệch thế hệ rõ nhất còn lại ở nhóm 01. Kèm: docstring <code>StageSwitcher</code> còn tự khai “trục điều hướng duy nhất” — câu đó đã lỗi thời từ 16/08.</p>
+        <p class="bang-chung"><code>components/Dashboard.tsx:416</code> · <code>studio/StageSwitcher.tsx</code></p>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ============ 07 ============ -->
+  <section class="at-nhom">
+    <header><span class="so">07</span><h2>TRẠNG THÁI · một ngôn ngữ cho cả app</h2><span class="dem">11 khung</span></header>
+    <div class="at-luoi">
+
+      <article class="o">
+        <div class="dinh"><span class="ma">07·01</span><span class="nh nh-approved">APPROVED</span></div>
+        <div class="w"><div class="col"><span class="bar nh" style="width:40%"></span><i class="fill nhan"></i></div></div>
+        <h3>Ngày số không</h3>
+        <p class="ghi">Một cửa vào duy nhất, không bày lưới rỗng.</p>
+        <p class="bang-chung">LANE-A VIỆC 1 = <b>LIVE</b></p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">07·02</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w"><div class="col"><i class="fill mo"></i></div><span class="trong">TRỐNG</span></div>
+        <h3>Trống · làm-được-việc tại chỗ</h3>
+        <p class="ghi">2D và 3D làm đúng (câu + 2 nút). <span class="do">Trình chiếu bỏ trống hoàn toàn</span> ⇒ chưa phải một ngôn ngữ chung.</p>
+        <p class="bang-chung">DEMO-SACH ④⑤ đúng · ⑥ trống trơn</p>
+      </article>
+
+      <article class="o la-do">
+        <div class="dinh"><span class="ma">07·03</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w"><div class="col"><span class="bar" style="width:30%"></span><i class="fill mo"></i></div></div>
+        <h3>Đang tải</h3>
+        <p class="ghi">Bốn trạng thái Home đã dựng và đo 2 theme. <span class="do">Nhưng Home vẫn đứng spinner trắng khi <code>/api/auth/me</code> chậm — đo được 127 giây một lượt</span>: không skeleton, không timeout, không câu nào.</p>
+        <p class="bang-chung">LANE-A: 4 trạng thái <b>LIVE</b> · DEMO-SACH ① bắt lỗ này</p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">07·04</span><span class="nh nh-approved">APPROVED</span></div>
+        <div class="w"><div class="col"><i class="fill sai"></i><span class="bar" style="width:50%"></span></div></div>
+        <h3>Lỗi</h3>
+        <p class="ghi">Nói được chuyện gì hỏng, có đường ra.</p>
+        <p class="bang-chung">LANE-A: 4 trạng thái <b>LIVE</b> · <code>components/home/TrangThaiO.tsx</code></p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">07·05</span><span class="nh nh-approved">APPROVED</span></div>
+        <div class="w"><div class="col"><i class="fill mo"></i><span class="bar" style="width:36%"></span></div></div>
+        <h3>Ngoại tuyến</h3>
+        <p class="ghi">Local-first: mất mạng không làm app chết, chỉ thu năng lực.</p>
+        <p class="bang-chung">LANE-A <b>LIVE</b> · grep <code>offline</code>: ProjectSelect · ProjectOverviewCard · AiBriefPanel</p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">07·06</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w gach"><div class="col"><i class="fill mo"></i></div></div>
+        <h3>Không hỗ trợ</h3>
+        <p class="ghi">Cửa Files trả <b>415</b> kèm câu server đo được cho DWG/DXF — nói thật, không giả vờ nhận. Chưa nhân ra các cửa khác.</p>
+        <p class="bang-chung">COHERENCE-FILES ⑩ (415 thật, đo trên app)</p>
+      </article>
+
+      <article class="o la-do">
+        <div class="dinh"><span class="ma">07·07</span><span class="nh nh-needs">NEEDS-HOÀ</span></div>
+        <div class="w gach"><div class="col"><i class="fill nhac"></i></div></div>
+        <h3>Cần xem lại</h3>
+        <p class="ghi"><span class="do">Không có chỗ lưu.</span> <code>daXem</code> chưa có cột ⇒ máy chủ không cưỡng chế được. Đã khai thẳng hợp đồng “Promote KHÔNG đòi duyệt” thay vì dựng một cổng giả.</p>
+        <p class="bang-chung">LANE-B-promote-quality: review contract <b>BLOCKED</b> — schema là cửa của Hoà</p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">07·08</span><span class="nh nh-needs">NEEDS-HOÀ</span></div>
+        <div class="w gach"><div class="col"><i class="fill dat"></i></div></div>
+        <h3>Đã kiểm (Verified)</h3>
+        <p class="ghi">Cờ tồn tại trong lõi (<code>image-to-3d</code>, <code>idfc-import</code>) nhưng <b>chưa có mặt hiển thị nhất quán</b>, và bị chặn cùng 07·07.</p>
+        <p class="bang-chung">grep <code>Verified|daKiem</code>: chỉ ở <code>lib/</code>, 0 ở <code>components/</code></p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">07·09</span><span class="nh nh-inprogress">IN-PROGRESS</span></div>
+        <div class="w"><div class="col"><i class="fill"></i></div><div class="col"><i class="fill nhan"></i></div></div>
+        <h3>Dẫn xuất (Derived)</h3>
+        <p class="ghi">Gia phả có thật ở promote và render (nguồn · hash · <code>sceneRev</code>). Chưa đọc được ở phía Trình chiếu — xem 04·E.</p>
+        <p class="bang-chung">LANE-B promote metadata <b>LIVE</b> · LANE-C bridge <b>PARTIAL</b></p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">07·10</span><span class="nh nh-approved">APPROVED</span></div>
+        <div class="w"><div class="col"><i class="fill nhac"></i><span class="bar" style="width:44%"></span></div></div>
+        <h3>Suy ra (Inferred)</h3>
+        <p class="ghi">Cờ ba nấc sống thật trên mặt vật liệu — máy suy thì nói là máy suy, không giả vờ đã đo.</p>
+        <p class="bang-chung"><code>materials/ChiBaoBaMat.tsx</code> · <code>BaMatPanel.tsx</code> · <code>MaterialPbrEditor.tsx</code></p>
+      </article>
+
+      <article class="o">
+        <div class="dinh"><span class="ma">07·11</span><span class="nh nh-ready">READY-TO-CODE</span></div>
+        <div class="w mo-di"><div class="col"><i class="fill mo"></i><span class="bar" style="width:60%"></span></div></div>
+        <h3>Cũ (Stale)</h3>
+        <p class="ghi">Rải rác trong present-editor và cad theo nghĩa riêng của từng chỗ. <b>Chưa là một trạng thái của hệ</b> — mà không có nó thì Override≠Edit-Definition không nói được gì.</p>
+        <p class="bang-chung">grep <code>Stale|daCu</code> · luật 5 mức sự thật ở bàn giao §1</p>
+      </article>
+
+    </div>
+  </section>
+
+  <footer class="at-chan">
+    <h3>Đọc tường này thế nào</h3>
+    <ul>
+      <li><b>Chỗ lệch thế hệ rõ nhất:</b> nhóm 02 gần như trắng (BROWSE / Passport / Verify đều 0 dòng code) trong khi nhóm 01 và 05 đã có bề mặt sống — Thư viện đang là mảng tụt xa nhất so với phần còn lại.</li>
+      <li><b>Ba thứ bị chặn bởi cửa người, không phải bởi kỹ thuật:</b> 02·D + 07·07 + 07·08 cùng chặn ở một chỗ — <code>daXem</code> không có nơi lưu. Một quyết định schema mở được cả ba.</li>
+      <li><b>Ba thứ đã chốt luật mà code 0 dòng:</b> 03·D/05·G Auto Grid · 04·C Context Stack · 04·E Go-to-Source. Đây là phần “vẽ xong chưa xây”, rẻ nhất để đi tiếp.</li>
+      <li><b>Không giấu:</b> 02·E LibrarySheet cũ · 06·X Dashboard cửa thứ hai · 03·C Trình chiếu trống · 07·03 spinner trắng 127&nbsp;s — bốn chỗ xấu vẫn nằm trên tường đúng chỗ của chúng.</li>
+      <li><b>Nhãn không đoán:</b> ô nào không tra được sự thật thì ghi NEEDS-HOÀ, không ô nào được APPROVED bằng suy diễn. Nguồn: <code>docs/bao-cao-phien/2026-08-20-*.md</code> · <code>ls components/**</code> · grep 20/08.</li>
+    </ul>
+  </footer>
+
+</div>

@@ -1,0 +1,39 @@
+{
+  "thang": {
+    "w": 400,
+    "h": 858,
+    "x": 1200,
+    "y": 42
+  },
+  "dai": {
+    "w": 960,
+    "h": 420,
+    "x": 240,
+    "y": 42
+  },
+  "vat": {
+    "w": 848,
+    "h": 462,
+    "x": 296,
+    "y": 210
+  },
+  "nguCanh": {
+    "w": 848,
+    "h": 184,
+    "x": 296,
+    "y": 704
+  },
+  "soKeBen": 3,
+  "soONen": 5,
+  "soThan": 1,
+  "cauKhiGoi": "còn 6 việc và 11 dự án đang ngủ",
+  "nhanTrenAnh": 2,
+  "demo": true,
+  "cuonNgang": false,
+  "hangTran": [],
+  "thangCuon": {
+    "scroll": 858,
+    "client": 858,
+    "tran": false
+  }
+}

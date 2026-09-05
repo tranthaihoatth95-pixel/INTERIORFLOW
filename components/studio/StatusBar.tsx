@@ -7,10 +7,15 @@
  * Gom chỉ báo trước đây rải rác mỗi chặng một kiểu vào MỘT chỗ, 3 vùng cố định:
  *   TRÁI  — ngữ cảnh: tên dự án (flowName, lib/store.ts — DÙNG CHUNG cả 3 chặng) · toạ độ
  *           con trỏ (chỉ CAD, lib/cad/live-status.ts, đã throttle 100ms).
- *   GIỮA  — VITALS, điểm gọi CHÍNH THỨC: rê chuột vào → nở ô nhập (hover-to-expand, 150ms,
- *           kiểu Siri macOS) · bấm (hoặc Enter) → mở popover đầy đủ (VitalsGesturePanel, neo
- *           'statusbar', xổ LÊN). ⌘J/Ctrl+J (đăng ký ở StageSwitcher.tsx) cũng neo vào đây.
- *           Cảm ứng/di động: GIỮ NGUYÊN cử chỉ kéo từ vùng 3 chặng (StageSwitcher, không sửa).
+ *   GIỮA  — Ô GÕ NHANH cho Vitals: rê chuột vào → nở ô nhập (hover-to-expand, 150ms, kiểu Siri
+ *           macOS) · bấm (hoặc Enter) → gọi `useVitalsUi.open(câu hỏi, autoSend)`.
+ *           🔴 ĐÍNH CHÍNH 04/09 — câu cũ ghi ô này "mở popover đầy đủ ... neo 'statusbar', xổ
+ *           LÊN" và "⌘J đăng ký ở StageSwitcher": CẢ HAI ĐỀU SAI TỪ 17/08. `anchor` bỏ từ 05/08,
+ *           còn `StageSwitcher` bị gỡ khỏi header 17/08 nên panel nó mount **không còn tồn tại**
+ *           ⇒ ô này gọi `open()` vào hư không: **gõ Enter là MẤT CÂU HỎI**. Nay panel là mức ③
+ *           của khẩu độ mép trên `components/studio/VitalsAperture.tsx`, và ⌘J đăng ký ở đó.
+ *           Ô gõ nhanh GIỮ NGUYÊN — nó là cơ chế riêng (gõ thẳng, không phải mở panel rồi mới
+ *           gõ), không phải bản sao của panel.
  *   PHẢI  — trạng thái hệ thống: hàng đợi render (chỉ Render, lib/store.ts flowRuns — 2.2.86,
  *           30/07: đơn vị là FlowRun/lượt chạy, không phải Job/node lẻ) · đang lưu/
  *           đã lưu (CAD + Present, lib/save-status.ts — bám autosaver có sẵn) · số vi phạm quy
@@ -94,9 +99,10 @@ export default function StatusBar({ stage, hidden }: Props) {
   const diskMessage = useSaveStatus((s) => s.diskMessage);
   const otherTabOpen = useProjectPresence((s) => s.otherTabOpen);
 
-  // 05/08 — panel Vitals nay mount DUY NHẤT ở `StageSwitcher.tsx` (ổ ① header). Ở đây chỉ ĐỌC
-  // `panelOpen` để ô gõ nhanh không tự co lại khi panel đang mở, và gọi `open()` khi người dùng
-  // gửi câu hỏi. KHÔNG mount panel (xem lib/vitals-ui.ts + SO-KIEM-TONG §1).
+  // Panel Vitals mount DUY NHẤT ở `components/studio/VitalsAperture.tsx` (khẩu độ mép trên,
+  // EXS §7 — sửa 04/09; trước đó dòng này ghi `StageSwitcher.tsx`, nơi đã không còn được mount).
+  // Ở đây chỉ ĐỌC `panelOpen` để ô gõ nhanh không tự co lại khi panel đang mở, và gọi `open()`
+  // khi người dùng gửi câu hỏi. KHÔNG mount panel (xem lib/vitals-ui.ts + SO-KIEM-TONG §1).
   const panelOpen = useVitalsUi((s) => s.panelOpen);
   const openVitals = useVitalsUi((s) => s.open);
 
@@ -258,11 +264,12 @@ export default function StatusBar({ stage, hidden }: Props) {
                   }
                 }}
                 placeholder="Hỏi Vitals…"
+                /* ring TRONG: ô nằm trong vỏ pill của thanh trạng thái — ring ngoài đè viền vỏ */
+                className="if-focus-inset"
                 style={{
                   flex: 1,
                   minWidth: 0,
                   border: 'none',
-                  outline: 'none',
                   background: 'transparent',
                   color: 'var(--t1)',
                   fontSize: 11.5,
@@ -286,10 +293,10 @@ export default function StatusBar({ stage, hidden }: Props) {
         </div>
 
         {/* 05/08 — ĐÃ GỠ `<VitalsGesturePanel>` khỏi đây (Hoà chốt: giữ MỘT bản ở header).
-            Panel mount duy nhất tại `StageSwitcher.tsx`; ô gõ nhanh trên đây gọi `openVitals()`
-            và panel ở header nhận `initialInput`/`autoSend`. Ô gõ + hover-nở kiểu Siri GIỮ
-            NGUYÊN — đó là cơ chế riêng (gõ thẳng, không phải mở panel rồi mới gõ), không phải
-            bản sao của panel. */}
+            04/09 — panel mount duy nhất nay tại `components/studio/VitalsAperture.tsx` (khẩu độ
+            mép trên); ô gõ nhanh trên đây gọi `openVitals()` và khẩu độ nhận `initialInput`/
+            `autoSend`. Ô gõ + hover-nở kiểu Siri GIỮ NGUYÊN — đó là cơ chế riêng (gõ thẳng,
+            không phải mở panel rồi mới gõ), không phải bản sao của panel. */}
       </div>
 
       {/* PHẢI — trạng thái hệ thống. A2 (DS-A 14/08): `overflow:hidden` cùng lý do cánh trái —

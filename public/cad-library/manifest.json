@@ -64,7 +64,10 @@
       "file": "/cad-library/phong-khach/living-sofa-2seat.dxf",
       "thumb": "/cad-library/phong-khach/living-sofa-2seat.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 800
     },
     {
       "id": "living-sofa-3seat",
@@ -76,7 +79,10 @@
       "file": "/cad-library/phong-khach/living-sofa-3seat.dxf",
       "thumb": "/cad-library/phong-khach/living-sofa-3seat.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 800
     },
     {
       "id": "living-sofa-lshape",
@@ -88,7 +94,10 @@
       "file": "/cad-library/phong-khach/living-sofa-lshape.dxf",
       "thumb": "/cad-library/phong-khach/living-sofa-lshape.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 800
     },
     {
       "id": "living-armchair",
@@ -100,7 +109,10 @@
       "file": "/cad-library/phong-khach/living-armchair.dxf",
       "thumb": "/cad-library/phong-khach/living-armchair.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 750
     },
     {
       "id": "living-coffee-table",
@@ -112,7 +124,10 @@
       "file": "/cad-library/phong-khach/living-coffee-table.dxf",
       "thumb": "/cad-library/phong-khach/living-coffee-table.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 400
     },
     {
       "id": "living-tv-console",
@@ -124,7 +139,10 @@
       "file": "/cad-library/phong-khach/living-tv-console.dxf",
       "thumb": "/cad-library/phong-khach/living-tv-console.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 400
     },
     {
       "id": "living-bookshelf",
@@ -136,7 +154,10 @@
       "file": "/cad-library/phong-khach/living-bookshelf.dxf",
       "thumb": "/cad-library/phong-khach/living-bookshelf.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 1800
     },
     {
       "id": "dining-table-4",
@@ -148,7 +169,10 @@
       "file": "/cad-library/phong-an/dining-table-4.dxf",
       "thumb": "/cad-library/phong-an/dining-table-4.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 750
     },
     {
       "id": "dining-table-6",
@@ -160,7 +184,10 @@
       "file": "/cad-library/phong-an/dining-table-6.dxf",
       "thumb": "/cad-library/phong-an/dining-table-6.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 750
     },
     {
       "id": "dining-table-round-4",
@@ -172,7 +199,10 @@
       "file": "/cad-library/phong-an/dining-table-round-4.dxf",
       "thumb": "/cad-library/phong-an/dining-table-round-4.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 750
     },
     {
       "id": "dining-bar-stool",
@@ -184,7 +214,10 @@
       "file": "/cad-library/phong-an/dining-bar-stool.dxf",
       "thumb": "/cad-library/phong-an/dining-bar-stool.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 750
     },
     {
       "id": "dining-sideboard",
@@ -196,7 +229,10 @@
       "file": "/cad-library/phong-an/dining-sideboard.dxf",
       "thumb": "/cad-library/phong-an/dining-sideboard.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 800
     },
     {
       "id": "bed-single",
@@ -208,7 +244,10 @@
       "file": "/cad-library/phong-ngu/bed-single.dxf",
       "thumb": "/cad-library/phong-ngu/bed-single.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 500
     },
     {
       "id": "bed-double",
@@ -220,7 +259,10 @@
       "file": "/cad-library/phong-ngu/bed-double.dxf",
       "thumb": "/cad-library/phong-ngu/bed-double.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 500
     },
     {
       "id": "bed-queen",
@@ -232,7 +274,10 @@
       "file": "/cad-library/phong-ngu/bed-queen.dxf",
       "thumb": "/cad-library/phong-ngu/bed-queen.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 500
     },
     {
       "id": "bed-king",
@@ -244,7 +289,10 @@
       "file": "/cad-library/phong-ngu/bed-king.dxf",
       "thumb": "/cad-library/phong-ngu/bed-king.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 500
     },
     {
       "id": "bedroom-nightstand",
@@ -256,7 +304,10 @@
       "file": "/cad-library/phong-ngu/bedroom-nightstand.dxf",
       "thumb": "/cad-library/phong-ngu/bedroom-nightstand.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 500
     },
     {
       "id": "bedroom-wardrobe-2door",
@@ -268,7 +319,10 @@
       "file": "/cad-library/phong-ngu/bedroom-wardrobe-2door.dxf",
       "thumb": "/cad-library/phong-ngu/bedroom-wardrobe-2door.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "millwork",
+      "hUp": 2200
     },
     {
       "id": "bedroom-wardrobe-3door",
@@ -280,7 +334,10 @@
       "file": "/cad-library/phong-ngu/bedroom-wardrobe-3door.dxf",
       "thumb": "/cad-library/phong-ngu/bedroom-wardrobe-3door.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "millwork",
+      "hUp": 2200
     },
     {
       "id": "bedroom-dresser",
@@ -292,7 +349,10 @@
       "file": "/cad-library/phong-ngu/bedroom-dresser.dxf",
       "thumb": "/cad-library/phong-ngu/bedroom-dresser.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 800
     },
     {
       "id": "kitchen-sink",
@@ -304,7 +364,10 @@
       "file": "/cad-library/bep/kitchen-sink.dxf",
       "thumb": "/cad-library/bep/kitchen-sink.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "fixture",
+      "hUp": 200
     },
     {
       "id": "kitchen-stove-4",
@@ -316,7 +379,10 @@
       "file": "/cad-library/bep/kitchen-stove-4.dxf",
       "thumb": "/cad-library/bep/kitchen-stove-4.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "fixture",
+      "hUp": 100
     },
     {
       "id": "kitchen-fridge",
@@ -328,7 +394,10 @@
       "file": "/cad-library/bep/kitchen-fridge.dxf",
       "thumb": "/cad-library/bep/kitchen-fridge.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "fixture",
+      "hUp": 1800
     },
     {
       "id": "kitchen-island",
@@ -340,7 +409,10 @@
       "file": "/cad-library/bep/kitchen-island.dxf",
       "thumb": "/cad-library/bep/kitchen-island.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "millwork",
+      "hUp": 900
     },
     {
       "id": "kitchen-cabinet-l",
@@ -352,7 +424,10 @@
       "file": "/cad-library/bep/kitchen-cabinet-l.dxf",
       "thumb": "/cad-library/bep/kitchen-cabinet-l.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "millwork",
+      "hUp": 900
     },
     {
       "id": "bath-toilet",
@@ -364,7 +439,10 @@
       "file": "/cad-library/ve-sinh/bath-toilet.dxf",
       "thumb": "/cad-library/ve-sinh/bath-toilet.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "fixture",
+      "hUp": 780
     },
     {
       "id": "bath-bidet",
@@ -376,7 +454,10 @@
       "file": "/cad-library/ve-sinh/bath-bidet.dxf",
       "thumb": "/cad-library/ve-sinh/bath-bidet.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "fixture",
+      "hUp": 400
     },
     {
       "id": "bath-lavabo",
@@ -388,7 +469,10 @@
       "file": "/cad-library/ve-sinh/bath-lavabo.dxf",
       "thumb": "/cad-library/ve-sinh/bath-lavabo.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "fixture",
+      "hUp": 850
     },
     {
       "id": "bath-bathtub",
@@ -400,7 +484,10 @@
       "file": "/cad-library/ve-sinh/bath-bathtub.dxf",
       "thumb": "/cad-library/ve-sinh/bath-bathtub.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "fixture",
+      "hUp": 600
     },
     {
       "id": "bath-shower",
@@ -412,7 +499,10 @@
       "file": "/cad-library/ve-sinh/bath-shower.dxf",
       "thumb": "/cad-library/ve-sinh/bath-shower.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "fixture",
+      "hUp": 2000
     },
     {
       "id": "arch-door-single",
@@ -424,7 +514,9 @@
       "file": "/cad-library/cua/arch-door-single.dxf",
       "thumb": "/cad-library/cua/arch-door-single.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "kien-truc",
+      "hUp": 2200
     },
     {
       "id": "arch-door-double",
@@ -436,7 +528,9 @@
       "file": "/cad-library/cua/arch-door-double.dxf",
       "thumb": "/cad-library/cua/arch-door-double.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "kien-truc",
+      "hUp": 2200
     },
     {
       "id": "arch-door-sliding",
@@ -448,7 +542,9 @@
       "file": "/cad-library/cua/arch-door-sliding.dxf",
       "thumb": "/cad-library/cua/arch-door-sliding.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "kien-truc",
+      "hUp": 2200
     },
     {
       "id": "arch-window-single",
@@ -460,7 +556,9 @@
       "file": "/cad-library/cua/arch-window-single.dxf",
       "thumb": "/cad-library/cua/arch-window-single.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "kien-truc",
+      "hUp": 1400
     },
     {
       "id": "arch-window-double",
@@ -472,7 +570,9 @@
       "file": "/cad-library/cua/arch-window-double.dxf",
       "thumb": "/cad-library/cua/arch-window-double.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "kien-truc",
+      "hUp": 1400
     },
     {
       "id": "arch-window-bay",
@@ -484,7 +584,9 @@
       "file": "/cad-library/cua/arch-window-bay.dxf",
       "thumb": "/cad-library/cua/arch-window-bay.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "kien-truc",
+      "hUp": 1400
     },
     {
       "id": "plant-pot-small",
@@ -496,7 +598,9 @@
       "file": "/cad-library/cay-canh/plant-pot-small.dxf",
       "thumb": "/cad-library/cay-canh/plant-pot-small.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "phu-canh",
+      "hUp": 400
     },
     {
       "id": "plant-pot-large",
@@ -508,7 +612,9 @@
       "file": "/cad-library/cay-canh/plant-pot-large.dxf",
       "thumb": "/cad-library/cay-canh/plant-pot-large.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "phu-canh",
+      "hUp": 800
     },
     {
       "id": "plant-tree-top",
@@ -520,7 +626,9 @@
       "file": "/cad-library/cay-canh/plant-tree-top.dxf",
       "thumb": "/cad-library/cay-canh/plant-tree-top.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "phu-canh",
+      "hUp": 3000
     },
     {
       "id": "vehicle-car-sedan",
@@ -532,7 +640,9 @@
       "file": "/cad-library/xe/vehicle-car-sedan.dxf",
       "thumb": "/cad-library/xe/vehicle-car-sedan.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "phu-canh",
+      "hUp": 1450
     },
     {
       "id": "vehicle-car-suv",
@@ -544,7 +654,9 @@
       "file": "/cad-library/xe/vehicle-car-suv.dxf",
       "thumb": "/cad-library/xe/vehicle-car-suv.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "phu-canh",
+      "hUp": 1750
     },
     {
       "id": "stairs-straight",
@@ -556,7 +668,9 @@
       "file": "/cad-library/cau-thang/stairs-straight.dxf",
       "thumb": "/cad-library/cau-thang/stairs-straight.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "kien-truc",
+      "hUp": 3000
     },
     {
       "id": "stairs-l-shape",
@@ -568,7 +682,9 @@
       "file": "/cad-library/cau-thang/stairs-l-shape.dxf",
       "thumb": "/cad-library/cau-thang/stairs-l-shape.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "kien-truc",
+      "hUp": 3000
     },
     {
       "id": "column-square",
@@ -580,7 +696,9 @@
       "file": "/cad-library/cot/column-square.dxf",
       "thumb": "/cad-library/cot/column-square.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "kien-truc",
+      "hUp": 3000
     },
     {
       "id": "column-round",
@@ -592,7 +710,9 @@
       "file": "/cad-library/cot/column-round.dxf",
       "thumb": "/cad-library/cot/column-round.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "kien-truc",
+      "hUp": 3000
     },
     {
       "id": "symbol-north",
@@ -604,7 +724,8 @@
       "file": "/cad-library/ky-hieu/symbol-north.dxf",
       "thumb": "/cad-library/ky-hieu/symbol-north.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "ky-hieu"
     },
     {
       "id": "ban-lam-viec-1400x700",
@@ -616,7 +737,10 @@
       "file": "/cad-library/van-phong/ban-lam-viec-1400x700.dxf",
       "thumb": "/cad-library/van-phong/ban-lam-viec-1400x700.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 750
     },
     {
       "id": "ban-lam-viec-1200x600",
@@ -628,7 +752,10 @@
       "file": "/cad-library/van-phong/ban-lam-viec-1200x600.dxf",
       "thumb": "/cad-library/van-phong/ban-lam-viec-1200x600.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 750
     },
     {
       "id": "ghe-xoay",
@@ -640,7 +767,10 @@
       "file": "/cad-library/van-phong/ghe-xoay.dxf",
       "thumb": "/cad-library/van-phong/ghe-xoay.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 1000
     },
     {
       "id": "vach-ngan-1400",
@@ -652,7 +782,10 @@
       "file": "/cad-library/van-phong/vach-ngan-1400.dxf",
       "thumb": "/cad-library/van-phong/vach-ngan-1400.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "fitout",
+      "hUp": 1200
     },
     {
       "id": "vach-ngan-1200",
@@ -664,7 +797,10 @@
       "file": "/cad-library/van-phong/vach-ngan-1200.dxf",
       "thumb": "/cad-library/van-phong/vach-ngan-1200.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "fitout",
+      "hUp": 1200
     },
     {
       "id": "tu-ho-so-thap-800",
@@ -676,7 +812,10 @@
       "file": "/cad-library/van-phong/tu-ho-so-thap-800.dxf",
       "thumb": "/cad-library/van-phong/tu-ho-so-thap-800.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 750
     },
     {
       "id": "tu-ho-so-thap-1200",
@@ -688,7 +827,10 @@
       "file": "/cad-library/van-phong/tu-ho-so-thap-1200.dxf",
       "thumb": "/cad-library/van-phong/tu-ho-so-thap-1200.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 750
     },
     {
       "id": "tu-ho-so-cao-800",
@@ -700,7 +842,12 @@
       "file": "/cad-library/van-phong/tu-ho-so-cao-800.dxf",
       "thumb": "/cad-library/van-phong/tu-ho-so-cao-800.svg",
       "source": "tự dựng (nguyên bản, theo phong cách lib/cad/furniture.ts)",
-      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)"
+      "license": "CC0 — tự do sử dụng/sửa/phân phối (tài sản gốc của dự án InteriorFlow)",
+      "nhomVat": "mua-sam",
+      "kind": "furniture",
+      "hUp": 1800
     }
-  ]
+  ],
+  "hUpNote": "hUp = chiều cao đứng danh nghĩa (mm). w/h là HÌNH CHIẾU BẰNG (rộng × sâu, có thể gồm cung mở cánh) — h KHÔNG phải chiều cao. Giá trị hUp là mặc định danh nghĩa theo thông lệ nghề, bản chèn được phép ghi đè.",
+  "nhomVatNote": "nhomVat: mua-sam (có kind, VÀO BOQ) · kien-truc · phu-canh · ky-hieu. Chỉ mua-sam được vào BOQ — ký hiệu và phụ cảnh KHÔNG BAO GIỜ."
 }

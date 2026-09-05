@@ -151,11 +151,26 @@ const NEO_DO_SANG: Record<WallpaperTheme, Record<WallpaperPeriod, [number, numbe
     day: [0.09, 0.34],
     dusk: [0.06, 0.22],
   },
+  /* 🔴 VÒNG 3 (04/09) — nâng nhánh SÁNG. Bản trước neo từ 0.862; đo trên chính `bangMau()`
+   * cho ra **8/20 bảng có điểm SÁNG NHẤT vẫn tối hơn nền trang** (toàn bộ `night` + 3/5
+   * `dusk`) ⇒ dải nền đọc ra như một vệt xám đè lên trang, không phải như ánh sáng.
+   * Số đối chiếu: `--bg` sáng `#f2efe9` có lum **0.8649**, mà `night/chan-troi` chỉ đạt
+   * lum tối đa 0.8544.
+   *
+   * ⚠️ ĐÁNH ĐỔI PHẢI KHAI, không giấu: nền trang sáng nên trần vật lý chỉ còn [0.865 … 1.0]
+   * ⇒ biến thiên tối đa có thể đạt là **1.156**. Dải cũ có bộ đạt 1.21, tức KHÔNG THỂ vừa
+   * "sáng hơn trang" vừa giữ nguyên biến thiên cũ. Sau khi nâng: biến thiên **1.021–1.087**
+   * (cũ 1.057–1.213) — thấp hơn, nhưng vẫn KHÔNG phẳng lì, và **thứ tự giờ giữ nguyên**:
+   * night 0.9015 < dusk 0.9069 < dawn 0.9231 < day 0.9511. Dải vẫn kể được giờ.
+   *
+   * Neo dò bằng máy chứ không chỉnh tay: `scripts/nghiem-thu-ban-lam-viec/do-neo-sang.ts`
+   * (điều kiện: `lumMin ≥ lum(--bg)` với MỌI bộ × MỌI chặng ⇒ đạt 0/20 vi phạm).
+   * Nhánh TỐI không đụng — đo được 0/20 vi phạm, đang đúng. */
   light: {
-    night: [0.862, 0.935],
-    dawn: [0.892, 0.966],
-    day: [0.93, 0.998],
-    dusk: [0.874, 0.95],
+    night: [0.943, 0.970],
+    dawn: [0.951, 0.982],
+    day: [0.96, 0.996],
+    dusk: [0.944, 0.973],
   },
 };
 

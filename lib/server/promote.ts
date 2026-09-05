@@ -13,18 +13,27 @@
  *   1 LibraryAsset  → N Project (qua `ProjectAssetUsage`).
  * Bản đồ dòng chảy: `docs/IF-KIEN-TRUC.md` §5 *Files → cửa sổ công cụ → Thư viện → đề xuất*.
  *
- * ══ 🔴 KHÔNG DEDUPE ĐƯỢC THEO `contentHash` — KHAI THẲNG, KHÔNG BỊA ══════════════════════════
- * `ProjectFile` CÓ cột `contentHash` (`prisma/schema.prisma:662`) nhưng **`LibraryAsset` KHÔNG
- * CÓ** (đo tại nguồn 20/08, `schema.prisma:282-321` — 0 cột hash). ⇒ Không có cách nào hỏi
- * *"đã có LibraryAsset nào cùng nội dung chưa"* mà không quét toàn bảng.
- *   · **KHÔNG tự thêm cột** — phiếu cấm đổi schema, và regenerate Prisma Client sẽ làm các phiên
- *     dev server đang sống lỗi P2022 (ca thật đã ghi ở `schema.prisma:283-288`).
- *   · **ĐÃ CÂN VÀ BÁC** phương án nhét hash vào `LibraryAsset.tags`: `tags` là CSV free-text
- *     không index ⇒ tra là quét O(n) toàn bảng (đang có ~1.6k hàng, sẽ tăng), và `contains` trên
- *     chuỗi ghép còn dính khớp nhầm tiền tố. Dedupe sai nguy hiểm hơn không dedupe: nó **gắn
- *     nhầm project A vào asset của project B**.
- * ⇒ v0: mỗi lần Promote một ProjectFile CHƯA promote → sinh `LibraryAsset` mới. Dedupe xuyên-file
- *   theo nội dung là **việc còn nợ**, cần cột `contentHash` (+ index) trên `LibraryAsset`.
+ * ══ SIÊU DỮ LIỆU — server TỰ ĐỌC TỆP, không tin nhãn nào (vá 04/09) ══════════════════════════
+ * Trước bản vá này, `libraryAsset.create` ở đây KHÔNG ghi `w`/`h`/`palette`/`contentHash` một chữ
+ * nào ⇒ **mọi tài sản promote đều `0×0`, palette rỗng**. Nay đi qua `lib/server/asset-metadata.ts`
+ * — CÙNG cửa trích + CÙNG cửa dựng bản ghi với `library-save.ts`, nên thêm/bớt một cột là cả hai
+ * cửa cùng đổi, không còn cách nào để một cửa "quên" một trường.
+ *   · `contentHash` KHÔNG băm lại: `ProjectFile.contentHash` đã mang sha256 của đúng binary đó
+ *     (cùng hàm `bamContentHash`) ⇒ truyền xuống dùng lại, không đọc-băm 25MB lần hai.
+ *   · Không đo được thì `0` / `[]` / `null` — KHÔNG đoán. `w=0` đọc là *"chưa biết"*.
+ *
+ * ══ 🔧 ĐÍNH CHÍNH — docstring cũ ở chỗ này ĐÃ SAI, đừng chép lại ══════════════════════════════
+ * Bản trước viết *"`LibraryAsset` KHÔNG CÓ cột `contentHash` ⇒ không dedupe được"*. Đo lại tại
+ * nguồn 04/09: cột `LibraryAsset.contentHash` **CÓ THẬT**, kèm `@@index([userId, contentHash])`
+ * (`prisma/schema.prisma`, model `LibraryAsset`). Câu cũ mô tả một hiện trạng đã qua.
+ * ⇒ Bản vá này **ghi `contentHash`** cho mọi asset mới sinh (điều kiện cần của dedupe).
+ * ⇒ Nhưng **CHƯA BẬT dedupe-theo-nội-dung** — đó là việc RIÊNG, ngoài phạm vi lượt vá này. Khoá
+ *   coi-là-một-vật phải là `userId` + `contentHash` + LỚP `license:` (bỏ `userId` là rò tài sản
+ *   xuyên người dùng; bỏ `license:` là gộp hai tệp trùng bytes nhưng KHÁC GIẤY PHÉP — ca hợp lệ).
+ *   Bật nó còn kéo theo một trạng thái trả về mới (*"vật này kho đã có, từ tệp khác"* ≠ *"bạn bấm
+ *   lại"*) ⇒ phải quyết riêng, không kèm vào một bản vá siêu dữ liệu.
+ * ⛔ **KHÔNG BAO GIỜ thêm `@unique` cho `contentHash`** — đọc ghi chú trong `schema.prisma`: kho
+ *   đang có trùng-bytes-khác-giấy-phép THẬT, unique áp vào là đổ ngay lúc backfill.
  *
  * ══ IDEMPOTENT — promote lại CÙNG một ProjectFile KHÔNG nhân bản ═════════════════════════════
  * `ProjectFile` cũng **không có** cột `promotedAt`/`assetId` để đánh dấu. Không bịa cột ⇒ dấu
@@ -43,6 +52,7 @@ import { prisma } from './db';
 import { imgIdFromKey } from '../img-id';
 import { LIBRARY_USAGES } from './library-save';
 import { buildGalleryTag } from '../library/gallery-tags';
+import { trichSieuDuLieuTuDia, dungBanGhiLibraryAsset } from './asset-metadata';
 
 /**
  * Suy `usage` mặc định từ MIME — quy ước phiếu: ảnh → `ref-render`, PDF → `brief`, còn lại →
@@ -86,6 +96,12 @@ export type PromoteResult =
       usageId: string;
       usage: string;
       projectId: string;
+      /**
+       * Siêu dữ liệu ĐÃ TRÍCH được ở lượt này, để nơi gọi nói đúng thứ vừa ghi mà không phải
+       * đọc lại DB. `null` khi KHÔNG trích lượt này (ca `daCo` — asset cũ, không đụng tới).
+       * Thêm mới (04/09) và ADDITIVE: nơi gọi cũ không đọc trường này vẫn chạy y nguyên.
+       */
+      meta: { w: number; h: number; palette: string[]; ghiChu: string[] } | null;
     }
   | { ok: false; error: string; status: number };
 
@@ -96,7 +112,11 @@ export type PromoteResult =
 export async function promoteProjectFile(input: PromoteInput): Promise<PromoteResult> {
   const pf = await prisma.projectFile.findUnique({
     where: { id: input.projectFileId },
-    select: { id: true, projectId: true, name: true, mime: true, path: true, deletedAt: true },
+    select: {
+      id: true, projectId: true, name: true, mime: true, path: true, deletedAt: true,
+      // hash đã tính lúc nhận tệp — kéo theo để KHÔNG băm lại binary lần hai.
+      contentHash: true,
+    },
   });
   if (!pf || pf.deletedAt) return { ok: false, error: 'Không tìm thấy tệp dự án.', status: 404 };
 
@@ -127,6 +147,23 @@ export async function promoteProjectFile(input: PromoteInput): Promise<PromoteRe
       usageId: row.id,
       usage,
       projectId: pf.projectId,
+      // Asset cũ, không trích lại — nói `null` thay vì dựng số giả cho có trường.
+      meta: null,
+    };
+  }
+
+  // ── ①b TRÍCH SIÊU DỮ LIỆU — server tự đọc tệp, KHÔNG tin nhãn nào ───────────────────────────
+  // Đây là chỗ vá lỗ "tài sản promote đều 0×0": trước đây bước này KHÔNG TỒN TẠI. Chạy SAU bước
+  // idempotent ở trên để ca "bấm lại" không tốn một lượt đọc đĩa nào.
+  const meta = await trichSieuDuLieuTuDia(pf.path, pf.contentHash);
+  if (!meta) {
+    // Bản ghi còn, tệp đã mất trên đĩa. 410 (Gone) chứ không 404: `ProjectFile` TÌM THẤY, thứ
+    // biến mất là nội dung. Sinh asset trỏ vào đường dẫn chết là đẻ một vật hỏng vào kho DÙNG
+    // CHUNG — thà từ chối và nói rõ.
+    return {
+      ok: false,
+      error: 'Tệp gốc không còn trên đĩa — không đưa vào Thư viện được. Tải lại tệp rồi thử lại.',
+      status: 410,
     };
   }
 
@@ -142,16 +179,19 @@ export async function promoteProjectFile(input: PromoteInput): Promise<PromoteRe
 
   const out = await prisma.$transaction(async (tx) => {
     const asset = await tx.libraryAsset.create({
-      data: {
+      // ⭐ CÙNG hàm dựng bản ghi với `library-save.ts` — hai cửa ghi, MỘT khuôn. Thêm/bớt trường
+      // là cả hai cùng đổi; không còn cách nào để một cửa "quên" một cột nữa.
+      // (Trần 120 ký tự của `name` nay do chính hàm đó giữ, không cắt hai lần.)
+      data: dungBanGhiLibraryAsset({
         userId: input.userId,
-        name: String(input.name ?? pf.name).slice(0, 120),
+        name: String(input.name ?? pf.name),
         category: String(input.category ?? usage),
         tags,
         mime: pf.mime,
         path: pf.path,
         usage,
-        lastEditedBy: input.userId,
-      },
+        meta,
+      }),
       select: { id: true },
     });
 
@@ -176,6 +216,7 @@ export async function promoteProjectFile(input: PromoteInput): Promise<PromoteRe
     usageId: out.usageId,
     usage,
     projectId: pf.projectId,
+    meta: { w: meta.w, h: meta.h, palette: meta.palette, ghiChu: meta.ghiChu },
   };
 }
 

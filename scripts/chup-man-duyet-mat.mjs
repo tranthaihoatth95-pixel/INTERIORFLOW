@@ -16,6 +16,11 @@
  *   IF_URL=http://localhost:3000     (mặc định)
  *   IF_OUT=<thư mục khác>            (mặc định là thư mục Drive ở trên)
  *   IF_LOC=1                         chỉ chụp vài màn để thử nhanh
+ *   IF_NEN=sang,toi                  chụp cả hai nền (mặc định: nền đang lưu trong phiên)
+ *   IF_KHO=1600x900,1280x800         chụp nhiều khổ màn (mặc định: 1440x900)
+ *   IF_KHUNG=01-01,10-               chỉ chụp khung có tên bắt đầu bằng tiền tố này
+ *   IF_TRINH_DUYET=<đường dẫn>       trình duyệt tự chỉ (khi bản Playwright trong repo lệch
+ *                                    bản Chromium cài sẵn trên máy — xem ghi chú dưới)
  *
  * Mật khẩu KHÔNG được ghi vào file nào, không vào git, chỉ sống trong biến môi
  * trường của đúng lệnh đó.
@@ -38,6 +43,36 @@ const URL_GOC = process.env.IF_URL ?? 'http://localhost:3000';
 const EMAIL = process.env.IF_EMAIL ?? '';
 const MATKHAU = process.env.IF_PASSWORD ?? '';
 const CHI_THU = process.env.IF_LOC === '1';
+
+/* ── BA TRỤC CHỤP (thêm 04/09) ────────────────────────────────────────────────
+   Trước 04/09 máy chỉ chụp ĐÚNG MỘT khổ (1440×900) và ĐÚNG MỘT nền — tức lô ảnh
+   duyệt mắt **không bao giờ** soi được nền tối hay khổ hẹp, dù cả hai đều là luật
+   (mock phải đủ 2 theme · Home đổi bố cục ở ngưỡng 1100px). Nay ba trục khai qua
+   biến môi trường, mặc định giữ nguyên hành vi cũ để lô cũ không đổi nghĩa.
+
+     IF_NEN=sang,toi              hai nền (mặc định: chỉ nền đang lưu trong phiên)
+     IF_KHO=1600x900,1280x800     nhiều khổ  (mặc định: 1440x900)
+     IF_KHUNG=01-01,10-           chỉ chụp khung có tên bắt đầu bằng một trong các tiền tố
+
+   Tên tệp CHỈ đeo đuôi khi có nhiều hơn một giá trị trên trục đó — chụp một khổ
+   một nền thì tên y như cũ, lô cũ đối chiếu được. */
+const NEN = (process.env.IF_NEN ?? '').split(',').map((v) => v.trim()).filter(Boolean);
+const KHO = (process.env.IF_KHO ?? '').split(',').map((v) => v.trim()).filter(Boolean);
+const LOC_KHUNG = (process.env.IF_KHUNG ?? '').split(',').map((v) => v.trim()).filter(Boolean);
+
+/** 'sang'/'light' → 'light' · 'toi'/'dark' → 'dark'. Khoá lưu: `lib/store.ts` THEME_KEY. */
+function maNen(v) {
+  const t = v.toLowerCase();
+  if (t === 'sang' || t === 'light') return 'light';
+  if (t === 'toi' || t === 'dark') return 'dark';
+  throw new Error(`IF_NEN không hiểu giá trị "${v}" — dùng: sang | toi`);
+}
+
+function maKho(v) {
+  const m = /^(\d+)x(\d+)$/.exec(v);
+  if (!m) throw new Error(`IF_KHO không hiểu giá trị "${v}" — dùng dạng 1600x900`);
+  return { width: Number(m[1]), height: Number(m[2]) };
+}
 
 const OUT =
   process.env.IF_OUT ??
@@ -62,6 +97,27 @@ const KHUNG = [
 
   // ── Tổng quan ────────────────────────────────────────────────────────────
   { ten: '01-01-home-tong-quan-du-an', url: '/' },
+  /* Home ở trạng thái CÓ VIỆC DỞ — khung QUAN TRỌNG NHẤT của Home mà lô cũ chưa bao giờ chụp.
+     Vì sao phải có riêng: dải "Tiếp tục việc dở" là HERO của Home theo EXS §6, nhưng nó chỉ mọc
+     khi `banViecDo = coDuAn && coViecDo` (`components/home/xuong-layout.ts:120`). Studio vừa dựng
+     thì `coViecDo=false` ⇒ hero KHÔNG mọc ⇒ ảnh Home cũ luôn là bản THIẾU tiêu điểm, và soi bản
+     đó rồi kết luận "bố cục trống" là kết luận sai đối tượng.
+     Cách tạo trạng thái: đi ĐÚNG đường người dùng thật — ghé một chặng (ResumeTracker tự ghi
+     resume vào localStorage) rồi quay về Home. KHÔNG nhét thẳng localStorage: nhét tay thì hình
+     dạng dữ liệu là do máy chụp bịa ra, không phải do app ghi. */
+  {
+    ten: '01-01b-home-co-viec-do',
+    url: '/',
+    cho: 1800,
+    truoc: async (page) => {
+      const goc = new URL(page.url()).origin;
+      await page.goto(`${goc}/cad-editor`, { waitUntil: 'domcontentloaded', timeout: 45000 });
+      await page.waitForTimeout(2500); // ResumeTracker ghi sau khi pathname ổn định
+      await page.goto(`${goc}/`, { waitUntil: 'networkidle', timeout: 45000 }).catch(() => {});
+      await page.waitForTimeout(2000);
+    },
+    choSauTruoc: 800,
+  },
   { ten: '01-02-files-cho-dau-moi', url: '/files' },
   { ten: '01-03-bang-viec', url: '/tasks' },
 
@@ -134,7 +190,14 @@ async function donLopChe(page) {
 async function main() {
   mkdirSync(OUT, { recursive: true });
 
+  /* TRÌNH DUYỆT — vì sao có đường tự chỉ (04/09).
+     Playwright tra trình duyệt theo SỐ HIỆU BẢN đóng đinh trong chính gói `playwright` đang cài.
+     Máy dựng sẵn có `chromium-1194`, còn gói trong repo đi tìm `chromium_headless_shell-1234`
+     ⇒ nổ *"Executable doesn't exist"* rồi khuyên chạy `npx playwright install` — tức tải lại cả
+     một bộ trình duyệt chỉ vì lệch số hiệu, trong khi bản đang có chạy tốt.
+     `IF_TRINH_DUYET` trỏ thẳng vào bản có sẵn. Không đặt thì hành vi y như cũ. */
   const ctx = await chromium.launchPersistentContext(PHIEN, {
+    ...(process.env.IF_TRINH_DUYET ? { executablePath: process.env.IF_TRINH_DUYET } : {}),
     headless: !MO_DANG_NHAP,
     viewport: { width: 1440, height: 900 },
     deviceScaleFactor: 2, // ảnh nét khi Hoà zoom trên điện thoại
@@ -236,34 +299,81 @@ async function main() {
     console.log('    (mở app, vào một dự án, chép id trên thanh địa chỉ)\n');
   }
 
-  const ds = CHI_THU ? KHUNG.slice(0, 4) : KHUNG;
+  let ds = CHI_THU ? KHUNG.slice(0, 4) : KHUNG;
+  if (LOC_KHUNG.length) ds = ds.filter((k) => LOC_KHUNG.some((t) => k.ten.startsWith(t)));
+  if (!ds.length) {
+    console.error(`⛔ IF_KHUNG="${process.env.IF_KHUNG}" không khớp khung nào — không có gì để chụp.`);
+    await ctx.close();
+    process.exit(1);
+  }
+
+  const dsKho = KHO.length ? KHO.map(maKho) : [{ width: 1440, height: 900 }];
+  const dsNen = NEN.length ? NEN.map(maNen) : [null]; // null = giữ nền phiên đang có
+  const nhieuKho = dsKho.length > 1;
+  const nhieuNen = dsNen.length > 1;
+
   const bo = [];
   let n = 0;
 
-  for (const k of ds) {
-    if (k.url.includes(':id') && !duAnId) {
-      bo.push(`${k.ten} — không có dự án`);
-      continue;
-    }
-    const url = URL_GOC + k.url.replace(':id', duAnId);
-    try {
-      await page.goto(url, { waitUntil: 'networkidle', timeout: 45000 });
-    } catch {
-      // networkidle không tới được (app có polling) — vẫn chụp cái đang thấy
-    }
-    await page.waitForTimeout(k.cho ?? 1200);
-    await donLopChe(page);
+  for (const kho of dsKho) {
+    await page.setViewportSize(kho);
 
-    // Một khung hỏng KHÔNG được làm chết cả lô — ghi lại rồi đi tiếp.
-    const tep = join(OUT, `${k.ten}.png`);
-    try {
-      await page.screenshot({ path: tep, timeout: 20000, animations: 'disabled' });
-      n++;
-      console.log(`  📸 ${k.ten}`);
-    } catch (e) {
-      const ly = String(e?.message ?? e).split('\n')[0];
-      bo.push(`${k.ten} — ${ly}`);
-      console.error(`  ⚠️  bỏ ${k.ten}: ${ly}`);
+    for (const nen of dsNen) {
+      /* Đổi nền theo ĐÚNG ĐƯỜNG APP DÙNG — ghi khoá `interiorflow.theme` rồi để `hydrate()`
+         đọc lại ở lần tải kế (`lib/store.ts:583`). KHÔNG gán thẳng `data-theme` lên thẻ html:
+         gán tay thì `appliedTheme` trong store vẫn là giá trị cũ, ảnh ra một đằng còn trạng
+         thái app một nẻo — chụp được một thứ KHÔNG BAO GIỜ xảy ra với người dùng thật. */
+      if (nen) {
+        await page.evaluate((v) => {
+          try { localStorage.setItem('interiorflow.theme', v); } catch {}
+        }, nen);
+      }
+
+      for (const k of ds) {
+        if (k.url.includes(':id') && !duAnId) {
+          bo.push(`${k.ten} — không có dự án`);
+          continue;
+        }
+        const url = URL_GOC + k.url.replace(':id', duAnId);
+        try {
+          await page.goto(url, { waitUntil: 'networkidle', timeout: 45000 });
+        } catch {
+          // networkidle không tới được (app có polling) — vẫn chụp cái đang thấy
+        }
+        await page.waitForTimeout(k.cho ?? 1200);
+        await donLopChe(page);
+
+        /* `truoc` — việc phải làm trước khi bấm máy (mở panel, đổi mode, bật tool).
+           Trường này khai trong bảng KHUNG từ 16/08 nhưng **chưa bao giờ được gọi** — nên mọi
+           khung cần thao tác trước đều lặng lẽ chụp trạng thái nghỉ. Nay gọi thật; hỏng thì
+           GHI RA rồi vẫn chụp, vì ảnh trạng thái nghỉ còn hơn không có ảnh nào. */
+        if (typeof k.truoc === 'function') {
+          try {
+            await k.truoc(page);
+            await page.waitForTimeout(k.choSauTruoc ?? 500);
+          } catch (e) {
+            const ly = String(e?.message ?? e).split('\n')[0];
+            bo.push(`${k.ten} — bước "truoc" hỏng: ${ly} (vẫn chụp trạng thái nghỉ)`);
+            console.error(`  ⚠️  ${k.ten}: bước chuẩn bị hỏng — ${ly}`);
+          }
+        }
+
+        const duoi =
+          (nhieuKho ? `-${kho.width}x${kho.height}` : '') +
+          (nhieuNen ? `-${nen === 'dark' ? 'toi' : 'sang'}` : '');
+        const ten = `${k.ten}${duoi}`;
+
+        // Một khung hỏng KHÔNG được làm chết cả lô — ghi lại rồi đi tiếp.
+        try {
+          await page.screenshot({ path: join(OUT, `${ten}.png`), timeout: 20000, animations: 'disabled' });
+          n++;
+          console.log(`  📸 ${ten}`);
+        } catch (e) {
+          const ly = String(e?.message ?? e).split('\n')[0];
+          bo.push(`${ten} — ${ly}`);
+          console.error(`  ⚠️  bỏ ${ten}: ${ly}`);
+        }
+      }
     }
   }
 
@@ -272,7 +382,8 @@ async function main() {
     '# LÔ ẢNH DUYỆT MẮT — InteriorFlow',
     '',
     `Chụp lúc: ${new Date().toLocaleString('vi-VN')}`,
-    `Khổ màn: 1440×900 · độ nét gấp đôi`,
+    `Khổ màn: ${dsKho.map((k) => `${k.width}×${k.height}`).join(' · ')} · độ nét gấp đôi`,
+    `Nền: ${dsNen.map((v) => (v === null ? 'theo phiên' : v === 'dark' ? 'tối' : 'sáng')).join(' · ')}`,
     '',
     '## Cách note ngược cho T',
     'Thấy chỗ nào sai: **chụp màn hình + vẽ khoanh** rồi bỏ vào thư mục `02-note-cua-Hoa`.',

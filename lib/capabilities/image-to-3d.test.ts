@@ -16,8 +16,13 @@ import {
   duocVaoBoq,
   bieuDienCuaUngVien,
   nacThapNhat,
+  nacTuCanCu,
+  nhanXuatXu,
   tomTatUngVien,
+  HANH_DONG_DUYET,
+  NAC_THEO_CAN_CU,
   HE_BIEU_DIEN,
+  type CanCuSuThat,
   type DauVaoDeXuat,
   type UngVienKhoi3D,
 } from './image-to-3d';
@@ -106,12 +111,57 @@ console.log('\n① cờ 3 nấc không rò');
   ok('đề xuất chưa duyệt → KHÔNG vào BOQ', duocVaoBoq(uv).duoc === false);
   ok('  · lý do nói rõ là chưa duyệt', duocVaoBoq(uv).lyDo.includes('chưa duyệt'));
 
+  // 🔴 SỬA 20/08 (vòng 2) — bản trước khẳng định *"chỉ chiều người GÕ LẠI SỐ mới lên verified"*,
+  // và cả một ca *"gõ lại ĐÚNG số máy vẫn tính là đã kiểm"*. Nó khoá đúng NGHI THỨC vừa bị bác:
+  // gõ lại một con số không phải bằng chứng — nó chỉ là gõ lại. Nay khẳng định đúng bốn nghĩa
+  // canonical: người CUNG CẤP số ⇒ human-override; người XÁC NHẬN có tham chiếu ⇒ human-confirmed;
+  // để nguyên ⇒ không đổi gì. Cùng họ bài học Hough 15/08: test khoá hình dạng sai thì nó che bug.
   const daNhan = nhanUngVien(uv, { nguoiXacNhan: 'hoa' });
-  ok('người ký → cả ba chiều verified', daNhan.rong.flag === 'verified' && daNhan.sau.flag === 'verified' && daNhan.cao.flag === 'verified');
+  ok('chỉ bấm Nhận, không gõ số nào → KHÔNG chiều nào lên verified', [daNhan.rong, daNhan.sau, daNhan.cao].every((k) => k.flag !== 'verified'));
+  ok('  · cờ máy giữ nguyên từng chiều (suy vẫn là suy)', daNhan.sau.flag === 'inferred' && daNhan.rong.flag === uv.rong.flag);
   ok('  · flagMay GIỮ NGUYÊN dấu vết máy (không xoá lịch sử)', daNhan.sau.flagMay === 'inferred');
-  ok('  · basis ghi tên người ký', daNhan.sau.basis.includes('hoa'));
+  ok('  · basis ghi tên người đã xem', daNhan.sau.basis.includes('hoa'));
   ok('  · giá trị mm không đổi khi chỉ ký, không sửa', daNhan.rong.valueMm === uv.rong.valueMm);
-  ok('đã ký → vào được BOQ', duocVaoBoq(daNhan).duoc === true);
+  ok('  · SUY-RA KHÔNG LỌT VÀO BOQ dù đã bấm Nhận', duocVaoBoq(daNhan).duoc === false);
+  ok('  · lý do chặn nói đúng chiều nào còn suy', duocVaoBoq(daNhan).lyDo.includes('sâu'));
+
+  // ĐƯỜNG ① — người CUNG CẤP số. Không cần gõ lại chiều nào đã đo được: chỉ chiều còn suy.
+  const nguoiDua = nhanUngVien(uv, { nguoiXacNhan: 'hoa', sua: { sauMm: 620 } });
+  ok('người cung cấp số → chiều đó verified qua human-override', nguoiDua.sau.flag === 'verified' && nguoiDua.sau.canCu === 'human-override');
+  ok('  · CHỈ chiều đó đổi, hai chiều kia giữ nguyên căn cứ máy', nguoiDua.rong.canCu === uv.rong.canCu && nguoiDua.cao.canCu === uv.cao.canCu);
+  ok('  · chiều sửa mang số mới', nguoiDua.sau.valueMm === 620);
+  ok('  · KHÔNG phải gõ lại hai chiều kia mà vẫn vào được BOQ', duocVaoBoq(nguoiDua).duoc === true);
+  ok('  · BOQ giữ dấu vết: có cảnh báo số đến từ người', !!duocVaoBoq(nguoiDua).canhBao && duocVaoBoq(nguoiDua).canhBao!.includes('người nhập tay'));
+
+  // ⛔ NGHI THỨC ĐÃ BỊ BÁC: gõ lại đúng con số máy KHÔNG còn được gọi là "đã kiểm".
+  const goLaiYNguyen = nhanUngVien(uv, { nguoiXacNhan: 'hoa', sua: { sauMm: uv.sau.valueMm } });
+  ok('gõ lại ĐÚNG số máy = người nhập tay, KHÔNG phải "xác nhận đúng số máy"', goLaiYNguyen.sau.canCu === 'human-override');
+  ok('  · không còn câu nghi thức nào trong basis', !goLaiYNguyen.sau.basis.includes('xác nhận đúng số máy'));
+
+  // ĐƯỜNG ② — người XÁC NHẬN tường minh, có tham chiếu. KHÔNG gõ lại số nào.
+  const xn = nhanUngVien(uv, { nguoiXacNhan: 'hoa', xacNhan: { sau: 'catalogue Mezzo 2026 tr.41' } });
+  ok('xác nhận có tham chiếu → verified qua human-confirmed', xn.sau.flag === 'verified' && xn.sau.canCu === 'human-confirmed');
+  ok('  · GIỮ NGUYÊN số máy (người không gõ lại gì)', xn.sau.valueMm === uv.sau.valueMm);
+  ok('  · basis ghi lại đối chiếu với cái gì', xn.sau.basis.includes('catalogue Mezzo 2026 tr.41'));
+  ok('  · đủ ba chiều hợp lệ → vào được BOQ', duocVaoBoq(xn).duoc === true);
+  ok('xác nhận SUÔNG (tham chiếu rỗng) → ném lỗi, không có verified không bằng chứng', (() => {
+    try { nhanUngVien(uv, { nguoiXacNhan: 'hoa', xacNhan: { sau: '   ' } }); return false; } catch { return true; }
+  })());
+
+  // Số người gõ mà hỏng: nói thẳng, không nuốt rồi vẫn báo "đã nhận".
+  ok('gõ số ≤ 0 → ném lỗi kèm tên chiều', (() => {
+    try { nhanUngVien(uv, { nguoiXacNhan: 'hoa', sua: { caoMm: 0 } }); return false; }
+    catch (e) { return e instanceof Error && e.message.includes('cao'); }
+  })());
+
+  // …và khi CHIỀU KHÁC còn suy thì ký lẻ KHÔNG mở được cổng BOQ. Dựng ca bằng bậc 2 (chỉ mặt
+  // nạ, không neo) — bậc đó suy cả ba chiều, đúng ca người dùng gặp nhiều nhất.
+  const bac2 = deXuatOk({ ...CO_BAN, knownWidthMm: undefined, genId: () => 'i23_test_bac2' });
+  const bac2KyLe = nhanUngVien(bac2, { nguoiXacNhan: 'hoa', sua: { caoMm: 900 } });
+  ok('bậc 2 (chỉ mặt nạ) vẫn để chiều sâu là suy', bac2.sau.flag === 'inferred');
+  ok('  · ký lẻ chiều CAO không đụng tới chiều sâu', bac2KyLe.cao.flag === 'verified' && bac2KyLe.sau.flag === 'inferred');
+  ok('  · ⇒ cả món vẫn đứng ngoài BOQ', duocVaoBoq(bac2KyLe).duoc === false);
+  ok('  · lý do chặn gọi đúng tên chiều còn suy', duocVaoBoq(bac2KyLe).lyDo.includes('sâu') && !duocVaoBoq(bac2KyLe).lyDo.includes('cao'));
 
   // Sửa tay
   const suaTay = nhanUngVien(uv, { nguoiXacNhan: 'hoa', sua: { caoMm: 880 } });
@@ -127,6 +177,54 @@ console.log('\n① cờ 3 nấc không rò');
   ok('không ai ký → ném lỗi, không có verified vô chủ', (() => {
     try { nhanUngVien(uv, { nguoiXacNhan: '' }); return false; } catch { return true; }
   })());
+}
+
+/* ═════════ ①b BỐN NGHĨA CANONICAL — CĂN CỨ LÀ NGUỒN, NẤC LÀ HỆ QUẢ ═════════ */
+console.log('\n①b bốn nghĩa canonical: measured · verified · human-override · inferred');
+{
+  const uv = deXuatOk();
+
+  // Bất biến nền: KHÔNG có căn cứ nào mà thiếu nấc, và nấc luôn suy từ căn cứ.
+  ok('mọi căn cứ đều có nấc — bảng ánh xạ không lỗ', (Object.keys(NAC_THEO_CAN_CU) as CanCuSuThat[]).every((c) => ['measured', 'inferred', 'verified'].includes(nacTuCanCu(c))));
+  ok('KHÔNG đẻ nấc thứ tư — vẫn đúng bộ 3 đã có', new Set(Object.values(NAC_THEO_CAN_CU)).size === 3);
+  ok('human-override là VERIFIED, không phải measured', nacTuCanCu('human-override') === 'verified');
+  ok('human-confirmed là VERIFIED', nacTuCanCu('human-confirmed') === 'verified');
+  ok('dải chuẩn nghề là INFERRED (một con số trong sách không phải phép đo)', nacTuCanCu('category-prior') === 'inferred');
+
+  const moiChieu = (u: UngVienKhoi3D) => [u.rong, u.sau, u.cao];
+  const bs = (u: UngVienKhoi3D) => moiChieu(u).every((k) => k.flag === nacTuCanCu(k.canCu) && k.flagMay === nacTuCanCu(k.canCuMay));
+  ok('máy sinh: flag LUÔN = nacTuCanCu(canCu)', bs(uv));
+
+  // 🔴 KHẲNG ĐỊNH TRUNG TÂM CỦA CẢ LƯỢT SỬA.
+  const cacDuong: UngVienKhoi3D[] = [
+    nhanUngVien(uv, { nguoiXacNhan: 'hoa' }),
+    nhanUngVien(uv, { nguoiXacNhan: 'hoa', sua: { rongMm: 810, sauMm: 620, caoMm: 900 } }),
+    nhanUngVien(uv, { nguoiXacNhan: 'hoa', xacNhan: { rong: 'bản vẽ TK-04', sau: 'đo tay tại xưởng 20/08', cao: 'trang hãng' } }),
+    nhanUngVien(uv, { nguoiXacNhan: 'hoa', sua: { sauMm: 620 }, xacNhan: { cao: 'trang hãng' } }),
+  ];
+  ok('HUMAN OVERRIDE KHÔNG BAO GIỜ MANG NHÃN measured — mọi đường, mọi chiều', cacDuong.every((u) => moiChieu(u).every((k) => !(k.canCu === 'human-override' && k.flag === 'measured'))));
+  ok('  · và nhãn xuất xứ của nó gọi đúng tên "người nhập tay"', nhanXuatXu('human-override') === 'người nhập tay' && !nhanXuatXu('human-override').includes('đo'));
+  ok('bất biến flag=nacTuCanCu giữ qua CẢ BỐN đường ký', cacDuong.every(bs));
+  ok('đã lên verified thì basis KHÔNG BAO GIỜ rỗng', cacDuong.every((u) => moiChieu(u).filter((k) => k.flag === 'verified').every((k) => k.basis.trim().length > 0)));
+  ok('  · …và căn cứ của nó phải là một trong hai đường người', cacDuong.every((u) => moiChieu(u).filter((k) => k.flag === 'verified').every((k) => k.canCu === 'human-override' || k.canCu === 'human-confirmed')));
+  ok('dấu vết MÁY còn nguyên sau mọi đường ký (canCuMay không bị ghi đè)', cacDuong.every((u) => u.sau.canCuMay === uv.sau.canCuMay));
+
+  // Ưu tiên MEASURED: ghi đè lên một chiều máy VỐN đã đo được thì phải nói ra.
+  ok('rộng của ca này máy đo được (bậc 3, có neo rộng thật)', uv.rong.flag === 'measured' && uv.rong.canCu === 'calibrated');
+  const deLen = nhanUngVien(uv, { nguoiXacNhan: 'hoa', sua: { rongMm: 810, sauMm: 620 } });
+  ok('ghi đè lên số ĐO ĐƯỢC → cảnh báo nói thẳng, ưu tiên số đo', (duocVaoBoq(deLen).canhBao ?? '').includes('vốn đã đo được') || (duocVaoBoq(deLen).canhBao ?? '').includes('VỐN ĐÃ đo được'));
+
+  // Cổng BOQ luôn trả xuất xứ đủ ba chiều — kể cả khi chặn.
+  const cong = duocVaoBoq(uv);
+  ok('BOQ trả xuất xứ đủ 3 chiều kể cả khi CHẶN', cong.duoc === false && cong.xuatXu.length === 3);
+  ok('  · mỗi dòng xuất xứ có chữ cho người đọc', cong.xuatXu.every((x) => x.nhan.length > 0 && x.flag === nacTuCanCu(x.canCu)));
+  ok('  · không dòng nào gọi số của người là "đo được"', duocVaoBoq(cacDuong[1]).xuatXu.filter((x) => x.canCu === 'human-override').every((x) => !x.nhan.includes('đo được')));
+
+  // Bốn hành động thật — thay cho nghi thức gõ lại.
+  ok('khai đủ 4 hành động ở cửa duyệt', HANH_DONG_DUYET.length === 4);
+  ok('  · có đủ Xác nhận · Sửa · Nhập kích thước đã biết · Hiệu chỉnh lại', ['Xác nhận', 'Sửa', 'Nhập kích thước đã biết', 'Hiệu chỉnh lại'].every((n) => HANH_DONG_DUYET.some((h) => h.nhan === n)));
+  ok('  · không hành động nào là "gõ lại đúng số cũ để mở khoá"', HANH_DONG_DUYET.every((h) => !h.mo.includes('gõ lại đúng')));
+  ok('  · Hiệu chỉnh lại cho ra số MÁY (calibrated), không phải số người', HANH_DONG_DUYET.find((h) => h.id === 'hieuChinhLai')!.canCu === 'calibrated');
 }
 
 /* ═════════ CỬA DUYỆT ═════════ */

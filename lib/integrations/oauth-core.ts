@@ -128,6 +128,56 @@ export async function disconnect(userId: string, provider: string) {
     .catch(() => {});
 }
 
+/** Scope đã cấp (chuỗi thô provider trả về lúc đổi code). `null` = chưa kết nối. */
+export async function getGrantedScope(userId: string, provider: string): Promise<string | null> {
+  const acc = await prisma.integrationAccount.findUnique({
+    where: { userId_provider: { userId, provider } },
+    select: { scope: true },
+  });
+  return acc ? acc.scope : null;
+}
+
+export interface KetQuaNgat {
+  daXoaBanLuu: boolean;
+  /** true = provider xác nhận thu hồi · false = provider từ chối/không tới được · null = provider không có endpoint. */
+  daThuHoiPhiaProvider: boolean | null;
+  ghiChu?: string;
+}
+
+/**
+ * NGẮT KẾT NỐI ĐÚNG NGHĨA: thu hồi token ở provider (nếu có endpoint, best-effort, KHÔNG log token)
+ * rồi mới xoá bản lưu. Xoá bản lưu LUÔN xảy ra kể cả thu hồi lỗi — người dùng bấm ngắt là phải ngắt.
+ */
+export async function revokeAndDisconnect(userId: string, provider: string): Promise<KetQuaNgat> {
+  const cfg = getProvider(provider);
+  let daThuHoiPhiaProvider: boolean | null = null;
+  let ghiChu = cfg?.revokeNote;
+  if (cfg?.revokeUrl) {
+    daThuHoiPhiaProvider = false;
+    try {
+      const acc = await prisma.integrationAccount.findUnique({
+        where: { userId_provider: { userId, provider } },
+        select: { accessToken: true, refreshToken: true },
+      });
+      if (acc) {
+        // Google: thu hồi refresh_token là thu hồi cả cặp; không có refresh thì thu hồi access.
+        const token = acc.refreshToken ? decryptToken(acc.refreshToken) : decryptToken(acc.accessToken);
+        const res = await fetch(cfg.revokeUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ token }),
+        });
+        daThuHoiPhiaProvider = res.ok;
+        if (!res.ok) ghiChu = `Provider trả ${res.status} khi thu hồi — bản lưu vẫn xoá.`;
+      }
+    } catch {
+      ghiChu = 'Không tới được endpoint thu hồi (ngoại tuyến?) — bản lưu vẫn xoá.';
+    }
+  }
+  await disconnect(userId, provider);
+  return { daXoaBanLuu: true, daThuHoiPhiaProvider, ghiChu };
+}
+
 export async function isConnected(userId: string, provider: string): Promise<boolean> {
   const acc = await prisma.integrationAccount.findUnique({
     where: { userId_provider: { userId, provider } },

@@ -10,6 +10,11 @@
  * `lastUserId`: các route studio (/cad-editor…) KHÔNG nạp user vào store — ResumeTracker
  * cần biết "user gần nhất là ai" để ghi resume mà không tốn thêm request /api/auth/me.
  * Ghi khi auth thành công; chỉ là id định danh cục bộ, không phải dữ liệu nhạy cảm.
+ *
+ * ⚠️ 04/09 — `lastUserId` là **BỘ ĐỆM**, KHÔNG phải nguồn sự thật. Nguồn sự thật của định danh
+ * là PHIÊN MÁY CHỦ (`/api/auth/me`). Vào thẳng route studio bằng tab mới/bookmark/F5 thì bộ đệm
+ * rỗng trong khi phiên vẫn hợp lệ — `lib/danh-tinh-phien.ts` gieo lại bộ đệm từ phiên. Đọc bộ
+ * đệm rồi kết luận "không có user" là ĐỌC SAI NGUỒN (đã gây P0 mất bản vẽ).
  */
 
 import { create } from 'zustand';
@@ -120,19 +125,71 @@ export function clearResume(userId: string): void {
 
 /* ---------- lastUserId — cho ResumeTracker ở route không có user trong store ---------- */
 
+/**
+ * ĐƯỜNG LÙI TRONG BỘ NHỚ (P0 04/09 — ca NẶNG HƠN ca deep-link).
+ *
+ * `localStorage.setItem` CÓ THỂ NÉM hoặc bị chặn: chế độ riêng tư, vài cấu hình Safari, webview
+ * nhúng, hoặc bộ nhớ origin bị trình duyệt thu hồi khi máy hết chỗ. `catch { bỏ qua }` bên dưới
+ * nuốt lỗi đó ⇒ người dùng đăng nhập THÀNH CÔNG, cookie hợp lệ, mà đệm KHÔNG BAO GIỜ được ghi
+ * ⇒ mất dữ liệu ở MỌI route, MỌI phiên — không riêng lúc vào thẳng URL.
+ *
+ * Giữ id trong biến của module để cả vòng đời tab vẫn dùng được. ⚠️ KHAI GIỚI HẠN THẬT: đường lùi
+ * này CHẾT khi tải lại trang — và đó là điều đúng, vì lúc đó KHÔNG có chỗ nào bền để lưu. Nó mua
+ * lại được phiên làm việc đang chạy, không mua được tính bền.
+ */
+let demTrongBoNho: string | null = null;
+
 export function setLastUserId(userId: string): void {
+  // THÀ KHÔNG LƯU CÒN HƠN LƯU NHẦM: id rỗng từng được ghi đè lên id thật (localStorage nhận
+  // mọi chuỗi), làm mọi khoá `userId::route::projectId` trượt sang bucket rỗng.
+  if (!userId) return;
+  demTrongBoNho = userId; // luôn giữ trước — không phụ thuộc localStorage có ghi nổi hay không
   try {
     localStorage.setItem(LAST_USER_KEY, userId);
   } catch {
-    /* bỏ qua */
+    /* localStorage bị chặn — đã có đường lùi trong bộ nhớ ở trên */
   }
 }
 
 export function getLastUserId(): string | null {
+  // BỘ NHỚ THẮNG localStorage, không phải ngược lại: `demTrongBoNho` chỉ được đặt bởi một lần
+  // định danh THÀNH CÔNG trong CHÍNH tab này, nên nó luôn mới hơn. Đọc localStorage trước sẽ trả
+  // về id CŨ của phiên trước khi ghi mới thất bại ⇒ ghi việc của người này vào bucket người kia.
+  if (demTrongBoNho) return demTrongBoNho;
   try {
     return localStorage.getItem(LAST_USER_KEY);
   } catch {
     return null;
+  }
+}
+
+/** Chỉ dùng trong test — xoá đường lùi để ca sau bắt đầu sạch. */
+export function quenDemTrongBoNho(): void {
+  demTrongBoNho = null;
+}
+
+/**
+ * XOÁ BỘ ĐỆM ĐỊNH DANH — gọi lúc ĐĂNG XUẤT.
+ *
+ * ⛔ Trước 04/09 hàm này KHÔNG TỒN TẠI (`grep clearLastUserId` = 0 kết quả toàn repo), nên
+ * `interiorflow.lastUserId` của người dùng TRƯỚC nằm lì trong localStorage sau khi đăng xuất.
+ * Người kế tiếp đăng nhập trên cùng máy thì việc của họ bị ghi vào kho của người trước — đã tái
+ * hiện trên app thật, xem `scripts/nghiem-thu-g1.mjs` CA8.
+ *
+ * `lib/danh-tinh-phien.ts` nay đã tự chữa bộ đệm lệch bằng cách hỏi lại máy chủ, nên đây là
+ * LỚP THỨ HAI: nó đóng nốt khe hẹp "đăng xuất rồi mất mạng" — lúc đó không hỏi được máy chủ,
+ * và nếu bộ đệm vẫn còn id người cũ thì đường lui-về-đệm sẽ trỏ nhầm người.
+ *
+ * ⚠️ CHƯA ĐƯỢC NỐI VÀO ĐƯỜNG ĐĂNG XUẤT — chỗ gọi nằm ngoài phạm vi ghi của làn nghiệm thu G1.
+ * Việc còn lại đúng một dòng: gọi hàm này ở nơi client bấm Đăng xuất (cùng chỗ gọi
+ * `DELETE /api/auth/me`).
+ */
+export function clearLastUserId(): void {
+  demTrongBoNho = null;
+  try {
+    localStorage.removeItem(LAST_USER_KEY);
+  } catch {
+    /* localStorage bị chặn — bộ nhớ đã xoá ở trên, đó mới là đường đọc thắng */
   }
 }
 

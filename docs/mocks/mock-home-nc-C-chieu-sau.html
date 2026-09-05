@@ -1,0 +1,93 @@
+<!doctype html><html lang="vi"><head><meta charset="utf-8">
+<title>Home · Nghiên cứu C — CHIỀU SÂU</title>
+<!-- @dsCard group="Home · nghiên cứu bố cục" -->
+<link rel="stylesheet" href="_home-nc-nen.css">
+<style>
+/* ═══ C · CHIỀU SÂU — MỘT vật nổi trên ánh sáng, phần còn lại là CHỮ TRÊN NỀN ═══
+   Ý: thứ bậc dựng bằng CHIỀU SÂU + CỠ, không bằng đường viền. Cả màn có ĐÚNG MỘT vật có vỏ
+   (tấm việc-đang-dở). Mọi thông tin khác đứng thẳng trên nền, ở bốn góc, không hộp, không nền.
+   Nền là ánh sáng theo giờ — cơ chế IF đã có (LightClock), không phải hình dán. */
+.c-nen{position:absolute;inset:0;overflow:hidden}
+.c-sang{position:absolute;inset:-10%;
+  background:radial-gradient(52% 46% at 26% 20%, rgba(106,87,245,.30), transparent 70%),
+             radial-gradient(46% 42% at 84% 82%, rgba(199,154,99,.20), transparent 72%)}
+:root[data-theme='light'] .c-sang{
+  background:radial-gradient(52% 46% at 26% 20%, rgba(106,87,245,.16), transparent 70%),
+             radial-gradient(46% 42% at 84% 82%, rgba(199,154,99,.22), transparent 72%)}
+/* ① VẬT DUY NHẤT CÓ VỎ — nổi, không dính mép, bóng dài để đọc ra "ở trên mặt phẳng" */
+.c-tam{position:absolute;left:96px;top:132px;width:748px;border-radius:var(--r-4);overflow:hidden;
+  background:var(--card);border:1px solid var(--vien-mo);box-shadow:0 44px 96px rgba(0,0,0,.52)}
+:root[data-theme='light'] .c-tam{box-shadow:0 34px 78px rgba(70,58,40,.20)}
+.c-anh{height:288px;background:radial-gradient(120% 120% at 20% 10%, #7b6040, #2a2018)}
+:root[data-theme='light'] .c-anh{background:radial-gradient(120% 120% at 20% 10%, #dcc6a6, #85705a)}
+.c-ruot{padding:30px 36px 34px}
+.c-ruot .hien-nho{margin:10px 0 12px}
+.c-hang{display:flex;gap:24px;color:var(--t3);font-size:var(--fs-sm)}
+.c-nut{margin-top:26px;display:flex;align-items:center;gap:16px}
+.c-nut a{height:44px;padding:0 22px;border-radius:var(--r-full);background:var(--accent);color:#fff;
+  display:inline-flex;align-items:center;font-weight:600;font-size:var(--fs-sm)}
+.c-nut span{color:var(--t4);font-size:var(--fs-xs)}
+/* ② BỐN CỤM CHỮ TRÊN NỀN — không vỏ, không nền, chỉ khoảng trắng định vị */
+.c-cum{position:absolute}
+.c-cum .nhan{margin-bottom:8px}
+.c-goc-tren{right:64px;top:60px;text-align:right;max-width:300px}
+.c-goc-tren .hien-nho{font-size:26px}
+.c-giua{right:64px;top:236px;text-align:right}
+.c-giua .day{display:flex;gap:34px;justify-content:flex-end;margin-top:10px}
+.c-giua .day div{min-width:52px}
+.c-giua .day div{text-align:right}
+.c-giua b{display:block;font-size:24px;font-weight:600;letter-spacing:-.01em}
+.c-duoi{right:64px;top:392px;text-align:right;max-width:330px}
+.c-duoi .d{padding:8px 0;border-top:1px solid var(--vien-mo);font-size:var(--fs-xs);color:var(--t3)}
+.c-duoi .d b{color:var(--t2);font-weight:600}
+.c-day{left:96px;bottom:52px;display:flex;align-items:center;gap:16px}
+.c-day i{width:44px;height:32px;border-radius:var(--r-1);background:linear-gradient(140deg,#8a7154,#413424)}
+.c-day span{color:var(--t4);font-size:var(--fs-xs)}
+.c-ghi{right:64px;bottom:52px;color:var(--t4);font-size:var(--fs-xs);text-align:right}
+</style></head><body>
+<div class="khung">
+  <nav class="rail"><i class="on"></i><i></i><i></i><i></i><i></i><hr><i></i><i></i><i></i><i></i><hr><i></i><i></i></nav>
+  <div class="than"><div class="c-nen">
+    <div class="c-sang"></div>
+
+    <section class="c-tam">
+      <div class="ghi" style="left:16px;top:16px;z-index:3">① vật DUY NHẤT có vỏ</div>
+      <div class="c-anh"></div>
+      <div class="c-ruot">
+        <div class="nhan">Đang dở · Thiết kế 2D · dừng 16:20 hôm qua</div>
+        <div class="hien-nho">Căn hộ Thảo Điền · mặt bằng tầng 2</div>
+        <div class="c-hang"><span class="so">78 m²</span><span class="so">3 bản vẽ</span><span>chưa gán vật liệu sàn</span></div>
+        <div class="c-nut"><a>Mở lại →</a><span>hoặc bắt đầu dự án mới</span></div>
+      </div>
+    </section>
+
+    <div class="c-cum c-goc-tren">
+      <div class="ghi" style="right:0;top:-26px">② chữ trên nền · không vỏ</div>
+      <div class="hien-nho">Chiều muộn, Kiêm</div>
+      <div class="phu" style="margin-top:4px">Thứ Sáu 04/09 · 2700K · lặn 18:04</div>
+    </div>
+
+    <div class="c-cum c-giua">
+      <span class="nhan">Đang chạy</span>
+      <div class="day">
+        <div><b class="so">4</b><span class="nhan">2D</span></div>
+        <div><b class="so">0</b><span class="nhan">3D</span></div>
+        <div><b class="so">0</b><span class="nhan">Trình chiếu</span></div>
+      </div>
+    </div>
+
+    <div class="c-cum c-duoi">
+      <span class="nhan">Xưởng</span>
+      <div class="d"><b>Detech Complex</b> vừa cập nhật · 9 phút</div>
+      <div class="d"><b>Nhà phố Bình Thạnh</b> · 1 tuần</div>
+    </div>
+
+    <div class="c-cum c-day">
+      <i></i><i style="background:linear-gradient(140deg,#7d8a6e,#333a2b)"></i>
+      <i style="background:linear-gradient(140deg,#6e7c8a,#2b3239)"></i>
+      <span>3 dự án khác · ＋ mới</span>
+    </div>
+
+    <div class="c-cum c-ghi">Gõ ghi chú rồi Enter…</div>
+  </div></div>
+</div></body></html>

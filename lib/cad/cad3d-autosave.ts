@@ -23,25 +23,46 @@
 
 import { useEffect } from 'react';
 import { useSheetsBucketId } from '../scope';
-import { startCad3DAutosave, getLastUserId } from './cad3d-autosave-core';
+import { startCad3DAutosave, type Cad3DAutosaveHandle } from './cad3d-autosave-core';
+import { danhTinhChoLuot } from '../danh-tinh-phien';
 
 export function useCad3DAutosave(): void {
   const bucketId = useSheetsBucketId();
 
   useEffect(() => {
-    const userId = getLastUserId();
-    const handle = startCad3DAutosave(userId ?? '', bucketId);
+    let cancelled = false;
+    let handle: Cad3DAutosaveHandle | null = null;
 
+    /**
+     * P0 04/09 — `getLastUserId()` ĐỒNG BỘ ở đây trả `null` khi vào thẳng URL (bộ đệm chưa được
+     * gieo, xem `lib/danh-tinh-phien.ts`) ⇒ `startCad3DAutosave('')` trả handle RỖNG ⇒ khối 3D
+     * dựng xong KHÔNG ghi một byte nào, KHÔNG báo lỗi. Nay chờ định danh giải từ PHIÊN MÁY CHỦ.
+     *
+     * Hai chỗ nghe sự kiện PHẢI đăng ký NGAY (đồng bộ), không đợi định danh: người dùng có thể
+     * đóng tab trước khi định danh về, và gỡ listener đòi đúng tham chiếu đã đăng ký — nên chúng
+     * trỏ qua `flush`, còn `handle` thì lắp sau. Chưa có handle ⇒ `flush()` là no-op, đúng nghĩa
+     * "chưa có gì để lưu".
+     */
+    const flush = () => handle?.flushNow();
     const onHide = () => {
-      if (document.visibilityState === 'hidden') handle.flushNow();
+      if (document.visibilityState === 'hidden') flush();
     };
-    window.addEventListener('beforeunload', handle.flushNow);
+    window.addEventListener('beforeunload', flush);
     document.addEventListener('visibilitychange', onHide);
 
+    void (async () => {
+      const { tiepTuc, userId } = await danhTinhChoLuot(() => !cancelled);
+      // Không có userId (thật sự chưa đăng nhập) ⇒ không dựng autosave — y hành vi cũ, chỉ khác
+      // là nay kết luận đó dựa trên câu trả lời của máy chủ chứ không dựa trên bộ đệm rỗng.
+      if (!tiepTuc || !userId) return;
+      handle = startCad3DAutosave(userId, bucketId);
+    })();
+
     return () => {
-      window.removeEventListener('beforeunload', handle.flushNow);
+      cancelled = true;
+      window.removeEventListener('beforeunload', flush);
       document.removeEventListener('visibilitychange', onHide);
-      handle.dispose();
+      handle?.dispose();
     };
   }, [bucketId]);
 }
