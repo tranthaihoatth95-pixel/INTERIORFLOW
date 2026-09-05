@@ -17,11 +17,17 @@ import { geometryOf } from './build-ops';
 // build-ops) — không sửa ngược `build-ops.ts` để gọi vào `build-recipe.ts`, tránh vòng lặp import
 // giữa 2 file cùng thư mục `lib/three/`.
 import { resolveSceneGroupGeometry } from './build-recipe';
+import { matIdCuaNhom } from './vat-lieu-nhom';
 
 export interface BuiltGroup {
   name: string;
   geometry: THREE.BufferGeometry;
   colorHex: string;
+  /** 05/09 (V8c bước 2) — DANH TÍNH VẬT LIỆU sống sót qua bước gộp. Trước trường này, khoá gộp là
+   * `colorHex` đơn thuần, mà mọi tường của app dùng CHUNG một hex (`cad-to-obj.ts:244/254/263`)
+   * ⇒ **hai bức tường KHÔNG THỂ mang hai vật liệu khác nhau**, dù dữ liệu có khai. `undefined` =
+   * nhóm chưa khai gì tra được (xem `matIdCuaNhom`) ⇒ rơi về màu phẳng, đúng như trước. */
+  matId?: string;
 }
 
 /** Group có `ops` boolean HOẶC có `recipe` với ít nhất 1 bước bật cần CSG/ngăn xếp riêng
@@ -50,9 +56,23 @@ function hasOpsGeometry(g: SceneGroup): boolean {
  * nguyên qua concat vertex). Biến ~2000 object (worst case: 1 group/entity) thành ~6 draw call.
  * NC-12 §4 — group có `ops` boolean tách riêng (xem `hasOpsGeometry`), dựng qua CSG thật, không
  * lọt vào đường concat này.
+ *
+ * 🔴 05/09 (V8c bước 2) — KHOÁ GỘP NAY LÀ `colorHex|matId`, KHÔNG còn là `colorHex` đơn thuần.
+ * Lý do bắt buộc: mọi tường của app dùng CHUNG một hex (`cad-to-obj.ts:244/254/263`), nên chừng
+ * nào khoá còn là màu thì **hai bức tường không thể mang hai vật liệu khác nhau** — dữ liệu có
+ * khai cũng vô ích, danh tính chết ngay trước lúc dựng mesh.
+ *
+ * SỐ DRAW CALL — đo thật trên 2000 group / 6 màu (`docs/bao-cao-phien/`, V8c):
+ *   · không ai khai vật liệu (đúng hiện trạng hôm nay) …… 6 → **6**, không nở một cái nào
+ *   · `specId` là cuid `ProductSpec` (không suy ra matId) … 6 → **6**
+ *   · 7 vật liệu hạt giống rải đều (hình thái thực tế) …… 6 → **42** (= 6 màu × 7 vật liệu)
+ *   · bệnh lý: MỖI entity một matId riêng ………………………… 6 → **2000**
+ * Trần đúng là `min(số màu × số vật liệu, số entity)`. Ca 2000 chỉ xảy ra khi dự án có 2000 vật
+ * liệu KHÁC NHAU — lúc đó chúng vốn KHÔNG gộp được (mỗi cái một texture), nên đó là hệ quả chứ
+ * không phải hồi quy. Ca đáng theo dõi là số VẬT LIỆU trong một cảnh, không phải số entity.
  */
 export function buildMergedGeometries(scene: Scene3DData): BuiltGroup[] {
-  const byColor = new Map<string, SceneGroup[]>();
+  const theoKhoa = new Map<string, { colorHex: string; matId: string | null; groups: SceneGroup[] }>();
   const opsGroups: SceneGroup[] = [];
   for (const g of scene.groups) {
     if (!g.positions.length) continue;
@@ -60,12 +80,14 @@ export function buildMergedGeometries(scene: Scene3DData): BuiltGroup[] {
       opsGroups.push(g);
       continue;
     }
-    const arr = byColor.get(g.colorHex);
-    if (arr) arr.push(g);
-    else byColor.set(g.colorHex, [g]);
+    const matId = matIdCuaNhom(g);
+    const khoa = `${g.colorHex}|${matId ?? ''}`;
+    const o = theoKhoa.get(khoa);
+    if (o) o.groups.push(g);
+    else theoKhoa.set(khoa, { colorHex: g.colorHex, matId, groups: [g] });
   }
   const out: BuiltGroup[] = [];
-  for (const [colorHex, groups] of byColor) {
+  for (const { colorHex, matId, groups } of theoKhoa.values()) {
     const total = groups.reduce((n, g) => n + g.positions.length, 0);
     const positions = new Array<number>(total);
     let off = 0;
@@ -73,10 +95,11 @@ export function buildMergedGeometries(scene: Scene3DData): BuiltGroup[] {
       for (let i = 0; i < g.positions.length; i++) positions[off + i] = g.positions[i];
       off += g.positions.length;
     }
-    out.push({ name: `merged_${colorHex}`, geometry: geometryOf(positions), colorHex });
+    out.push({ name: `merged_${colorHex}${matId ? `_${matId}` : ''}`, geometry: geometryOf(positions), colorHex, ...(matId ? { matId } : {}) });
   }
   for (const g of opsGroups) {
-    out.push({ name: g.name, geometry: resolveSceneGroupGeometry(g), colorHex: g.colorHex });
+    const matId = matIdCuaNhom(g);
+    out.push({ name: g.name, geometry: resolveSceneGroupGeometry(g), colorHex: g.colorHex, ...(matId ? { matId } : {}) });
   }
   return out;
 }
@@ -84,7 +107,12 @@ export function buildMergedGeometries(scene: Scene3DData): BuiltGroup[] {
 /** 1 mesh/group riêng — dùng để bench so draw-call thật (xem scripts đo FPS 3D-1) hoặc debug
  * từng khối. KHÔNG dùng làm mặc định trong Scene3DViewer (quá nhiều draw call ở scene lớn). */
 export function buildUnmergedGeometries(scene: Scene3DData): BuiltGroup[] {
-  return scene.groups.filter((g) => g.positions.length > 0).map((g) => ({ name: g.name, geometry: geometryOf(g.positions), colorHex: g.colorHex }));
+  return scene.groups
+    .filter((g) => g.positions.length > 0)
+    .map((g) => {
+      const matId = matIdCuaNhom(g);
+      return { name: g.name, geometry: geometryOf(g.positions), colorHex: g.colorHex, ...(matId ? { matId } : {}) };
+    });
 }
 
 export interface MassingWall {
@@ -98,6 +126,10 @@ export interface MassingWall {
   baseMm: number;
   geometry: THREE.BufferGeometry;
   colorHex: string;
+  /** V8c bước 2 — cùng lý do `BuiltGroup.matId`. Thiếu trường này thì mode dựng khối (massing) là
+   * chỗ DUY NHẤT còn phẳng lì trong khi cảnh tĩnh đã có vân — lệch nhau giữa hai mode, khó lần
+   * ra hơn hẳn hỏng đều. */
+  matId?: string;
 }
 
 /** Group nào đủ điều kiện tách thành mesh push-pull riêng (mode `massing`) — PHẢI có `entityId`
@@ -123,7 +155,8 @@ export function buildMassingWalls(scene: Scene3DData): MassingWall[] {
     // để 2 đường không lệch nhau (luật K1 "một nguồn"). Kéo-đẩy (push-pull) sau đó scale.y mesh
     // này tạm thời méo hố khoét trong lúc kéo — chấp nhận được, `pointerup` ghi `heightMm` mới
     // vào Doc rồi `useScene3D()` tính lại `scene` → hình cắt đúng lại (xem Scene3DViewer.tsx).
-    out.push({ entityId: g.entityId!, baseHeightMm: g.heightMm!, baseMm: g.baseMm ?? 0, geometry: resolveSceneGroupGeometry(g), colorHex: g.colorHex });
+    const matId = matIdCuaNhom(g);
+    out.push({ entityId: g.entityId!, baseHeightMm: g.heightMm!, baseMm: g.baseMm ?? 0, geometry: resolveSceneGroupGeometry(g), colorHex: g.colorHex, ...(matId ? { matId } : {}) });
   }
   return out;
 }

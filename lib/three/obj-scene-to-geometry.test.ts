@@ -64,5 +64,52 @@ console.log('buildMergedGeometries/buildUnmergedGeometries — không throw, kh�
   ok('unmerged — 1 geometry/group', unmerged.length === scene.groups.length);
 }
 
+/* ══════════════ V8c bước 2 — KHOÁ GỘP MANG DANH TÍNH VẬT LIỆU ══════════════
+ * Trước bước này khoá gộp là `colorHex` đơn thuần, mà MỌI tường của app dùng chung một hex
+ * (`cad-to-obj.ts:244/254/263`) ⇒ hai bức tường không thể mang hai vật liệu khác nhau, dù dữ liệu
+ * có khai. Ba ràng buộc dưới đây canh cả hai phía: tách được khi CÓ danh tính, và **không nở thêm
+ * draw call nào khi KHÔNG có** — vế sau mới là vế dễ hỏng âm thầm. */
+console.log('\nV8c — khoá gộp `colorHex|matId`');
+{
+  const SOI = 'f77b3a78-f2e3-4b19-b70f-20643c8a6243';
+  const OC_CHO = 'e1f4694e-b25c-4dcb-86d4-0c787b69f857';
+  const tuong = (i: number, extra: Partial<SceneGroup> = {}): SceneGroup => ({
+    name: `Wall_${i}`, colorHex: '#e8e4dc', positions: [0, 0, 0, 1, 0, 0, 1, 1, 0], ...extra,
+  });
+  const canh = (groups: SceneGroup[]): Scene3DData => ({ groups } as Scene3DData);
+
+  // ① KHÔNG group nào khai danh tính ⇒ số draw call phải Y HỆT trước bước này.
+  const khongKhai = buildMergedGeometries(canh([tuong(1), tuong(2), tuong(3)]));
+  ok('không ai khai vật liệu ⇒ vẫn gộp còn 1 (không nở draw call)', khongKhai.length === 1);
+  ok('không ai khai ⇒ BuiltGroup.matId để trống, không bịa', khongKhai[0].matId === undefined);
+
+  // ② Hai tường CÙNG MÀU nhưng khác vật liệu ⇒ phải tách. Đây là bài toán gốc.
+  const khacVatLieu = buildMergedGeometries(canh([
+    tuong(1, { specId: `hat-giong:${SOI}` }),
+    tuong(2, { specId: `hat-giong:${OC_CHO}` }),
+    tuong(3),
+  ]));
+  ok('cùng màu + khác matId ⇒ tách thành 3 nhóm', khacVatLieu.length === 3);
+  ok('nhóm mang đúng matId đã gỡ tiền tố hạt giống', khacVatLieu.some((b) => b.matId === SOI) && khacVatLieu.some((b) => b.matId === OC_CHO));
+
+  // ③ Cùng vật liệu thì vẫn gộp — nếu không, mỗi entity một draw call và cảnh lớn sập FPS.
+  const cungVatLieu = buildMergedGeometries(canh([
+    tuong(1, { specId: `hat-giong:${SOI}` }),
+    tuong(2, { specId: `hat-giong:${SOI}` }),
+    tuong(3, { specId: `hat-giong:${SOI.toUpperCase()}` }), // hoa/thường không được tách đôi
+  ]));
+  ok('cùng matId ⇒ vẫn gộp còn 1 draw call', cungVatLieu.length === 1);
+
+  // ④ `specId` là cuid ProductSpec thật ⇒ KHÔNG suy ra matId được (khai thẳng giới hạn, xem
+  //    docstring `matIdCuaNhom`). Nhóm đó phải rơi về màu, KHÔNG được tách theo specId — tách theo
+  //    specId là đúng đường nở về ~2000 draw call mà chú thích gốc của hàm cảnh báo.
+  const cuid = buildMergedGeometries(canh([
+    tuong(1, { specId: 'clx1abc23def45ghi67jkl890' }),
+    tuong(2, { specId: 'clx9zyx87wvu65tsr43qpo210' }),
+  ]));
+  ok('specId dạng cuid ⇒ không tách, gộp còn 1 (không nở draw call)', cuid.length === 1);
+  ok('specId dạng cuid ⇒ matId để trống, không giả UUID từ cuid', cuid[0].matId === undefined);
+}
+
 console.log(`\n${pass} pass, ${fail} fail`);
 if (fail) process.exit(1);
