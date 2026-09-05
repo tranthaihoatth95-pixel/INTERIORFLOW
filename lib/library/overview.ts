@@ -21,7 +21,7 @@ import { BAY_OF_SHELF, builtinCount, type SheetItem } from './shelves';
 import type { StageKey } from './types';
 import { IDFC_KIND_LABEL } from './thumb-kinds';
 import { cauKienHatGiongTrenKe } from './hat-giong-3d';
-import { object3dModelForName } from './object-3d-models';
+import { object3dModelForItem } from './object-3d-models';
 import type { IdfcKind } from '../cad/idfc';
 import type { KnowledgeStats } from './knowledge';
 
@@ -184,7 +184,9 @@ export function buildLibraryOverview(input: OverviewInput): OverviewSection[] {
   const vatLieu = items.filter((i) => i.shelfId === 'common-atlas');
   const anh = items.filter((i) => i.shelfId === 'common-asset');
   const kyHieuDb = items.filter((i) => i.shelfId === 'cad-kyhieu');
-  const moHinh3d = items.filter((i) => object3dModelForName(i.name) !== null);
+  // 05/09 — đếm theo DỮ LIỆU trước, tên sau: món do cửa nhận diện cấu kiện sinh ra mang con trỏ
+  // `model3d` thật, nên trang tổng đếm được chúng mà không phải thêm dòng regex nào.
+  const moHinh3d = items.filter((i) => object3dModelForItem(i) !== null);
   const mau = items.filter((i) => MAU_SHELVES.has(i.shelfId));
   const kyHieuBuiltin = builtinCount('cad-kyhieu');
   /* ⚡ 04/09 — TRANG TỔNG PHẢI ĐẾM CẢ TẦNG HẠT GIỐNG.

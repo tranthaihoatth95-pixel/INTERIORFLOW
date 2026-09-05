@@ -83,6 +83,17 @@ export function thumbKindOfAsset(a: Pick<LibraryApiAsset, 'tags' | 'usage' | 'na
 export function assetToSheetItem(a: LibraryApiAsset): SheetItem {
   const tags = tagList(a.tags);
   const shelfId = shelfOfAsset(a);
+  // `mo3d:<id biểu diễn>` — cửa nhận diện cấu kiện ghi vào lúc lưu. Hai tệp nằm CẠNH NHAU dưới
+  // cùng một đoạn đường nên MTLLoader phân giải được texture tương đối, không phải viết lại .mtl.
+  // ⚠️ ĐỌC TỪ CHUỖI GỐC, không qua `tags` — `tagList()` hạ chữ thường, mà đây là một ID phải giữ
+  // nguyên byte. Prisma `cuid()` hiện toàn chữ thường nên hạ chữ chưa gây hại, nhưng một id có
+  // hoa là hỏng câm: URL trả 404 và không ai biết vì sao.
+  const rep3d =
+    a.tags
+      .split(',')
+      .map((t) => t.trim())
+      .find((t) => t.startsWith('mo3d:'))
+      ?.slice(5) ?? null;
   return {
     id: `db:${a.id}`,
     shelfId,
@@ -93,6 +104,14 @@ export function assetToSheetItem(a: LibraryApiAsset): SheetItem {
     scope: 'studio',
     mechanic: mechanicOfShelf(shelfId),
     imageUrl: a.url,
+    ...(rep3d
+      ? {
+          model3d: {
+            glbUrl: `/api/idfc-import/tep/${rep3d}/mon.obj`,
+            mtlUrl: `/api/idfc-import/tep/${rep3d}/mon.mtl`,
+          },
+        }
+      : {}),
   };
 }
 

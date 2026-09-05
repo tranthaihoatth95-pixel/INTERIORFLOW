@@ -149,6 +149,12 @@ export interface SheetItem {
   imageUrl?: string;
   /** Dùng gần đây — cho chip "Gần đây". */
   recent?: boolean;
+  /**
+   * 05/09 — con trỏ tới KHỐI 3D XEM ĐƯỢC của món, đọc từ kho (tag `mo3d:<id biểu diễn>`) chứ
+   * không suy từ tên. Trước đó tấm Thư viện nhận ra món-có-3D bằng một bảng regex TÊN gõ cứng
+   * (`object-3d-models.ts`), nên món thứ hai không bao giờ hiện được. Vắng mặt = món không có khối.
+   */
+  model3d?: { glbUrl: string; mtlUrl?: string };
 }
 
 type Row = [name: string, code: string, kind: ThumbKind];

@@ -61,6 +61,14 @@ export interface VerifiedSpec {
 /** Kết quả vision ① — RefCaption + tên model đã chạy (để ghi provenance). */
 export interface PhotoClassification extends RefCaption {
   visionModel: string;
+  /**
+   * 05/09 — CỜ+NGUỒN THẬT của khối phân loại, tuỳ chọn. Bỏ trống ⇒ giữ NGUYÊN hành vi cũ
+   * (`inferred` + `vision:<visionModel>`), nên mọi người gọi cũ không đổi một byte.
+   * Có mặt khi phân loại KHÔNG đến từ máy nhìn ảnh — vd người tự khai lúc nhập tệp khối 3D.
+   * Không có trường này thì đường 0-credit buộc phải ghi `vision:<gì đó>` cho một câu người gõ:
+   * đó là NÓI DỐI NGUỒN, đúng thứ cờ 3 nấc sinh ra để chặn.
+   */
+  nguon?: { flag: ProvenanceFlag; source: string };
 }
 
 /** Kết quả mesh ② — GLB đã có + vết job. */
@@ -71,6 +79,11 @@ export interface MeshResult {
   requestId?: string;
   fileSizeBytes?: number;
   triangles?: number;
+  /**
+   * 05/09 — chuỗi nguồn ĐẦY ĐỦ, tuỳ chọn. Bỏ trống ⇒ giữ nguyên `fal:<falModel>[#<requestId>]`.
+   * Có mặt khi mesh KHÔNG do fal sinh (người đưa thẳng tệp .glb) — tiền tố `fal:` lúc đó sai sự thật.
+   */
+  nguon?: string;
 }
 
 /* ═══════════════ ③ BUILD BẢN GHI — THUẦN, test không mạng ═══════════════ */
@@ -118,8 +131,9 @@ export function buildIdfcFromPhoto(input: {
     ],
   };
 
-  const visionSource = `vision:${classification.visionModel}`;
-  const meshSource = `fal:${mesh.falModel}${mesh.requestId ? `#${mesh.requestId}` : ''}`;
+  const visionSource = classification.nguon?.source ?? `vision:${classification.visionModel}`;
+  const visionFlag: ProvenanceFlag = classification.nguon?.flag ?? 'inferred';
+  const meshSource = mesh.nguon ?? `fal:${mesh.falModel}${mesh.requestId ? `#${mesh.requestId}` : ''}`;
 
   const idfcJsonCore = exportIdfc({
     meta: {
@@ -158,11 +172,11 @@ export function buildIdfcFromPhoto(input: {
     },
     /** ① phân loại vision — cờ inferred. */
     classification: {
-      caption: prov(classification.caption, 'inferred', visionSource),
-      style: prov(classification.style, 'inferred', visionSource),
-      materials: prov(classification.materials, 'inferred', visionSource),
-      room: prov(classification.room, 'inferred', visionSource),
-      kind: prov('furniture', 'inferred', visionSource),
+      caption: prov(classification.caption, visionFlag, visionSource),
+      style: prov(classification.style, visionFlag, visionSource),
+      materials: prov(classification.materials, visionFlag, visionSource),
+      room: prov(classification.room, visionFlag, visionSource),
+      kind: prov('furniture', visionFlag, visionSource),
     },
     /** ③ tham số hãng — cờ verified từng trường, thiếu thì KHÔNG khai (không đoán bừa). */
     params: {
