@@ -14,6 +14,7 @@ import { useFlowStore } from '@/lib/store';
 import { getLastUserId } from '@/lib/resume';
 import {
   LOCK_IDLE_CHOICES,
+  DEFAULT_LOCK_IDLE_MINUTES,
   type LockIdleChoice,
   getLockIdleChoice,
   setLockIdleChoice,
@@ -24,8 +25,29 @@ import { useT } from '@/lib/i18n';
 
 export function LockScreenSettings() {
   const tr = useT();
-  const userId = useFlowStore((s) => s.user?.id) ?? getLastUserId() ?? '';
-  const [choice, setChoice] = useState<LockIdleChoice>(() => getLockIdleChoice(userId));
+  const idTrongStore = useFlowStore((s) => s.user?.id) ?? '';
+
+  /**
+   * 🔴 HYDRAT (05/09) — ĐỊNH DANH KHÔNG ĐƯỢC ĐỌC TRONG LÚC RENDER ĐẦU.
+   * Bản trước viết `useFlowStore(...) ?? getLastUserId() ?? ''` ngay thân component. Trên máy
+   * chủ `getLastUserId()` không có localStorage ⇒ trả null ⇒ `userId=''` ⇒ nút render
+   * `disabled=""` và nấc về mặc định 15. Trên trình duyệt, cùng lượt render ấy localStorage CÓ
+   * id ⇒ `disabled=false` và nấc là giá trị đã lưu. React đối chiếu hai bên rồi **vứt cả cây
+   * máy chủ dựng, render lại toàn bộ gốc bằng máy khách** (React #418 + #423, đo được ở
+   * `scripts/soi-mat/do-hydrat.mjs`: `Prop 'disabled' did not match. Server: "" Client: "false"`
+   * tại chính component này).
+   *
+   * Chữa: lượt render ĐẦU của trình duyệt phải giống hệt máy chủ ⇒ khởi tạo bằng hằng số, rồi
+   * mới với xuống localStorage trong hiệu ứng (chạy SAU khi hydrat xong). Cái giá là một nhịp
+   * ngắn nút bị vô hiệu — đúng bằng cửa sổ mà chú thích ② dưới đây vốn đã mô tả và đã có lời
+   * giải thích cho người dùng, nên không sinh trạng thái mới nào.
+   */
+  const [userId, setUserId] = useState('');
+  useEffect(() => {
+    setUserId(idTrongStore || getLastUserId() || '');
+  }, [idTrongStore]);
+
+  const [choice, setChoice] = useState<LockIdleChoice>(DEFAULT_LOCK_IDLE_MINUTES);
 
   /** Lane K (22/08): NẤC chọn sẵn thay ô nhập số tự do — 5/15/30/60/Không bao giờ. Ô số tự do
    * bắt người dùng nghĩ ra một con số cho việc họ không có ý kiến, và mở cửa cho giá trị vô
