@@ -33,8 +33,13 @@ const ALLOWED = new Set([
 ]);
 const CAPSULE = new Set([999, 9999]); // capsule/tròn — luôn hợp lệ
 
-const SCAN_DIRS = ['components'];
-const SCAN_FILES = ['app/globals.css'];
+/* ⚠️ VÙNG QUÉT MỞ RỘNG 05/09 — mốc CŨ (32) là SÀN, không phải sự thật.
+   Trước đó máy chỉ quét `components/` + đúng một tệp `app/globals.css`, nên **toàn bộ `app/`**
+   (route, layout, CSS theo màn) nằm ngoài tầm mắt: đo được thêm **19 khai báo radius ngoài thang**
+   ở đó. Con số nhảy 32 → ~51 KHÔNG phải hồi quy, không phải ai làm hỏng — là THÔI GIẤU.
+   Việc sửa 19 chỗ mới để cho lượt riêng; máy cảnh báo, KHÔNG chặn build. */
+const SCAN_DIRS = ['components', 'app'];
+const SCAN_FILES = [];
 const EXT = new Set(['.ts', '.tsx', '.css']);
 const SKIP = new Set(['node_modules', '.next', '.worktrees', '.git', 'dist', 'out']);
 

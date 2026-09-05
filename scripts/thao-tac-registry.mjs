@@ -107,7 +107,14 @@ export const LUAT = [
   { id: 'cam-hex-inline', toiDanh: 1, loai: 'grep',
     luat: 'Màu qua CSS var app — cấm hardcode hex trong inline style của component',
     nguon: 'LUAT-GIAO-DIEN-BAT-BUOC L4 + SPEC-DESIGN-SYSTEM-IF §2e.1',
-    soi: [{ dir: 'components', mau: ":\\s*'#[0-9a-fA-F]{3,8}'" }] },
+    /* ⚠️ VÙNG QUÉT MỞ RỘNG 05/09 — mốc CŨ chỉ đếm `components/`, tức là SÀN.
+       Hai luật khác trong chính tệp này (`backdrop-filter`, `outline`) đã khai cả `app/` từ lâu;
+       riêng luật hex thì không, nên hex gõ cứng trong `app/` chưa ai từng thấy. Đo 05/09 bằng
+       CHÍNH mẫu này: **45 chỗ** (ước tính 59 ghi trong sổ 04/09 đếm bằng mẫu rộng hơn — số
+       dùng là 45). Tổng 186 → 231 KHÔNG phải hồi quy, là thôi giấu; số LUẬT lệch vẫn là 2, cổng
+       không đổi màu. Sửa để lượt riêng; máy vẫn chỉ cảnh báo. */
+    soi: [{ dir: 'components', mau: ":\\s*'#[0-9a-fA-F]{3,8}'" },
+          { dir: 'app', mau: ":\\s*'#[0-9a-fA-F]{3,8}'" }] },
 
   { id: 'so-tabular-nums', toiDanh: 7, loai: 'grep',
     luat: 'Số hiển thị động (zoom %, đếm) dùng tabular-nums để không nhảy bề rộng',

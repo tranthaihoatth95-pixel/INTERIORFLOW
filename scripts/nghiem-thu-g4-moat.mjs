@@ -352,6 +352,28 @@ function chayChuoi(pha = {}) {
 
   const boq2 = computeBoq(doc2, KHO_GIA);
   const dongSan2 = boq2.rows.find((r) => r.specId === 'ps-go-ocho');
+
+  /* ═══ NEO NGOÀI · con số kỳ vọng TÍNH TAY, KHÔNG đi qua `computeBoq` ═══════════════════
+     ⚠️ VÌ SAO CÓ KHỐI NÀY (đo 05/09, ba mắt dưới từng là "SO GƯƠNG"):
+       ba mắt "BOQ sau mở lại / sau nạp lại ra đúng số cũ" so HAI KẾT QUẢ CỦA CÙNG MỘT HÀM.
+       Hàm hỏng thì cả hai vế cùng sai GIỐNG NHAU ⇒ vẫn bằng nhau ⇒ mắt vẫn xanh.
+       Bằng chứng chạy được: bẻ `computeBoq` trả `{rows:[],totalAmount:0}` ⇒ mắt
+       "① .idf — BOQ sau mở lại RA ĐÚNG SỐ CŨ" VẪN XANH (0₫ === 0₫, 0 dòng === 0 dòng).
+       Và neo `totalAmount > 0` từng thêm cho mắt IndexedDB cũng KHÔNG cứu được: bẻ hàm trả
+       một hằng số dương thì cả ba mắt xanh trở lại.
+     ⇒ Neo phải đến từ NGOÀI hàm đang nghi: tính thẳng từ hình học + bảng giá của bộ đo.
+       Sàn 5000×4000mm = 20 m² · óc chó 2.400.000₫/m² · hao hụt 8% ⇒ 51.840.000₫
+       Sofa 18.500.000₫ + tủ áo 32.000.000₫ = 50.500.000₫   ⇒ TỔNG 102.340.000₫
+     Neo này ĐỎ ngay khi `computeBoq` trả rỗng, trả hằng số, quên hao hụt, hay đổi đơn vị. */
+  const M2_SAN_TAY = ((SAN_MM[1].x - SAN_MM[0].x) / 1000) * ((SAN_MM[2].y - SAN_MM[1].y) / 1000);
+  const GIA_OCCHO = KHO_GIA.find((s) => s.id === 'ps-go-ocho');
+  const TIEN_SAN_TAY = M2_SAN_TAY * GIA_OCCHO.priceVnd * (1 + GIA_OCCHO.wastagePercent / 100);
+  const TIEN_MON_TAY = datVaoBanVe.reduce((t, d) => t + (KHO_GIA.find((s) => s.id === d.e.specId)?.priceVnd ?? 0), 0);
+  const TONG_TAY = TIEN_SAN_TAY + TIEN_MON_TAY;
+  const SO_DONG_TAY = 1 + datVaoBanVe.length; // 1 dòng sàn + mỗi món rời một dòng
+  doi('NEO NGOÀI · BOQ khớp con số tính tay từ hình học + bảng giá (không so gương)',
+    boq2.totalAmount === TONG_TAY && boq2.rows.length === SO_DONG_TAY,
+    `máy=${boq2.totalAmount?.toLocaleString('vi-VN')}₫/${boq2.rows.length} dòng · tay=${TONG_TAY.toLocaleString('vi-VN')}₫/${SO_DONG_TAY} dòng (sàn ${M2_SAN_TAY} m² × ${GIA_OCCHO.priceVnd.toLocaleString('vi-VN')}₫ × ${1 + GIA_OCCHO.wastagePercent / 100})`);
   doi('BOQ tự đổi theo — KHÔNG ai đi đồng bộ tay', !!dongSan2 && dongSan2.thanhTien !== dongSan?.thanhTien, `trước=${dongSan?.thanhTien?.toLocaleString('vi-VN')}₫ → sau=${dongSan2?.thanhTien?.toLocaleString('vi-VN')}₫`);
 
   const vanTaySau = boqFingerprint(doc2);
@@ -407,9 +429,24 @@ function chayChuoi(pha = {}) {
     doi('① .idf — ĐỊNH DANH NGỮ NGHĨA còn nguyên', matNguNghia === 0, `mất=${matNguNghia}`);
 
     const boqSauMo = computeBoq(docMoLai, KHO_GIA);
-    doi('① .idf — BOQ sau mở lại RA ĐÚNG SỐ CŨ', boqSauMo.totalAmount === boq2.totalAmount && boqSauMo.rows.length === boq2.rows.length, `${boqSauMo.totalAmount?.toLocaleString('vi-VN')}₫ vs ${boq2.totalAmount?.toLocaleString('vi-VN')}₫ · ${boqSauMo.rows.length} vs ${boq2.rows.length} dòng`);
+    // Neo vào TONG_TAY (tính ngoài `computeBoq`), KHÔNG so hai kết quả của cùng một hàm — xem
+    // khối "NEO NGOÀI" ở K8. Vẫn giữ vế `=== boq2` để bắt ca lệch giữa hai lần chạy.
+    doi('① .idf — BOQ sau mở lại RA ĐÚNG SỐ CŨ (neo vào số tính tay)',
+      boqSauMo.totalAmount === TONG_TAY && boqSauMo.rows.length === SO_DONG_TAY && boqSauMo.totalAmount === boq2.totalAmount,
+      `sau mở lại=${boqSauMo.totalAmount?.toLocaleString('vi-VN')}₫/${boqSauMo.rows.length} dòng · tay=${TONG_TAY.toLocaleString('vi-VN')}₫/${SO_DONG_TAY} · trước khi lưu=${boq2.totalAmount?.toLocaleString('vi-VN')}₫`);
     doi('① .idf — QUYẾT ĐỊNH của người còn hiệu lực', docMoLai.entities.find((e) => e.type === 'hatch')?.specId === 'ps-go-ocho', `specId sau mở lại = ${docMoLai.entities.find((e) => e.type === 'hatch')?.specId}`);
-    doi('① .idf — vân tay khớp ⇒ deck KHÔNG báo cũ oan', boqFingerprint(docMoLai) === vanTaySau, `${shortBoqFingerprint(boqFingerprint(docMoLai))} vs ${shortBoqFingerprint(vanTaySau)}`);
+    /* Mắt này cũng từng SO GƯƠNG: hai vế đều là `boqFingerprint(...)`, nên bẻ hàm trả một chuỗi
+       hằng thì hai vế vẫn bằng nhau ⇒ xanh (đo 05/09 bằng đột biến tạm trong `boqFingerprint`,
+       đã gỡ khỏi mã sản phẩm sau khi đo: mắt này lúc đó VẪN XANH).
+       Neo ngoài cho một hàm băm không phải "một con số tính tay" mà là SỨC PHÂN BIỆT: cùng Doc
+       ⇒ cùng vân tay, KHÁC Doc ⇒ KHÁC vân tay. Hằng số trượt cả hai vế sau. */
+    const vanTayXeDich = boqFingerprint({
+      ...docMoLai,
+      entities: docMoLai.entities.map((e) => (e.type === 'hatch' ? { ...e, points: e.points.map((p, i) => (i === 0 ? { x: p.x + 1, y: p.y } : p)) } : e)),
+    });
+    doi('① .idf — vân tay khớp ⇒ deck KHÔNG báo cũ oan (và vân tay PHÂN BIỆT được Doc khác)',
+      boqFingerprint(docMoLai) === vanTaySau && vanTaySau !== vanTayTruoc && vanTayXeDich !== vanTaySau,
+      `sau mở lại=${shortBoqFingerprint(boqFingerprint(docMoLai))} = trước lưu=${shortBoqFingerprint(vanTaySau)} · khác doc gốc=${vanTaySau !== vanTayTruoc} · xê dịch 1mm đổi vân tay=${vanTayXeDich !== vanTaySau}`);
 
     // ── LUẬT PASS ĐẦY ĐỦ: THAO TÁC → GHI XUỐNG → ĐÓNG/TẢI LẠI → VÀO LẠI → CÙNG MỘT SỰ THẬT.
     // Mọi khẳng định 3D ở K3/K8 phía trên đo trên Doc CÒN TRONG BỘ NHỚ. Chưa đủ: nếu định danh
@@ -467,7 +504,12 @@ function chayChuoi(pha = {}) {
     khoaThieuDuAn === 'u-g4-moat::/projects/g4-moat/cad' && !khoaThieuDuAn.endsWith('::'),
     `khoá=${khoaThieuDuAn}`);
 
-  doi('② IndexedDB — BOQ sau nạp lại ra đúng số', computeBoq(docIdb, KHO_GIA).totalAmount === boq2.totalAmount && boq2.totalAmount > 0, `${computeBoq(docIdb, KHO_GIA).totalAmount?.toLocaleString('vi-VN')}₫ (tổng > 0 để so không phải "hai số 0 bằng nhau")`);
+  // Neo vào TONG_TAY. Neo cũ `totalAmount > 0` KHÔNG đủ: đo 05/09, bẻ `computeBoq` trả một hằng
+  // số dương thì mắt này xanh trở lại — "cả hai vế cùng sai giống nhau" vẫn qua được ngưỡng > 0.
+  const boqIdb = computeBoq(docIdb, KHO_GIA);
+  doi('② IndexedDB — BOQ sau nạp lại ra đúng số (neo vào số tính tay)',
+    boqIdb.totalAmount === TONG_TAY && boqIdb.rows.length === SO_DONG_TAY && boqIdb.totalAmount === boq2.totalAmount,
+    `sau nạp lại=${boqIdb.totalAmount?.toLocaleString('vi-VN')}₫/${boqIdb.rows.length} dòng · tay=${TONG_TAY.toLocaleString('vi-VN')}₫/${SO_DONG_TAY}`);
 
   // ③ .idfc — một cấu kiện rời, mang cả hình học lẫn thương mại
   const chuoiIdfc = exportIdfc({
