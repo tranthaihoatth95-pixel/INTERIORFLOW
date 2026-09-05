@@ -7,7 +7,7 @@ export const SETTINGS_MOCK_CSS = `
 .if-settings-app *{box-sizing:border-box}
 
 /* Rail riêng ĐÃ XOÁ 03/08 — /settings dùng chung components/LeftRail.tsx toàn app. */
-.if-settings-app .main{flex:1;padding:26px 34px 30px 18px;overflow:auto}
+.if-settings-app .main{flex:1;padding:26px 34px 30px 18px;overflow:auto;scrollbar-gutter:stable}
 .if-settings-app h1{font-size:22px;margin:0;letter-spacing:-.02em;font-weight:600}
 .if-settings-app .sub{font-size:12px;color:var(--t2);margin-top:3px}
 .if-settings-app .backlink{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--t2);margin-bottom:10px;background:none;border:0;padding:0;cursor:pointer}

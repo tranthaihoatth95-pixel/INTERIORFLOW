@@ -1207,6 +1207,126 @@ body {
   }
 }
 
+/* ─────────────────────────────────────────────────────────────────────────────
+ * MÉP CUỘN — GIỮ CHỖ CHO THANH CUỘN (05/09)
+ *
+ * LUẬT NGẦM đã tìm ra: `AppShell.tsx:193` khoá `height:100dvh; overflow:hidden`, nên trang
+ * KHÔNG BAO GIỜ cao hơn màn. Mọi màn phải tự dựng hộp cuộn con — đo được **122 chỗ / 95 tệp**,
+ * ít nhất 4 phương ngữ khác nhau. Và vì `overflow:hidden` nằm ở VỎ, **thanh cuộn của trình duyệt
+ * không bao giờ hiện ở cấp trang** — mất luôn tín hiệu "còn nữa" phổ quát nhất.
+ *
+ * Đo 05/09 trên Chromium: mọi hộp cuộn có `offsetWidth − clientWidth = 0` ⇒ thanh cuộn là
+ * OVERLAY: chỉ hiện TRONG LÚC đang cuộn rồi tan. Nghĩa là **trước khi cuộn, không tín hiệu nào**
+ * — người dùng không thể khám phá ra thứ họ không biết là có. Hậu quả đo được: Cài đặt giấu
+ * **2879px** (thấy 23%), Files giấu 1690px (thấy 34%), 0/122 vùng có dấu hiệu còn tiếp.
+ *
+ * ⚠️ Và khối `::-webkit-scrollbar` ngay dưới đây — khai `width: 8px`, thumb tô màu theo theme —
+ * ĐÃ LÀ MÃ CHẾT: 8px đó chưa bao giờ chạm màn, vì không ai giữ chỗ cho nó. Đã viết, chưa cắm.
+ *
+ * `scrollbar-gutter: stable` biến 0px bóng ma thành 8px THẬT (đo: 0 → 8). Không mask, không bọc
+ * thêm thẻ, không đụng cấu trúc — nên không có rủi ro cắt popover như cách dùng `mask-image`.
+ * Vì sao KHÔNG bỏ khoá vỏ: mọi công cụ sáng tạo (Figma · VS Code · Blender · Photoshop · Linear)
+ * đều khoá vỏ, và bỏ khoá KHÔNG giải bài này — app cuộn-cả-trang với thanh overlay vẫn mù y hệt;
+ * nó chỉ làm rail · thanh công cụ · khẩu độ Vitals (đang neo viền màn) trôi theo.
+ * ───────────────────────────────────────────────────────────────────────────── */
+.overflow-y-auto,
+.overflow-auto,
+.if-vung-cuon,
+.if-settings-app .main,
+.if-lib-root .shelf,
+.if-files-app .insp,
+.if-files-app .uplist {
+  scrollbar-gutter: stable;
+
+  /* 🔴 HAI LẦN THỬ, HAI LẦN ĐO — ghi lại cả hai vì mỗi lần đều suýt thành "xong" giả.
+   *
+   * LẦN 1 · `scrollbar-gutter: stable`. Đo được máng `0 → 8px` trên 9/9 hộp cuộn thật. Số đẹp,
+   * đúng, nhưng cắt dải mép rồi soi pixel ⇒ **con trượt KHÔNG vẽ ra**. Dừng ở đó là lấy mất 8px
+   * bố cục mà không thêm tín hiệu nào. GIỮ `stable` (nó chặn nhảy bố cục khi nội dung lớn lên,
+   * và máng là chỗ để con trượt sống nếu môi trường có vẽ) nhưng KHÔNG coi nó là dấu hiệu.
+   *
+   * LẦN 2 · mẹo scroll-shadow 4 lớp background (2 `local` che + 2 `scroll` vệt). CSS áp ĐÚNG —
+   * `getComputedStyle` trả đủ 4 lớp, đúng attachment, đúng vị trí. Nhưng đo pixel: **CHÊNH = 0.0**.
+   * Lý do: **background vẽ PHÍA SAU con**. Màn Cài đặt toàn thẻ ĐỤC ⇒ thẻ che kín vệt. Mẹo đó chỉ
+   * hợp danh sách nền trong suốt, KHÔNG hợp bố cục thẻ. ⇒ ĐÃ GỠ, không để lại mã chết.
+   *
+   * LẦN 3 · dấu hiệu phải nằm TRÊN nội dung. Không bọc thêm thẻ (122 chỗ, không đi sửa từng chỗ
+   * được) ⇒ dùng `::before/::after` **sticky** ngay trong hộp cuộn: sticky dính theo khung nhìn của
+   * hộp, `z-index` cho nó nổi trên thẻ, `margin` âm để không chiếm chỗ. Phần "chỉ hiện khi thật sự
+   * còn nội dung" giao cho **scroll-driven animation** (`animation-timeline: scroll(self block)`) —
+   * Chromium 115+, mà IF ship bằng Electron 33 (Chromium 130). Trình duyệt không hỗ trợ thì
+   * `opacity` giữ nguyên giá trị tĩnh 0 ⇒ **không có tín hiệu SAI**, chỉ là không có tín hiệu.
+   * 🔴 BẪY THỨ BA, mắc rồi mới thấy: `.main` khai `overflow:auto` như một **THUỘC TÍNH CSS**, không
+   * phải **class Tailwind** ⇒ nó **chưa bao giờ khớp** `.overflow-y-auto`. Hai lần trong một lượt
+   * tôi lẫn "có tràn" với "có class". ⇒ Phải liệt kê tường minh các hộp cuộn khai-bằng-thuộc-tính.
+   * Và chính chỗ này chứng minh vì sao **không thể làm bằng một quy tắc CSS toàn cục**: CSS không
+   * chọn được theo "có tràn hay không". Đường bền là MỘT component sở hữu cái mép, mọi vùng cuộn
+   * đi qua nó. Danh sách dưới đây là **bản vá tạm có tên**, không phải kiến trúc.
+   * ⚠️ `mask-image` cố ý KHÔNG dùng: nó XÉN mọi thứ vẽ ra ngoài vùng ⇒ dropdown/popover nổi bên
+   * trong hộp cuộn sẽ bị cắt. Đó là lối `.cad-pill-scroll` dùng cho trục NGANG, nơi không có popover. */
+}
+
+@keyframes if-hien-mep-tren { from { opacity: 0; } 4%, to { opacity: 1; } }
+@keyframes if-hien-mep-duoi { from, 96% { opacity: 1; } to { opacity: 0; } }
+
+.overflow-y-auto::before, .overflow-auto::before, .if-vung-cuon::before,
+.if-settings-app .main::before, .if-lib-root .shelf::before,
+.if-files-app .insp::before, .if-files-app .uplist::before,
+.overflow-y-auto::after, .overflow-auto::after, .if-vung-cuon::after,
+.if-settings-app .main::after, .if-lib-root .shelf::after,
+.if-files-app .insp::after, .if-files-app .uplist::after {
+  content: '';
+  display: block;
+  position: sticky;
+  z-index: 3;
+  height: 14px;
+  pointer-events: none;
+  opacity: 0;
+  /* 🔴 `scroll(self)` SAI — `self` là phần tử MANG animation, tức chính ::before, mà pseudo thì
+   * không cuộn ⇒ timeline không bao giờ tiến, `opacity` kẹt ở 0. Đo được: pseudo tồn tại đủ
+   * (position sticky · z-index 3 · gradient · animation-name) mà pixel CHÊNH vẫn 0.0.
+   * `nearest` mới là hộp cuộn gần nhất — tức `.main`. */
+  animation-timeline: scroll(nearest block);
+  animation-fill-mode: both;
+}
+.overflow-y-auto::before, .overflow-auto::before, .if-vung-cuon::before,
+.if-settings-app .main::before, .if-lib-root .shelf::before,
+.if-files-app .insp::before, .if-files-app .uplist::before {
+  top: 0;
+  margin-bottom: -14px;
+  background: linear-gradient(to bottom,
+    color-mix(in srgb, var(--t1) 12%, transparent), transparent);
+  animation-name: if-hien-mep-tren;
+}
+.overflow-y-auto::after, .overflow-auto::after, .if-vung-cuon::after,
+.if-settings-app .main::after, .if-lib-root .shelf::after,
+.if-files-app .insp::after, .if-files-app .uplist::after {
+  bottom: 0;
+  margin-top: -14px;
+  background: linear-gradient(to top,
+    color-mix(in srgb, var(--t1) 12%, transparent), transparent);
+  animation-name: if-hien-mep-duoi;
+}
+/* Giảm chuyển động: vệt là TRẠNG THÁI chứ không phải hiệu ứng, nên GIỮ — nhưng bỏ phần chạy theo
+ * cuộn, để nó đứng yên ở mức thấy được. Tắt hẳn là lấy mất tín hiệu của đúng nhóm người cần nó. */
+@media (prefers-reduced-motion: reduce) {
+  .overflow-y-auto::before, .overflow-auto::before, .if-vung-cuon::before,
+  .overflow-y-auto::after, .overflow-auto::after, .if-vung-cuon::after {
+    animation: none;
+    opacity: 1;
+  }
+}
+/* Hai lớp dưới CỐ Ý ẩn thanh cuộn và đã tự dựng vệt mờ 2 mép cho trục NGANG
+ * (`.cad-pill-scroll.is-overflowing`) ⇒ không giữ chỗ máng, và không mọc thêm vệt dọc. */
+.no-scrollbar::before, .no-scrollbar::after,
+.cad-pill-scroll::before, .cad-pill-scroll::after { content: none; }
+/* Ngoại lệ CÓ LÝ DO: hai lớp dưới CỐ Ý ẩn thanh cuộn và đã tự dựng vệt mờ 2 mép thay thế
+ * (`.cad-pill-scroll.is-overflowing`). Giữ chỗ cho một thanh đã ẩn là chừa 8px trống vô nghĩa. */
+.no-scrollbar,
+.cad-pill-scroll {
+  scrollbar-gutter: auto;
+}
+
 /* scrollbar tối giản, overlay kiểu macOS */
 ::-webkit-scrollbar {
   width: 8px;

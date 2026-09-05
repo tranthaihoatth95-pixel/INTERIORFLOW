@@ -22,8 +22,8 @@ for (const path of ['/','/files','/library','/materials','/tasks','/settings']) 
       const s=getComputedStyle(el);
       if(!/auto|scroll|overlay/.test(s.overflowY)) continue;
       const du = el.scrollHeight - el.clientHeight;
-      if (du > 4) cuon.push({ tag:el.tagName.toLowerCase(), cls:(el.className||'').toString().slice(0,55),
-        cao:el.clientHeight, nd:el.scrollHeight, du });
+      if (du > 4) cuon.push({ tag:el.tagName.toLowerCase(), cls:(el.className||'').toString().slice(0,40),
+        du, mang: el.offsetWidth - el.clientWidth });
     }
     // thứ bị CẮT ở mép dưới khung nhìn mà không ai cuộn được tới
     let catDay=0;

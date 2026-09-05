@@ -121,7 +121,7 @@ export const FILES_MOCK_CSS = `
    lấn khi tải ≥2 file cùng lúc — bug thật, không chỉ thẩm mỹ, xem báo cáo so sánh). */
 .if-files-app .uptoast{position:absolute;right:20px;bottom:20px;display:flex;flex-direction:column;background:var(--nen-mo-panel);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%);border:1px solid var(--vien-mo);border-radius:var(--radius-lg);box-shadow:var(--shadow-pop);min-width:320px;max-width:360px;z-index:6;overflow:hidden}
 .if-files-app .uphead{padding:11px 14px;font-size:11.5px;font-weight:600;color:var(--t2);border-bottom:1px solid var(--vien-mo)}
-.if-files-app .uplist{display:flex;flex-direction:column;max-height:260px;overflow-y:auto}
+.if-files-app .uplist{display:flex;flex-direction:column;max-height:260px;overflow-y:auto;scrollbar-gutter:stable}
 .if-files-app .upitem{display:flex;align-items:center;gap:12px;padding:10px 14px}
 .if-files-app .upitem+.upitem{border-top:1px solid var(--vien-mo)}
 .if-files-app .upitem .fic{width:38px;height:44px;border-radius:var(--radius-sm);background:var(--field);border:1px solid var(--border);position:relative;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4px;flex:none}
@@ -151,7 +151,7 @@ export const FILES_MOCK_CSS = `
 .if-files-app .track{height:5px;border-radius:5px;background:var(--field);margin-top:7px;overflow:hidden}
 .if-files-app .track i{display:block;height:100%;border-radius:5px;background:var(--accent);transition:width .3s ease-out}
 
-.if-files-app .insp{width:308px;padding:26px 26px 22px 0;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
+.if-files-app .insp{width:308px;padding:26px 26px 22px 0;display:flex;flex-direction:column;gap:14px;overflow-y:auto;scrollbar-gutter:stable}
 .if-files-app .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-node);padding:16px}
 .if-files-app .storrow{display:flex;align-items:center;gap:14px}
 .if-files-app .ring{width:64px;height:64px;flex:none}

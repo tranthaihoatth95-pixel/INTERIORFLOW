@@ -88,6 +88,11 @@ const MAU_NOI_DUNG_CSS = [
   '.react-flow__edge.selected .react-flow__edge-path { stroke-width: 2.5; }',
   '/* selector nói rõ đây là nét của một biểu tượng ⇒ PHẢI bắt */',
   '.if-icon svg { stroke-width: 2; }',
+  '/* MÉP CUỘN — khai overflow dọc mà KHÔNG giữ chỗ thanh cuộn ⇒ PHẢI bắt */',
+  '.ao-cuon-tran { overflow-y: auto; }',
+  '/* ⛔ hai ca dưới PHẢI **KHÔNG** bị bắt — khoá cả hai chiều của luật mép cuộn */',
+  '.ao-cuon-du { overflow-y: auto; scrollbar-gutter: stable; }',
+  '.ao-cuon-ngang { overflow-x: auto; }',
 ].join('\n');
 if (TU_KIEM) TEP.push(MAU_AO, MAU_AO_CSS);
 
@@ -263,9 +268,56 @@ moHo('F-MAT-VOCAB', 'Vật liệu · G0–G3 phải có mặt trong token sản 
  * placeholder). Chỉ bắt khi nó đứng sau `||`/`??` để **thế chỗ một giá trị thật chưa biết** —
  * đó mới là chỗ phỏng đoán đội lốt sự thật. */
 moHo('F-NHAN-BIA', 'Nhãn · cấm bịa tên khi giá trị thật chưa biết');
+/* ── F-MEP-CUON · VÙNG CUỘN KHÔNG CÓ DẤU HIỆU "CÒN TIẾP" ─────────────────────────────────────
+ * LUẬT NGẦM tìm ra 05/09, và nó là loại luật KHÔNG NẰM TRONG TÀI LIỆU NÀO — nó được thi hành
+ * bằng MỘT DÒNG CSS: `AppShell.tsx:193` khoá `height:100dvh; overflow:hidden`. Trang không bao
+ * giờ cao hơn màn ⇒ mỗi màn phải tự dựng hộp cuộn con. Đo: **122 chỗ / 95 tệp**, ≥4 phương ngữ.
+ *
+ * Vì `overflow:hidden` nằm ở VỎ, thanh cuộn cấp trang không bao giờ hiện. Và đo trên Chromium,
+ * MỌI hộp cuộn con có `offsetWidth − clientWidth = 0` ⇒ thanh cuộn là OVERLAY: chỉ hiện TRONG
+ * LÚC cuộn rồi tan. **Trước khi cuộn, không có tín hiệu nào.** Người dùng không khám phá được
+ * thứ họ không biết là có. Hậu quả đo được cùng ngày:
+ *   · Cài đặt  858 khung / 3737 nội dung → giấu 2879px, thấy 23%
+ *   · Files    858 / 2548              → giấu 1690px, thấy 34%, 22 phần tử bị cắt ở mép
+ *   · 0/122 vùng cuộn có bất kỳ dấu hiệu còn tiếp nào (mask · fade · bóng mép)
+ *
+ * ⇒ LUẬT: nơi nào khai `overflow[-y]: auto|scroll` thì nơi đó phải khai luôn `scrollbar-gutter`.
+ * `stable` biến máng 0px bóng ma thành 8px THẬT (đo: 0 → 8) — thanh cuộn thành công dân của bố
+ * cục, không phải bóng ma. `auto` là lối THOÁT CÓ KHAI cho ai cố ý ẩn thanh và đã tự dựng vệt mờ.
+ *
+ * ⚠️ THƯỚC LÀ XẤP XỈ, khai thẳng: nó tìm `scrollbar-gutter` trong cửa sổ ±260 ký tự quanh chỗ
+ * khai overflow, KHÔNG phân tích cây CSS. Khai đúng luật mà đặt cách xa >260 ký tự thì bị báo oan;
+ * ngược lại một khai báo của rule KHÁC nằm gần cũng có thể tha nhầm. Chấp nhận: rẻ, và sai số
+ * này không che được ca thật nào đã đo. `overflow-x` KHÔNG tính — cuộn ngang là bài khác. */
+moHo('F-MEP-CUON', 'Vùng cuộn · khai overflow thì phải khai scrollbar-gutter');
 
 for (const p of TEP) {
   const src = doc(p);
+
+  // ── MÉP CUỘN: khai overflow dọc mà không khai scrollbar-gutter ──────────────
+  {
+    const RE_CUON = /overflow(?:Y)?\s*:\s*['"`]?(auto|scroll)\b|overflow(?:-y)?\s*:\s*(auto|scroll)\b/g;
+    let m, thay = false;
+    while ((m = RE_CUON.exec(src))) {
+      // `overflow-x` đã bị loại bởi chính mẫu; loại thêm ca `overflowX` viết hoa lạc vào.
+      if (/overflow-?x/i.test(src.slice(Math.max(0, m.index - 2), m.index + 12))) continue;
+      thay = true; ho['F-MEP-CUON'].ungVien++;
+      /* 🔴 SỬA NGAY TRONG LƯỢT MỞ SỔ — bản đầu dùng CỬA SỔ ±260 KÝ TỰ và `--tu-kiem` bắt được
+       * ngay: trong tệp ảo, rule `.ao-cuon-tran{overflow-y:auto}` nằm cách rule kế
+       * `.ao-cuon-du{...scrollbar-gutter:stable}` đúng ~60 ký tự ⇒ nó ĐỌC GHÉ khai báo của hàng
+       * xóm rồi tha oan. Kho thật còn dễ rò hơn: CSS-in-TS ở repo này viết mỗi rule một dòng sát
+       * nhau. ⇒ Đổi sang phạm vi KHỐI `{...}` bao quanh — chính xác cho cả rule CSS phẳng lẫn
+       * object `style={{…}}` trong JSX. Không có bước tự kiểm hai chiều thì thước này đã mở sổ
+       * bằng một con số ĐẸP HƠN SỰ THẬT, và không ai biết. */
+      const mo = src.lastIndexOf('{', m.index);
+      const dong2 = src.indexOf('}', m.index);
+      const khoi = src.slice(mo === -1 ? 0 : mo, dong2 === -1 ? src.length : dong2);
+      if (/scrollbar-gutter|scrollbarGutter/.test(khoi)) continue;
+      viPham('F-MEP-CUON', p, soDong(src, m.index), m[0].trim(),
+        'kèm scrollbar-gutter', 'vùng cuộn không giữ chỗ cho thanh cuộn ⇒ 0 dấu hiệu "còn tiếp"');
+    }
+    if (thay) ho['F-MEP-CUON'].tep++;
+  }
 
   // ── NHÃN BỊA: `x || 'Chưa đặt tên'` · `x ?? 'Untitled'` ─────────────────────
   {
@@ -550,13 +602,25 @@ if (TU_KIEM) {
    * đường kích thước lên 1.5 rồi **làm hỏng bản vẽ**. Audit 05/09 gỡ 9 ca báo oan; hai
    * khẳng định dưới đây KHOÁ phần miễn trừ đó lại, để lần sau gỡ nhầm là TRƯỢT ngay. */
   const netCua = (tep) => ho['F-ICON-STROKE'].viPham.filter((v) => v.p === tep).map((v) => v.thay);
+  const mepCua = (tep) => ho['F-MEP-CUON'].viPham.filter((v) => v.p === tep);
+  /* Đếm vi phạm rơi ĐÚNG dòng chứa một selector — đủ để phân biệt ba ca ảo nằm cùng một tệp. */
+  const soDongViPham = (id, tep, selector) => {
+    const d = doc(tep).split('\n');
+    return ho[id].viPham.filter((v) => v.p === tep && (d[v.dong - 1] || '').includes(selector)).length;
+  };
   const KHONG_BAT_OAN = [
     ['F-ICON-STROKE', 'BẮT   nét 2 trong <svg viewBox="0 0 16 16">', netCua(MAU_AO).includes('2')],
     ['F-ICON-STROKE', 'THA   nét 0.15 trên <motion.path> của bản vẽ (viewBox là biểu thức)', !netCua(MAU_AO).includes('0.15')],
     ['F-ICON-STROKE', 'BẮT   nét 2 của selector `.if-icon svg`', netCua(MAU_AO_CSS).includes('2')],
     ['F-ICON-STROKE', 'THA   nét 2.5 của dây nối `.react-flow__edge-path`', !netCua(MAU_AO_CSS).includes('2.5')],
+    /* MÉP CUỘN — cùng kỷ luật: đòi máy phân định CẢ HAI CHIỀU, không chỉ chiều bắt.
+     * Ai gỡ nhầm nhánh `scrollbar-gutter` hoặc nhánh `overflow-x` thì TRƯỢT ngay tại đây,
+     * chứ không âm thầm kết tội một vùng đã khai đúng luật / một vùng cuộn NGANG. */
+    ['F-MEP-CUON', 'BẮT   `overflow-y:auto` trần, không giữ chỗ thanh cuộn', mepCua(MAU_AO_CSS).length >= 1],
+    ['F-MEP-CUON', 'THA   `overflow-y:auto` ĐÃ kèm `scrollbar-gutter:stable`', soDongViPham('F-MEP-CUON', MAU_AO_CSS, 'ao-cuon-du') === 0],
+    ['F-MEP-CUON', 'THA   `overflow-x:auto` — cuộn NGANG là bài khác', soDongViPham('F-MEP-CUON', MAU_AO_CSS, 'ao-cuon-ngang') === 0],
   ];
-  console.log('   RANH GIỚI ICON ↔ KHÔNG-PHẢI-ICON — đòi máy phân định ĐÚNG CẢ HAI CHIỀU\n');
+  console.log('   RANH GIỚI ICON ↔ KHÔNG-PHẢI-ICON · MÉP CUỘN — đòi máy phân định ĐÚNG CẢ HAI CHIỀU\n');
   for (const [id, mo, dat] of KHONG_BAT_OAN) {
     if (!dat) truot++;
     console.log(`   ${dat ? '🟢 ĐÚNG' : '🔴 SAI — RANH GIỚI ĐÃ LỆCH'}  ${id}  ${mo}`);
@@ -564,7 +628,7 @@ if (TU_KIEM) {
   console.log('');
 
   if (truot) { console.log(`🔴 TỰ KIỂM TRƯỢT — ${truot} khẳng định không đạt.\n`); process.exit(3); }
-  console.log('🟢 TỰ KIỂM ĐẠT — 4 họ soi-theo-tệp còn sống, và ranh giới icon phân định đúng cả hai chiều.\n');
+  console.log('🟢 TỰ KIỂM ĐẠT — các họ soi-theo-tệp còn sống; ranh giới icon VÀ mép cuộn phân định đúng cả hai chiều.\n');
   console.log('⚠️ Lượt chạy này CÓ tệp ảo ⇒ các con số ở trên KHÔNG dùng làm phép đo. Chạy lại không cờ.\n');
 }
 if (doHong) { console.log('🟠 CÓ HỌ LUẬT KHÔNG THẤY ỨNG VIÊN NÀO — coi là PHÉP ĐO HỎNG, không phải ĐẠT.\n'); process.exit(2); }

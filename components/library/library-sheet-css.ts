@@ -108,7 +108,7 @@ export const LIBRARY_SHEET_CSS = `
 /* 🔴 SỬA 07/08 (Hoà chốt "PHƯƠNG ÁN A"): 186px chỉ là số chép nguyên văn từ mock CŨ
    (mock-if-3chang.html) — KHÔNG phải chốt của Hoà. Mock MỚI (Thư viện.dc.html, 06/08) và
    bảng chốt 07/08 đều ghi 214px — đổi theo, không giữ số cũ "cho tiện tay". */
-.if-lib-root .shelf{width:214px;flex:none;border-right:1px solid var(--vien-mo);padding:7px 6px;overflow-y:auto;
+.if-lib-root .shelf{width:214px;flex:none;border-right:1px solid var(--vien-mo);padding:7px 6px;overflow-y:auto;scrollbar-gutter:stable;
        display:flex;flex-direction:column}
 .if-lib-root .shrow{width:100%;height:30px;flex:none;display:flex;align-items:center;gap:9px;padding:0 9px;border-radius:var(--radius-sm);
        color:var(--t2);font-size:var(--fs-xs);text-align:left;transition:background .12s var(--ease-apple);border:0;background:none;cursor:pointer}
