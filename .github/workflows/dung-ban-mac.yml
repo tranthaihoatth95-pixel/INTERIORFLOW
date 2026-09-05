@@ -14,7 +14,16 @@
 name: Dựng bộ cài macOS (.dmg)
 
 on:
+  # Hai cửa kích hoạt, CỐ Ý:
+  #  · workflow_dispatch — nút "Run workflow" trong tab Actions. ⚠️ GitHub CHỈ hiện nút này khi
+  #    tệp workflow đã có trên NHÁNH MẶC ĐỊNH (main). Trước khi nhánh tích hợp được gộp vào main
+  #    thì nút chưa xuất hiện và API trả 404 — đã đo 05/09, không phải lỗi cấu hình.
+  #  · push vào nhánh `dung-mac` — cửa dùng được NGAY, vì workflow chạy theo tệp CỦA CHÍNH nhánh
+  #    được push, không cần có mặt trên main. Muốn dựng lại: push nhánh `dung-mac` lên mốc mới.
   workflow_dispatch:
+  push:
+    branches:
+      - dung-mac
 
 jobs:
   dung-dmg:
