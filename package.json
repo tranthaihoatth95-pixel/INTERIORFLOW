@@ -22,6 +22,7 @@
     "soi:that": "node scripts/soi-that.mjs",
     "soi:cam-dien": "node scripts/soi-cam-dien.mjs",
     "soi:cong-cu-chet": "node scripts/soi-cong-cu-chet.mjs",
+    "soi:mat-tu-cham": "node scripts/soi-mat-tu-cham.mjs",
     "release:preflight": "node scripts/release-preflight.mjs",
     "license:check": "license-checker-rseidelsohn --production --onlyAllow 'MIT;ISC;Apache-2.0;BSD-2-Clause;BSD-3-Clause;CC0-1.0;OFL-1.1;LGPL-3.0-or-later;Zlib;BlueOak-1.0.0;0BSD;Python-2.0' --excludePackages 'interiorflow@0.1.0;@mlightcad/libredwg-web@0.7.7;caniuse-lite@1.0.30001800' --summary",
     "tsc": "tsc --noEmit",
