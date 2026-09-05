@@ -18,6 +18,12 @@
  *   ⇒ **INSPECT thì ĐƯỢC**, vì thứ nó khẳng định là *"khung soi rộng bằng này, một tấm lặp
  *     bằng kia, nên mạch rơi vào đây"* — cả ba con số đến thẳng từ `uvScaleMm`, và đó đúng là
  *     phép lát mà engine 3D sẽ dùng. Chi tiết BÊN TRONG tấm vẫn là suy diễn, và panel nói ra.
+ *   ⚠️ BỔ SUNG 05/09 — hai món ship sẵn nay có **ẢNH VÂN THẬT** (`baseColorMapUrl`), tức đã
+ *     hiệu chuẩn theo `uvScaleMm`. Với chúng, nấc JUDGE khai được ĐÚNG MỘT con số mm: bề rộng
+ *     **trọn một chu kỳ lặp** — vì nấc này bày `cover` một tấm, nên "một tấm 190 mm ngang" là
+ *     phát biểu đúng theo định nghĩa, không phải ước lượng. Nó vẫn KHÔNG vẽ thước, và vẫn
+ *     KHÔNG khai mm cho vân procedural. Ranh giới không đổi: **khai cái mình đo được, im về
+ *     cái mình chỉ vẽ ra.**
  *
  * 📄 BẢN VẼ CỦA VIỆC NÀY: `docs/delivery/SPEC-VAT-LIEU-LAT-CAT-DOC.md` §5.5 (hợp đồng ngưỡng) +
  * §6 mục V5 (thứ tự thi công). Trỏ ngược lại là CỐ Ý: bản vẽ đó hôm nay **không tệp nào trỏ

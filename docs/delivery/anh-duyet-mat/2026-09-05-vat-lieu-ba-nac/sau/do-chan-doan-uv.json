@@ -1,0 +1,23 @@
+{
+  "chuKyMm": 400,
+  "lan1": {
+    "anh": "chan-doan-512.png",
+    "rongDai": 418,
+    "coNen": "279px 279px",
+    "lap": "repeat",
+    "pxTrenMm": 0.698,
+    "vuong": true,
+    "soTamNgang": 1.5
+  },
+  "lan2": {
+    "anh": "chan-doan-512.png",
+    "rongDai": 418,
+    "coNen": "279px 279px",
+    "lap": "repeat",
+    "pxTrenMm": 0.698,
+    "vuong": true,
+    "soTamNgang": 1.5
+  },
+  "giong": true,
+  "loi": []
+}
