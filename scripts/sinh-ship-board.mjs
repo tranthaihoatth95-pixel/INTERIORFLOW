@@ -95,7 +95,12 @@ const DANG_DUNG = [
     duoc: 'Đặt món xuống giữ danh tính; chỉ khi người dùng CHỦ ĐỘNG rã món thì nó mới thành hình học rời.' },
 ];
 
-const mau = { PASS: '#2f9e6b', PARTIAL: '#c08a2e', FAIL: '#c04a4a', UNVERIFIED: '#6b7280', CONFLICT: '#8b5cf6' };
+/* ⚠️ CONFLICT trước đây dùng đúng nửa TÍM của cặp màu logo cũ — thứ `check-chot` luật
+   `LOGO-KHONG-ACCENT` cấm **ở bất kỳ đâu** (chốt 07/08 mục 9) ⇒ `npm test` ĐỎ. Bắt được 05/09
+   khi làn V5 chạy cổng chung. Đổi sang một tím KHÁC, giữ nguyên nghĩa "hai bên nói ngược nhau".
+   Tra cặp màu bị cấm ở `scripts/check-chot.mjs` — CHỖ NÀY cấm chép lại chúng, kể cả trong chú
+   thích: máy soi đọc cả chú thích, và nó đúng khi làm vậy (chép mẫu sai là gieo lại mầm). */
+const mau = { PASS: '#2f9e6b', PARTIAL: '#c08a2e', FAIL: '#c04a4a', UNVERIFIED: '#6b7280', CONFLICT: '#6d5bd0' };
 /** Cắt theo ranh giới TỪ — cắt giữa chữ ra "cà h" thì người đọc tưởng dữ liệu hỏng. */
 const catGon = (s, n) => { const t = String(s); if (t.length <= n) return t;
   const c = t.slice(0, n); return c.slice(0, c.lastIndexOf(' ')) + '…'; };
