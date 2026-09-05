@@ -33,7 +33,7 @@
       "ma": "J07",
       "ten": "Vẽ 2D → lưu → MÁY SẠCH (xoá hồ sơ) mở lại vẫn thấy nét",
       "trangThai": "PASS",
-      "vi": "XOÁ SẠCH hồ sơ trình duyệt rồi mở lại: 3 thực thể quay về đúng ID cũ, khôi phục từ hàng ProjectFile trên máy chủ (1501 byte, 3 thực thể parse lại được)",
+      "vi": "XOÁ SẠCH hồ sơ trình duyệt rồi mở lại: 3 thực thể quay về đúng ID cũ, khôi phục từ hàng ProjectFile trên máy chủ (1590 byte, 3 thực thể parse lại được)",
       "ghiChu": ""
     },
     {
@@ -47,7 +47,7 @@
       "ma": "J04",
       "ten": "Home → bấm \"Tạo dự án mới\" → dự án có thật trong CSDL và còn sau khi mở lại",
       "trangThai": "PASS",
-      "vi": "dự án tạo thật trong CSDL (20 → 21 hàng Project, 21 Flow) · URL http://localhost:3096/ → http://localhost:3096/projects/cmtng76fo001d7de8ds9jzotj/render · Home mở lại vẫn thấy (17 dự án qua GET /api/flows)",
+      "vi": "dự án tạo thật trong CSDL (30 → 31 hàng Project, 23 Flow) · URL http://localhost:3230/ → http://localhost:3230/ · Home mở lại vẫn thấy (2 dự án qua GET /api/flows)",
       "ghiChu": ""
     },
     {
