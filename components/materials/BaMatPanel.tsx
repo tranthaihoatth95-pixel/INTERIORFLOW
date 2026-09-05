@@ -15,10 +15,12 @@
  * Khuôn hộp thoại chép nguyên `MaterialPbrEditor.tsx` (nền mờ + tấm `--panel` + nút ✕) — một
  * ngôn ngữ giao diện, không chế khuôn thứ hai.
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Ruler, Orbit, Tag, X, Sparkles } from 'lucide-react';
 import { useT } from '@/lib/i18n';
 import type { BaMat, MatKhoa, MatMotMat } from '@/lib/materials/ba-mat';
+import type { XemTruocO } from '@/lib/materials/xem-truoc-o';
+import { MauVatLieuLon } from './MauVatLieuLon';
 
 const KY_HIEU: Record<MatKhoa, typeof Ruler> = { ve2d: Ruler, dung3d: Orbit, trinhBay: Tag };
 
@@ -38,11 +40,23 @@ function dauCua(m: MatMotMat): string {
   return m.trangThai === 'chuaDu' ? '!' : '–';
 }
 
+/** Hai nấc chi tiết mở được từ panel này. Nhãn nói **VIỆC**, không nói cỡ — ba nấc là ba công
+ * năng, và đặt tên theo cỡ ("vừa/lớn") là cách chắc chắn nhất để chúng lại trượt về kéo dãn. */
+const NAC_LON = [
+  { ma: 'judge' as const, vi: 'Soi chất', en: 'Surface', giai: { vi: 'vân · độ bóng', en: 'grain · finish' } },
+  { ma: 'inspect' as const, vi: 'Soi khổ thật', en: 'True scale', giai: { vi: 'mạch · số đo', en: 'seams · numbers' } },
+];
+
 export function BaMatPanel({
-  baMat, ten, onClose, onMoChatLieu, onMoSuaThuongMai,
+  baMat, ten, xemTruoc, nguon, onClose, onMoChatLieu, onMoSuaThuongMai,
 }: {
   baMat: BaMat;
   ten: string;
+  /** nguyên liệu VẼ mẫu vật — CÙNG kết quả `getMaterial()` mà bảng kho đang dùng cho nấc SCAN.
+   * `null` = món chưa có mã ⇒ không tra được mặt nào ⇒ panel không bày mẫu vật giả. */
+  xemTruoc?: XemTruocO | null;
+  /** nhãn nguồn của dòng kho — gốc gác, hiện ở nấc INSPECT. */
+  nguon?: string | null;
   onClose: () => void;
   /** mở cửa sổ chất liệu render — chỉ truyền khi món CÓ mã (matId = mã vật liệu). */
   onMoChatLieu?: () => void;
@@ -51,6 +65,9 @@ export function BaMatPanel({
 }) {
   const tr = useT();
   const tamRef = useRef<HTMLDivElement>(null);
+  /* Mở ra ở **JUDGE**: câu người dùng hỏi trước tiên khi bấm vào một vật liệu là *"nó là chất
+     gì"*, không phải *"tấm rộng bao nhiêu"*. Nấc khổ nằm cách một cú bấm, có nhãn nói rõ việc. */
+  const [nac, setNac] = useState<'judge' | 'inspect'>('judge');
 
   useEffect(() => {
     // esc-only: handler CHỈ đóng bằng Escape — Escape phải luôn thoát được, kể cả khi tiêu điểm
@@ -127,6 +144,40 @@ export function BaMatPanel({
               'No code yet, so no stage can look it up. The code is what links all three faces.',
             )}
         </div>
+
+        {xemTruoc && (
+          /* ⭐ MẪU VẬT — nấc chi tiết JUDGE/INSPECT. Trước lượt này panel "một vật, ba mặt" nói
+             về vật liệu bằng CHỮ và không cho nhìn thấy nó lấy một pixel; bảng kho thì chỉ có ô
+             44 px, ở cỡ đó vân không đọc được. Đây là chỗ hai câu hỏi còn lại được trả lời. */
+          <div style={{ marginBottom: 16 }}>
+            <div role="group" aria-label={tr('Nấc soi', 'Inspection level')} style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+              {NAC_LON.map((n) => {
+                const dang = n.ma === nac;
+                return (
+                  <button
+                    key={n.ma}
+                    type="button"
+                    data-nac={n.ma}
+                    aria-pressed={dang}
+                    onClick={() => setNac(n.ma)}
+                    className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--focus-ring)]"
+                    style={{
+                      height: 'var(--tap)', padding: '0 12px', borderRadius: 'var(--r-2)', cursor: 'pointer',
+                      border: `1px solid ${dang ? 'var(--accent)' : 'var(--border)'}`,
+                      background: dang ? 'var(--card)' : 'transparent',
+                      color: dang ? 'var(--t1)' : 'var(--t3)', fontSize: 12, fontWeight: 600,
+                      display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {tr(n.vi, n.en)}
+                    <span style={{ fontWeight: 400, fontSize: 11, color: 'var(--t4)' }}>{tr(n.giai.vi, n.giai.en)}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <MauVatLieuLon xemTruoc={xemTruoc} nac={nac} ten={ten} nguon={nguon} rongKhung={420} />
+          </div>
+        )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {baMat.mats.map((m) => {
