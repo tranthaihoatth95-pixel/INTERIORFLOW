@@ -62,6 +62,10 @@ jobs:
         run: npx next build
         env:
           DATABASE_URL: file:./prisma/dev.db
+          # Khoá dùng-một-lần cho máy dựng: `lib/server/auth.ts` nay TỪ CHỐI chạy ở production
+          # khi thiếu AUTH_SECRET. Khoá thật do máy người dùng tự sinh lúc chạy (electron/main.js
+          # ghi vào <userData>/config.json) — cái ở đây chỉ để `next build` gom được page data.
+          AUTH_SECRET: ${{ github.run_id }}-${{ github.sha }}-chi-de-dung-goi
 
       - name: Có .next chưa (chặn gói rỗng)
         run: test -f .next/BUILD_ID && echo "BUILD_ID = $(cat .next/BUILD_ID)"
@@ -133,6 +137,10 @@ jobs:
         run: npm ci
         env:
           DATABASE_URL: file:./prisma/dev.db
+          # Khoá dùng-một-lần cho máy dựng: `lib/server/auth.ts` nay TỪ CHỐI chạy ở production
+          # khi thiếu AUTH_SECRET. Khoá thật do máy người dùng tự sinh lúc chạy (electron/main.js
+          # ghi vào <userData>/config.json) — cái ở đây chỉ để `next build` gom được page data.
+          AUTH_SECRET: ${{ github.run_id }}-${{ github.sha }}-chi-de-dung-goi
 
       - name: Kiểm trước phát hành
         run: node scripts/release-preflight.mjs
@@ -141,6 +149,10 @@ jobs:
         run: npx next build
         env:
           DATABASE_URL: file:./prisma/dev.db
+          # Khoá dùng-một-lần cho máy dựng: `lib/server/auth.ts` nay TỪ CHỐI chạy ở production
+          # khi thiếu AUTH_SECRET. Khoá thật do máy người dùng tự sinh lúc chạy (electron/main.js
+          # ghi vào <userData>/config.json) — cái ở đây chỉ để `next build` gom được page data.
+          AUTH_SECRET: ${{ github.run_id }}-${{ github.sha }}-chi-de-dung-goi
 
       - name: Có .next chưa (chặn gói rỗng)
         run: test -f .next/BUILD_ID && echo "BUILD_ID = $(cat .next/BUILD_ID)"
