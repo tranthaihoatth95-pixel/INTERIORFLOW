@@ -5,7 +5,12 @@
  * hỏng vĩnh viễn ở máy người dùng, và không ai phát hiện lúc chạy**:
  *   ① `matId` đổi ⇒ mọi `.idf`/`.idfc` đang trỏ vào nó thành **mồ côi**, im lặng.
  *   ② giá lọt vào vật liệu ⇒ mỗi lần bảng giá đổi phải sửa MỌI vật liệu (phá luật 2.1.9.i).
- *   ③ bản đồ texture lọt vào ⇒ kéo theo tệp nhị phân + hồ sơ giấy phép vào bộ ship (phá G4 §4).
+ *   ③ bản đồ texture **của người ngoài** lọt vào ⇒ kéo theo hồ sơ giấy phép vào bộ ship.
+ *      🔴 SỬA 05/09 — luật cũ cấm MỌI bản đồ texture, và cái giá đo được là: 9 ảnh vân do CHÍNH
+ *      IF sinh (`scripts/sinh-mau-vat-lieu.mjs`) nằm mồ côi trong `public/mau-vat-lieu/` 16 ngày
+ *      (`grep` nơi dùng = 0), trong khi mọi quả cầu rơi về hai màu không vân. Lý do của luật là
+ *      GIẤY PHÉP, và ảnh của chính mình thì không có rủi ro đó ⇒ thu hẹp, không bỏ: cấm ảnh
+ *      NGOÀI (http · data: · thư mục khác) và cấm URL trỏ vào tệp KHÔNG TỒN TẠI.
  *
  * Chạy: node_modules/.bin/sucrase-node lib/materials/hat-giong.test.ts
  */
@@ -15,6 +20,8 @@ import {
   pbrMapHatGiong,
   timVatLieuHatGiong,
 } from './hat-giong';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import { isMatIdUuid, normalizeMatIdCanonical } from './matid-identity';
 import { inferPbrFromCategory } from './pbr-from-category';
 
@@ -84,13 +91,35 @@ for (const v of VAT_LIEU_HAT_GIONG) {
   ok(`"${v.code}" không mang trường thương mại nào`, dinh.length === 0, `dính: ${dinh.join(',')}`);
 }
 
-/* ─── ③ KHÔNG BẢN ĐỒ TEXTURE (G4 §4 — ship tham số, texture theo gói nạp) ── */
-console.log('③ ship THAM SỐ, không ship bản đồ texture');
-const KHOA_CAM_TEXTURE = ['baseColorMapUrl', 'normalUrl', 'roughnessMapUrl', 'metallicMapUrl', 'heightUrl', 'aoUrl', 'photoUrl'];
+/* ─── ③ BẢN ĐỒ TEXTURE: CHỈ ẢNH CỦA CHÍNH IF, VÀ PHẢI CÓ THẬT ─────────────── */
+console.log('③ bản đồ texture chỉ được trỏ vào ảnh của chính IF, và tệp phải tồn tại');
+const KHOA_TEXTURE = ['baseColorMapUrl', 'normalUrl', 'roughnessMapUrl', 'metallicMapUrl', 'heightUrl', 'aoUrl', 'photoUrl'] as const;
+/** Thư mục ảnh do CHÍNH IF sinh ra bằng `scripts/sinh-mau-vat-lieu.mjs` — tất định, không tải
+ * mạng, không chép của ai. Đây là ngoại lệ DUY NHẤT; mọi đường khác vẫn cấm. */
+const DUONG_CHO_PHEP = '/mau-vat-lieu/';
 for (const v of VAT_LIEU_HAT_GIONG) {
-  const phang = JSON.stringify(v.pbr);
-  const dinh = KHOA_CAM_TEXTURE.filter((k) => phang.includes(`"${k}"`));
-  ok(`"${v.code}" không nhúng bản đồ texture`, dinh.length === 0, `dính: ${dinh.join(',')}`);
+  for (const k of KHOA_TEXTURE) {
+    const url = (v.pbr as Record<string, unknown>)[k];
+    if (url === undefined) continue;
+    ok(`"${v.code}".${k} là chuỗi`, typeof url === 'string');
+    const u = String(url);
+    /* CẤM ảnh ngoài: `http(s)://` kéo theo phụ thuộc mạng + giấy phép của người khác;
+       `data:` nhét nhị phân vào mã nguồn và làm mọi khác biệt git thành rác. */
+    ok(`"${v.code}".${k} không trỏ ra ngoài`, !/^(https?:)?\/\//.test(u) && !u.startsWith('data:'), u);
+    ok(`"${v.code}".${k} nằm trong ${DUONG_CHO_PHEP}`, u.startsWith(DUONG_CHO_PHEP), u);
+    /* URL trỏ vào tệp không tồn tại là **ô trống im lặng** trên máy người dùng — three.js nuốt
+       lỗi tải (`loadPbrTextures` cố ý `.catch`), nên không có test này thì không ai biết. */
+    ok(`"${v.code}".${k} có tệp THẬT trên đĩa`, existsSync(join(process.cwd(), 'public', u)), u);
+  }
+}
+/* Có ảnh vân thì BẮT BUỘC khai bước lặp — thiếu nó là vân sai tỉ lệ, lỗi NHÌN THẤY ĐƯỢC
+   (`ba-mat.ts` cũng hạ mặt 3D xuống `chuaDu` đúng ca này). */
+for (const v of VAT_LIEU_HAT_GIONG) {
+  if (!v.pbr.baseColorMapUrl) continue;
+  ok(`"${v.code}" có ảnh vân thì phải có uvScaleMm`, !!v.pbr.uvScaleMm && v.pbr.uvScaleMm.w > 0 && v.pbr.uvScaleMm.h > 0);
+  /* glTF: `baseColorFactor × baseColorTexture`. Ảnh vân đủ màu phải đi với hệ số TRẮNG, không
+     thì ảnh bị ám màu — gỗ óc chó nhân với chính màu nâu của nó ra gần đen. */
+  ok(`"${v.code}" có ảnh vân thì baseColor phải TRẮNG (hệ số nhân)`, (v.pbr.baseColor ?? '').toLowerCase() === '#ffffff', String(v.pbr.baseColor));
 }
 
 /* ─── GIẤY PHÉP — mọi tài sản phân phối phải khai tường minh ─────────────── */

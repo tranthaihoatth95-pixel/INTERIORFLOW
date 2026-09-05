@@ -34,6 +34,9 @@ export interface XemTruocO {
   pbr: MaterialPbr | null;
   /** preset 2D — nguồn của **vân procedural** làm nền chờ (0 byte, đồng bộ, không WebGL). */
   def: MaterialDef | null;
+  /** ẢNH VÂN THẬT (`MaterialPbr.baseColorMapUrl`) nếu mã này có. Có nó thì nó THẮNG vân
+   * procedural ở mọi nấc — cùng MỘT sự thật vật liệu nuôi cả ba nấc, không hai đường vẽ. */
+  anhVan: string | null;
 }
 
 /** Màu cuối cùng khi mọi mặt đều trống. Xám trung tính — nói "chưa biết", không giả vờ là vật
@@ -43,7 +46,13 @@ const XAM_CHUA_BIET = '#8a8a8a';
 export function xemTruocO(khoaHang: string, f: MaterialFacets, colorHex?: string | null): XemTruocO {
   const pbr = f.pbr ?? null;
   const def = f.flat ?? null;
-  const goc = pbr?.baseColor ?? def?.color ?? colorHex ?? XAM_CHUA_BIET;
+  /* 🔴 CÓ ẢNH VÂN ⇒ **KHÔNG lấy `baseColor` làm màu phẳng**. Theo glTF, khi có
+     `baseColorTexture` thì `baseColorFactor` là HỆ SỐ NHÂN, và ảnh vân đủ màu phải đi với hệ số
+     TRẮNG (`buildPbrMaterial` đã thi hành đúng luật đó). Trắng là màu của PHÉP NHÂN, không phải
+     màu của vật liệu — lấy nó vẽ ô là ra một ô trắng cho tấm gỗ óc chó. Màu thật của vật liệu
+     lúc này nằm ở mặt 2D (`def.color`), nơi nó vẫn có nghĩa là màu. */
+  const coAnhVan = !!pbr?.baseColorMapUrl;
+  const goc = (coAnhVan ? def?.color : pbr?.baseColor) ?? def?.color ?? colorHex ?? XAM_CHUA_BIET;
   const tones = def?.tones ?? [];
   return {
     id: pbr ? `${khoaHang}|${pbrCacheKey(pbr)}` : khoaHang,
@@ -52,5 +61,6 @@ export function xemTruocO(khoaHang: string, f: MaterialFacets, colorHex?: string
     mauB: tones[tones.length - 1] ?? goc,
     pbr,
     def,
+    anhVan: pbr?.baseColorMapUrl ?? null,
   };
 }

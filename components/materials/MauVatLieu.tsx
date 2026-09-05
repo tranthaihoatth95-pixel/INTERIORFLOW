@@ -57,12 +57,13 @@ export function MauVatLieu({
   /* 05/09 — lượt vẽ quả cầu ngã thì ô này phải tự nói, không để người dùng đoán. */
   const [lyDo, setLyDo] = useState<string | null>(null);
 
-  /* Vân procedural — đồng bộ và ĐÃ CÓ CACHE trong `material-texture.ts` theo `id+size`, nên
-     `useMemo` ở đây chỉ để khỏi gọi qua lớp cache mỗi lần render lại hàng. Không có preset 2D
-     (món chưa gắn mã) ⇒ chuỗi rỗng ⇒ tự rơi về màu phẳng, KHÔNG vẽ vân bịa. */
+  /* ẢNH VÂN THẬT thắng nếu có (05/09 — hai món ship sẵn nay trỏ vào `public/mau-vat-lieu/`).
+     Không có thì mới tới vân procedural: đồng bộ, ĐÃ CÓ CACHE theo `id+size` trong
+     `material-texture.ts`, nên `useMemo` ở đây chỉ để khỏi gọi qua lớp cache mỗi lần render lại
+     hàng. Không có cả hai (món chưa gắn mã) ⇒ chuỗi rỗng ⇒ tự rơi về màu phẳng, KHÔNG vẽ vân bịa. */
   const van = useMemo(
-    () => (xemTruoc?.def ? materialTextureDataUrl(xemTruoc.def, 96) : ''),
-    [xemTruoc?.def],
+    () => xemTruoc?.anhVan ?? (xemTruoc?.def ? materialTextureDataUrl(xemTruoc.def, 96) : ''),
+    [xemTruoc?.anhVan, xemTruoc?.def],
   );
 
   const khung: React.CSSProperties = {

@@ -17,8 +17,9 @@ function ok(name: string, cond: boolean, detail?: string) {
   if (cond) pass += 1; else { fail += 1; console.error('  ✗', name, detail ?? ''); }
 }
 
-/** Đúng thông số vật liệu hạt giống đang ship (`hat-giong.ts`) — không dựng số giả. */
-const SOI: MaterialPbr = { baseColor: '#b98a54', roughness: 0.6, metallic: 0, uvScaleMm: { w: 1200, h: 190 }, typeId: 'go' };
+/** Đúng thông số vật liệu hạt giống đang ship (`hat-giong.ts`) — không dựng số giả.
+ * `w` là bề RỘNG tấm ván (190 mm), `h` là chiều DÀI (1200 mm): vân trong ảnh chạy theo trục đứng. */
+const SOI: MaterialPbr = { baseColor: '#ffffff', roughness: 0.6, metallic: 0, uvScaleMm: { w: 190, h: 1200 }, typeId: 'go', baseColorMapUrl: '/mau-vat-lieu/go-soi-trang.png' };
 
 console.log('BA NẤC CHI TIẾT KHÁC NHAU Ở LOẠI THÔNG TIN, KHÔNG Ở CỠ');
 const bandRong = 400;
@@ -33,16 +34,17 @@ ok('chỉ INSPECT lát lặp (mạch nối là thông tin của riêng nấc nà
   nScan.lapNen === 'no-repeat' && nJudge.lapNen === 'no-repeat' && nInspect.lapNen === 'repeat');
 ok('INSPECT không dùng cover — cover là mất tỉ lệ', !nInspect.coNen.includes('cover') && nInspect.coNen.includes('px'));
 
-console.log('INSPECT LÁT ĐÚNG SỐ — 1200 mm lặp trong khung 1800 mm ⇒ tấm vẽ rộng 2/3 khung');
+console.log('INSPECT LÁT ĐÚNG SỐ — tấm 190 mm lặp trong khung 285 mm ⇒ tấm vẽ rộng 2/3 khung');
 const kqI = nacXemTruoc(SOI, 'inspect', 168);
-ok('khung soi = 1,5 module = 1800 mm', kqI.spanMm === 1800, String(kqI.spanMm));
+ok('khung soi = 1,5 tấm = 285 mm', kqI.spanMm === 285, String(kqI.spanMm));
 ok('lặp 1,5 lần', Math.abs((kqI.repeat ?? 0) - 1.5) < 1e-9, String(kqI.repeat));
 ok('bề rộng tấm vẽ = 400 / 1,5 ≈ 267 px', nInspect.coNen.startsWith('267px'), nInspect.coNen);
 ok('không khai tỉ lệ ⇒ chiều cao "auto", không bịa một khổ vuông', nInspect.coNen.endsWith(' auto'), nInspect.coNen);
 
-console.log('VÁN 1200×190 PHẢI RA MẠCH NGANG — tỉ lệ thật, không tấm vuông');
-const nVan = nenVanNac('inspect', kqI, bandRong, 190 / 1200)!;
-ok('tấm vẽ 267 × 42 px (đúng 190/1200)', nVan.coNen === '267px 42px', nVan.coNen);
+console.log('VÁN 190×1200 PHẢI RA MẠCH DỌC — tỉ lệ thật, không tấm vuông');
+const nVan = nenVanNac('inspect', kqI, bandRong, 1200 / 190)!;
+ok('tấm vẽ 267 × 1684 px (đúng 1200/190) — cao hơn khung, đúng: khung chỉ soi một khúc ván',
+  nVan.coNen === '267px 1684px', nVan.coNen);
 ok('tỉ lệ 0 hoặc âm ⇒ về auto, không chia cho rác',
   nenVanNac('inspect', kqI, bandRong, 0)!.coNen.endsWith(' auto'));
 

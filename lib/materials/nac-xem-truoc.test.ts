@@ -31,11 +31,20 @@ const khongKhoi: MaterialPbr = { ...SOI, uvScaleMm: undefined };
 ok('thiếu uvScaleMm ⇒ inspect.spanMm null', nacXemTruoc(khongKhoi, 'inspect', 200).spanMm === null);
 ok('thiếu uvScaleMm ⇒ có lý do bằng chữ', !!nacXemTruoc(khongKhoi, 'inspect', 200).lyDo);
 
-console.log('SỐ CỦA GỖ SỒI — khớp đúng ví dụ spec §2.2 (uvScaleMm.w = 1200)');
-ok('judge spanMm = 25', nacXemTruoc(SOI, 'judge', 168).spanMm === 25);
-ok('judge repeat ≈ 0,021', Math.abs((nacXemTruoc(SOI, 'judge', 168).repeat ?? 0) - 25 / 1200) < 1e-9);
-ok('inspect spanMm = 1800', nacXemTruoc(SOI, 'inspect', 168).spanMm === 1800);
+/* 🔴 05/09 — HAI DÒNG DƯỚI TỪNG GHIM SỐ 1200 VÀO TEST. Khi tầng hạt giống nhận ảnh vân thật,
+   `uvScaleMm` đổi sang `{ w: 190, h: 1200 }` (vân trong ảnh chạy theo trục ĐỨNG ⇒ trục đứng là
+   chiều DÀI ván, trục ngang là bề RỘNG 190 mm) — và hai dòng đó đỏ, dù hợp đồng không sai một
+   li. Ghim DỮ LIỆU vào test đo HỢP ĐỒNG là bắt hợp đồng chịu tội cho một thay đổi dữ liệu.
+   ⇒ Suy từ `w` thật; giữ RIÊNG một tripwire cho chính con số đó, để đổi dữ liệu vẫn phải đi qua
+   một dòng đỏ có tên, không trôi im lặng. */
+const W = SOI.uvScaleMm!.w;
+console.log(`SỐ CỦA GỖ SỒI — suy từ uvScaleMm.w THẬT của món đang ship (${W} mm)`);
+ok('tripwire: bề rộng tấm ván đang ship = 190 mm', W === 190, String(W));
+ok('judge spanMm = 25 (khung soi CHẤT, hằng số của hợp đồng)', nacXemTruoc(SOI, 'judge', 168).spanMm === 25);
+ok('judge repeat = 25 / w', Math.abs((nacXemTruoc(SOI, 'judge', 168).repeat ?? 0) - 25 / W) < 1e-9);
+ok('inspect spanMm = 1,5 × w', nacXemTruoc(SOI, 'inspect', 168).spanMm === 1.5 * W);
 ok('inspect repeat = 1,5', nacXemTruoc(SOI, 'inspect', 168).repeat === 1.5);
+ok('inspect vẫn rộng gấp ≥10 lần judge (nếu không, nấc bị KHOÁ)', (nacXemTruoc(SOI, 'inspect', 168).spanMm ?? 0) >= 10 * 25);
 ok('hai nấc KHÔNG thể là cùng một ảnh', nacXemTruoc(SOI, 'judge', 168).repeat !== nacXemTruoc(SOI, 'inspect', 168).repeat);
 
 console.log('SÀN PX TỪNG NẤC');
