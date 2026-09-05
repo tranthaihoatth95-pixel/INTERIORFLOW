@@ -546,10 +546,35 @@ async function startNextServer() {
     {
       cwd: userDataDir,
       env: serverEnv,
-      stdio: 'ignore',
+      // ⚠️ TRƯỚC ĐÂY LÀ `stdio: 'ignore'` — gói VỨT SẠCH mọi log của máy chủ nội bộ. Hệ quả đo
+      // được 05/09: `POST /api/auth/register` trả 500 CHỈ khi chạy trong gói (cùng CSDL đó,
+      // chạy `next start` thường thì trả 200) — và KHÔNG CÓ MỘT DÒNG NÀO để biết vì sao.
+      // App không chẩn được là app không sửa được ngoài thực địa. Nay ghi ra tệp trong
+      // userData: người dùng gửi đúng một tệp là đủ để lần ra nguyên nhân.
+      stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
     }
   );
+
+  // Sổ log máy chủ trong userData — CÙNG chỗ với CSDL, nên gỡ cài/sao lưu đi cùng nhau.
+  try {
+    const logDir = path.join(userDataDir, 'logs');
+    fs.mkdirSync(logDir, { recursive: true });
+    const logPath = path.join(logDir, 'server.log');
+    // Cắt sổ khi quá 5 MB — không để nó phình vô hạn trên máy người dùng.
+    try {
+      if (fs.existsSync(logPath) && fs.statSync(logPath).size > 5 * 1024 * 1024) {
+        fs.renameSync(logPath, logPath + '.1');
+      }
+    } catch {}
+    const logStream = fs.createWriteStream(logPath, { flags: 'a' });
+    logStream.write(`\n===== phiên mới ${new Date().toISOString()} =====\n`);
+    serverProcess.stdout?.pipe(logStream);
+    serverProcess.stderr?.pipe(logStream);
+  } catch (e) {
+    // Không ghi được log thì KHÔNG được làm chết app — chỉ mất khả năng chẩn.
+    console.error('[log] không mở được sổ log máy chủ:', e);
+  }
 
   serverProcess.on('error', (err) => {
     dialog.showErrorBox('InteriorFlow', `Không khởi động được server nội bộ:\n${err.message}`);
