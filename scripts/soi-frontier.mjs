@@ -160,6 +160,25 @@ if (yeu.rong.length || yeu.chuThich.length) {
 }
 
 console.log(`👁 ${mat} qua mắt Hoà · ✅ ${mayOnly} xong-MÁY (NỢ NGHIỆM THU MẮT) · 🧩 ${engineOnly} ENGINE-CHƯA-TỚI-NGƯỜI-DÙNG · ⬜ ${todo} chờ · 🔴 ${red} LỆCH${red ? '  ← xử lệch TRƯỚC khi bàn việc mới' : ''}`);
+
+/* ── NỢ MẮT TÁCH LÀM HAI (05/09) ────────────────────────────────────────────────────────────────
+ * Hoà hỏi "chừng nào xong". Số nợ-mắt gộp (73) đọc ra như một hàng đợi không đáy, và nó ĐANG
+ * chặn mọi ước lượng: mắt Hoà là tài nguyên khan hiếm nhất (đo 05/09 — lô duyệt mắt #1 soạn
+ * 13/08, sau 23 ngày đúng 1 mục qua mắt).
+ * Nhưng KHÔNG PHẢI mục nào cũng cần mắt. Migration · cổng máy · lược đồ · tài liệu thì KHÔNG CÓ
+ * MẶT NHÌN ĐƯỢC — bắt người duyệt nhìn chúng là làm nghẽn cửa hẹp nhất bằng thứ không thuộc về nó.
+ * Tiêu chí ĐO ĐƯỢC, không cảm tính: bằng chứng của entry có chạm `components/` hoặc `app/` không?
+ * Đo lần đầu: 73 → 30 cần mắt · 43 chỉ cần cổng máy. Cửa hẹp co lại còn 41%.
+ * ⚠️ Đây là XẤP XỈ: một entry ruột-máy vẫn có thể đổi thứ nhìn thấy qua đường gián tiếp, và
+ * ngược lại. Nó dùng để XẾP HÀNG cho đúng, KHÔNG dùng để miễn nghiệm thu. */
+{
+  const chamMat = (it) => (it.bangChung || [])
+    .map((b) => b.file || b.dir || '')
+    .some((d) => /(^|\/)(components|app)(\/|$)/.test(d));
+  const noMat = FRONTIER.filter((it) => it.trangThai === 'xong');
+  const canMat = noMat.filter(chamMat).length;
+  console.log(`   ⓘ Trong ${noMat.length} nợ mắt: 👁 ${canMat} CÓ mặt nhìn được (cần mắt Hoà) · 🔧 ${noMat.length - canMat} ruột máy/giấy tờ (cổng máy là đủ)`);
+}
 if (engineOnly) console.log('   ⓘ 🧩 KHÔNG tính là xong: engine chạy được nhưng chưa có đường tới người dùng (soi:cam-dien gác bậc này).');
 console.log('');
 process.exit(red ? 1 : 0);
