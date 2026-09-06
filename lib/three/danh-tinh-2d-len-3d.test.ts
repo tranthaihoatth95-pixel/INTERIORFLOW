@@ -16,6 +16,7 @@ import { buildMergedGeometries } from './obj-scene-to-geometry';
 import { matIdCuaNhom } from '../materials/danh-tinh-vat-lieu';
 import { nguonVatLieuMacDinh } from './vat-lieu-nhom';
 import { VAT_LIEU_HAT_GIONG } from '../materials/hat-giong';
+import { exportIdf, importIdf } from '../cad/idf';
 
 let pass = 0;
 let fail = 0;
@@ -75,6 +76,23 @@ for (const b of built) {
   const pbr = nguon.pbrMap?.[b.matId];
   ok(`nhóm ${b.matId.slice(0, 8)}… ra ảnh vân + tỉ lệ vật lý`,
     !!pbr?.baseColorMapUrl && !!pbr?.uvScaleMm, JSON.stringify({ url: pbr?.baseColorMapUrl, uv: pbr?.uvScaleMm }));
+}
+
+console.log('\nvòng đời .idf — danh tính phải SỐNG SÓT qua lưu → mở lại');
+{
+  /* ⛔ Không có ca này thì cả dây trên chỉ đúng TRONG MỘT PHIÊN: người dùng chọn vật liệu, thấy
+     3D lên vân, lưu, đóng app, mở lại — và mọi thứ phẳng trở lại. Đó là kiểu hỏng tệ nhất vì nó
+     chỉ lộ ra ở lần mở SAU, xa chỗ gây lỗi. `lib/cad/idf.ts` không whitelist trường entity (đã
+     kiểm), nhưng "đã kiểm bằng mắt" không phải là máy canh — ca này mới là. */
+  const lai = importIdf(exportIdf([{ id: 'sh1', name: 'S1', doc }]));
+  const ents = (lai?.sheets?.[0]?.doc?.entities ?? []) as { id: string; matId?: string; specId?: string }[];
+  const s1 = ents.find((e) => e.id === 's1');
+  const s2 = ents.find((e) => e.id === 's2');
+  const s3 = ents.find((e) => e.id === 's3');
+  ok('mở lại đủ 3 entity', ents.length === 3, String(ents.length));
+  ok('`matId` sống sót qua .idf', s1?.matId === SOI.matId, String(s1?.matId));
+  ok('`specId` vẫn sống sót như trước (không hồi quy)', s2?.specId === `hat-giong:${OC_CHO.matId}`, String(s2?.specId));
+  ok('entity chưa gán vẫn KHÔNG có matId sau khi mở lại (không bịa lúc parse)', s3?.matId === undefined);
 }
 
 console.log(`\n${pass} pass · ${fail} fail`);
