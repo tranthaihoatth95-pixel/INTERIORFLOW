@@ -72,3 +72,75 @@
 
 > Luật này là con đẻ của LUẬT 300DPI + §2c chống-ngô-nghê + LUẬT NGÔN NGỮ — gom về MỘT cửa:
 > sản phẩm ra khỏi IF là mang chuẩn nghề, không mang dấu "máy làm".
+
+---
+
+## §7 · LẦN SOI FILE THẬT — 06/09/2026 (lane OUTPUT TRUTH)
+
+Dựng dữ liệu **qua app thật** (vẽ 2 vùng tô, gán 2 vật liệu kho có giá), xuất qua **đúng nút
+người dùng bấm**, rồi **mở từng tệp ra đọc**. Tệp gốc + ảnh: `docs/ship/anh/dau-ra-2026-09-06/`.
+Đọc `.xlsx` bằng `openpyxl` (bộ đọc độc lập, không phải bộ ghi của IF); đo khổ PDF từ `/MediaBox`;
+đếm pixel trang A3 bằng Pillow.
+
+**Dữ liệu thật đã dựng** — `hatch` mang ĐỦ HAI danh tính (`specId` cuid kho + `matId` UUID vật liệu):
+`ps-truth-go-soi` 4400×2900mm · `ps-truth-terrazzo` 1677,69×1102,48mm.
+
+### §3 · BOQ / XLSX — 3 ĐẠT · 2 KHÔNG ĐẠT · 1 phần
+
+| dòng checklist | phán | bằng chứng |
+|---|---|---|
+| mã · tên · đơn vị chuẩn · khối lượng · đơn giá · thành tiền | **ĐẠT** | 10 cột, `G='m2'`, không cột nào rỗng ngoài "Ảnh" |
+| khối lượng truy được về bản vẽ | **ĐẠT trên màn · KHÔNG ĐẠT trong tệp** | màn: "LẤY TỪ 1 vùng tô" + "Bấm để xem trên bản vẽ". Tệp: 0 dấu vết |
+| **số sửa tay mang badge sửa-tay** | 🔴 **KHÔNG ĐẠT** | sửa 12,76 → 20 m²: tệp ghi `F2=20`, **giống hệt ô đo được**; `12.76` biến mất khỏi zip; grep `sửa/tay/override/mô hình/comment` = 0 |
+| đơn giá có **NGUỒN + NGÀY** | 🔴 **KHÔNG ĐẠT** | không có cột nguồn/ngày; `MaterialSpecLite` không mang `priceNote`/`syncedAt` — rụng ngay ở tầng tính |
+| hao hụt khai rõ %, không cộng ngầm | **ĐẠT** | cột I = 8 và 5, tách khỏi đơn giá |
+| tổng khớp tổng dòng | **ĐẠT** | `J4 = =SUM(J2:J3)` — công thức SỐNG, không phải số chết |
+| không ô trống lặng lẽ | **PHẦN** | `E2`/`E3` (cột Ảnh) trống câm trong tệp (màn hiện "—") |
+| số tabular · VND không lẻ đồng | **ĐẠT** | `#,##0" đ"` cho tiền · `#,##0.00` cho khối lượng |
+| mở bằng bộ đọc thật không lỗi | **ĐẠT (có 1 cảnh báo)** | openpyxl mở được; cảnh báo *"Workbook contains no default style"* — `styles.xml` thiếu `<cellStyles>` |
+| 0 placeholder | **ĐẠT** | quét `{{ }}`/lorem/Untitled/NaN/undefined trên toàn zip = 0 |
+
+⭐ **SỐ HỌC TỰ KIỂM TAY ĐƯỢC — ĐẠT, và đây là điểm mạnh nhất của bảng.**
+`12,76 × 1,08 × 1.250.000 = 17.226.000` = đúng `J2`. `1,85 × 1,05 × 890.000 = 1.728.825` = đúng `J3`.
+Tổng = 18.954.825 = đúng `J4`. Tính tay từ diện tích THÔ (1,8496 m²) ra 1.728.470 — **lệch 355đ**,
+và bảng **đúng**, người soi sai: `compute.ts:94-105` cố ý nhân từ m² ĐÃ LÀM TRÒN để mọi con số in
+ra bấm máy tính lại được. Ghi lại để lần sau không báo nhầm đây là lỗi.
+
+### §4 · A3 PDF — khổ giấy ĐẠT · nội dung CHƯA CÓ
+
+🔴 **HAI ĐƯỜNG PDF, một đường ra sai khổ:**
+
+| nút | hàm | khổ đo từ `/MediaBox` | phán |
+|---|---|---|---|
+| **"PDF"** | `exportDeckToPdf` (`unit:'px'`) | 3621×2560 pt = **1277,5×903,1 mm** | 🔴 **KHÔNG ĐẠT ISO 216** — gấp ~3 lần A3; ảnh nhúng 2716×1920 ⇒ **54 dpi** |
+| **"PDF in 300dpi (A3/A4)"** | `exportDeckToPdfAtPaperSize` (`unit:'mm'`) | 1190,6×841,9 pt = **420,0×297,0 mm** | ✅ **ĐẠT** — ảnh 4960×3506 ⇒ **299,96 dpi**, đúng LUẬT 300DPI |
+
+Người dùng chọn "Bảng vật liệu A3" rồi bấm mục tên **"PDF"** thì ra tệp KHÔNG phải A3. Nhãn phụ có
+ghi *"đúng khổ đã chọn (màn hình/chiếu)"*, nhưng tên mục là "PDF" trần.
+
+🔴 **NỘI DUNG: NOT IMPLEMENTED — trang A3 TRẮNG TRƠN.**
+Đếm pixel cả hai tệp: **17.389.760 px, đúng 1 màu `(255,255,255)`, 100,000%**. Không phải lỗi trích
+ảnh — trên màn slide cũng trống, canvas hiện cửa "Bắt đầu hồ sơ trình khách".
+`PresentSheets.tsx:691` tự khai đúng: *"`material-a3` không hứa một editor vật liệu riêng"* — nó chỉ
+là trình dàn trang ở khổ A3. ⇒ **Nhãn "Bảng vật liệu A3" hứa nhiều hơn thứ giao ra.**
+Hệ quả cho câu "danh tính vật liệu trên bảng có khớp BOQ không": **trên bảng không có vật liệu nào** —
+dù màn chọn hồ sơ ngay trước đó đã đếm đúng *"2 vật liệu · 2 dòng BOQ"*.
+
+### Danh tính vật liệu — chỗ ĐÚNG và chỗ ĐỨT
+
+✅ **ĐÚNG:** đường UI mang đủ hai danh tính xuống `Doc`; BOQ tra ra đúng tên/NCC/mã SP/giá; 0 dòng
+mồ côi; 0 lỗi. Sổ 07/08 ghi *"`lib/materials`↔`ProductSpec` = 0 code"* — nay đã có dây và dây chạy.
+
+🔴 **ĐỨT 1 — ảnh vật liệu không đi theo `matId`.** `boqImageUrl()` (`boq-spec-extra.ts:62`) chỉ đọc
+`imageAssetId`. Hàng kho trỏ đúng `matId` của "Gỗ sồi tự nhiên" (có `/mau-vat-lieu/go-soi-trang.png`)
+vẫn ra cột Ảnh trống. Danh tính tới được, **tài sản thị giác thì không**.
+
+🔴 **ĐỨT 2 — vật liệu hạt giống không lên BOQ được.** `POST /api/boq/[projectId]:60` chỉ đọc
+`prisma.productSpec.findMany()`; nó **không trộn `kho-mo-dau.ts`** như 5 mặt tiền kia. Vật liệu ship
+kèm bản cài (`specId` dạng `hat-giong:<uuid>`, **cố ý không mang giá** theo luật 2.1.9.i) sẽ rơi vào
+`spec-not-found`. ⇒ Máy sạch, chưa nhập kho: chọn được vật liệu, tô được, **không ra dòng BOQ nào**.
+(Lượt này né được vì đã gieo kho có giá — tức đo ở ca TỐT NHẤT.)
+
+> **Việc phải làm, theo thứ tự tiền mất:** ① cột/ghi chú "sửa tay" + số máy vào XLSX ② nhãn "PDF"
+> không được ra tệp sai khổ khi deck là A4/A3 ③ nguồn+ngày đơn giá ④ trộn hạt giống vào route BOQ
+> ⑤ nội dung cho Bảng vật liệu A3 (hoặc đổi nhãn cho đúng thứ đang giao).
