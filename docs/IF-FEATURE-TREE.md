@@ -464,6 +464,122 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 
 ---
 
+## 2.4 · KIỂM KÊ CHẶNG TRÌNH CHIẾU — BẢY Ô (06/09, lane KIỂM KÊ TRÌNH CHIẾU)
+
+> **Vì sao mục này nằm ở ĐÂY, không nằm ở `CHUAN-DAU-RA-NGHE.md`:** file đó là **checklist nhị
+> phân cho TỆP XUẤT RA** (ISO 128/216, dãy tỉ lệ, khung tên, 300dpi) — nó phán *bản vẽ giao đi có
+> đạt chuẩn nghề không*. Mục này phán *năng lực nào TỒN TẠI và ĐÃ CẮM DÂY CHƯA* — đúng vai đã khai
+> ở đầu file này: *"trạng thái căn cứ CODE THẬT — không tin lời spec"*. Và không đặt ở
+> `IF-PRESENT-STAGE-SPEC.md` vì spec nói *phải có gì*, kiểm kê nói *đang có gì*.
+>
+> Thi hành `docs/HOP-DONG-PHOI-HOP-T.md` §11.1/§11.13 — **kiểm kê trước, không thiết kế lại**.
+> Đo trên app thật (Next dev, 1600×900, dự án fixture **tổng hợp · ẩn danh · trung tính**).
+> Bộ chạy lại được: `scripts/nghiem-thu-ban-lam-viec/luong-trinh-chieu.mjs`.
+> Ảnh + PDF xuất thật + nhật ký: `docs/ship/anh/tc-*`.
+
+### Kết luận một dòng
+**Chặng Trình chiếu KHÔNG thiếu năng lực — nó thiếu DÂY và thiếu HIỆN VẬT THẬT.**
+Đếm được: **0 module mồ côi** trong `lib/present-editor` (≈100 tệp, mọi tệp đều tới được từ
+`PresentEditor.tsx`/`Toolbar.tsx` theo đồ thị import, kể cả 6 tệp không ai import TRỰC TIẾP —
+`standards` · `region-layout` · `detect-regions` · `theme-roles` · `upscale-cache` · `grid-geometry`
+— đều tới nơi qua trung gian). ⇒ **Phản ứng "màn trắng ⇒ thiếu UI ⇒ dựng Present v2" là SAI.**
+
+### Bảng bảy ô
+
+| Ô | Năng lực | Bằng chứng `file:dòng` | Ghi chú |
+|---|---|---|---|
+| **1 ĐÃ CÓ VÀ CHẠY** | Editor + hệ trang (multi-sheet) | `components/present-editor/PresentSheets.tsx:761` · `PresentEditor.tsx` (122 KB) | tab hồ sơ, thêm/đổi tên/đảo thứ tự |
+| 1 | Mẫu trang (templates) | `lib/present-editor/templates.ts` (47 KB) | đếm trên app: **20+** mẫu thật (Bìa · Mục lục · Lưới ảnh 2×2 · Moodboard · Bảng màu & vật liệu · Trang mặt bằng kỹ thuật · Triptych · Catalog nội thất · So sánh 2 phương án · Collage · Trang kết…) |
+| 1 | Đặt bản vẽ 2D → Trình chiếu | gửi `components/cad/CadSheets.tsx:1196` `guiToSangTrinhChieu([to])` → nhận `components/present-editor/CongThietLapTrang.tsx` | đi bằng **TỜ** (khổ·lề·khung tên·neo nguồn), KHÔNG phải một tấm ảnh |
+| 1 | Logic tỉ lệ | `lib/present-editor/to-ban-ve.ts:19,102` `tyLeApDung` | luật ghi tại chỗ: **"CẤM CO GIÃN ÂM THẦM"** — chọn 1:50 thì in ra đúng 1:50 |
+| 1 | Liên kết nguồn + **nguồn đã đổi** | `to-ban-ve.ts:173` `trangThaiNguon` · `:178` `NHAN_TRANG_THAI` · `:315` `docDauVetNguon` | nguồn đổi ⇒ tờ **đánh dấu**, KHÔNG tự ghi đè (đúng [T5] người quyết cuối) |
+| 1 | Duyệt / đóng băng | `to-ban-ve.ts:213` `daPhatHanh` · `:220` `coTheTuCapNhat` · dùng ở `CongThietLapTrang.tsx:160` | tờ đã phát hành ⇒ nút Cập nhật mờ hẳn |
+| 1 | Ảnh/render từ chặng khác | `lib/present-editor/handoff.ts:172-187` `stashPresentHandoff*`/`consumePresentHandoff*` | 5 nơi gọi thật (KetXuatPanel · NodeExtras · RenderIOMenus · stage-nav · PresentEditor) |
+| 1 | Deep link "quay về trình bày" | `lib/present-editor/present-return.ts:29` · `components/studio/QuayVeTrinhBay.tsx` | ghim đúng index slide |
+| 1 | Xuất **PDF** | `lib/present-editor/export.ts:79` `exportDeckToPdf` | ✅ **chạy thật lượt này** — tải về `docs/ship/anh/tc-xuat.pdf`, 16.254 byte |
+| 1 | Xuất **PPTX** / PNG / PDF-theo-tờ-giấy / Gói Hồ Sơ `.zip` | `export.ts:354` `exportDeckToPptxFromModel` · `:152` PNG · `lib/ho-so-song/pack.ts:92` | menu Xuất có đủ 6 mục, 5 bật 1 mờ-kèm-lý-do |
+| 1 | Lưu + mở lại | `lib/present-editor/luu-len-may-chu.ts` + `idfp.ts` | ✅ **chứng minh lượt này**: đóng HẲN trình duyệt → mở lại → deck còn, hiện "1 slide", không quay về màn chọn |
+| 1 | Nhập PDF/PPTX (Smart Convert) | `lib/present-editor/pdf-import.ts:786` `extractImagesWithBbox` · `pptx-import.ts` | cửa "Mở tệp" · "Nhập tệp PDF · PPTX · ảnh" |
+| **3 CHƯA CẮM DÂY** | 🔴 **8/10 lệnh chung của thanh công cụ CHẾT ở Present** | khai `lib/commands/registry.ts:296,344,394,403,411,418,511` (`stages:['cad','render','present']`) · bày `components/present-editor/Toolbar.tsx:62` `commonCommandsFor` | Chữ · Đo khoảng cách · Di chuyển · Sao chép · Xoay · Đối xứng · Chọn · Xoá — **mờ hết**, lý do đọc được: *"Chưa nối … cho trang trình chiếu"*. Hoàn tác/Làm lại mờ đúng nghĩa (chưa có thao tác nào) |
+| 3 | Hệ quả nhìn thấy được | đo app thật 1600×900 | **HAI nút "Chữ" trên CÙNG một hàng**: x=660 (có nhãn, **chạy**) và x=1052 (icon trần, **chết**) — cách nhau 392 px |
+| 3 | Vật liệu ↔ Trình chiếu | `lib/materials/resolve.ts:52` `getMaterial()` | (nợ đã biết từ 17/08) trả đủ 3 mặt PBR·thương mại·hatch nhưng **0 nơi gọi ngoài test** ⇒ bảng vật liệu chưa có nguồn thật để ăn |
+| **5 MỘT PHẦN** | Kiểm chuẩn deck | `lib/review/luat/deck.ts:16` `luatDeck` · `lib/present-editor/export-checks.ts:62` | có luật + có cổng lúc xuất; chưa cắm ở **mọi** cửa chuyển công đoạn (entry `kiem-chang-moi-cong-doan`) |
+| 5 | PDF in 300 dpi | `export.ts:112` `exportDeckToPdfAtPaperSize` | có thật, nhưng **mờ** khi khổ là 16:9 — mờ **đúng** kèm lý do ("chỉ xuất được ở khổ giấy") |
+| **6 ĐÃ BỊ THAY** | Dựng video ở chặng 3 | chốt 13/08 (00-CHOT): tạo+dựng video về **chặng 2**; chặng 3 chỉ trình chiếu | `SPEC-TRINH-VIDEO-EDITOR.md` đọc theo chốt mới |
+| **7 THẬT SỰ CHƯA CÓ** | Bảng vật liệu A3 (trình soạn) | xem mục sửa sổ bên dưới | cửa vào chỉ mở **trang A3 trống** |
+| 7 | Văn bản · Biểu mẫu · Hợp đồng | `PresentDocTypePicker.tsx:116-118` | **đã khai thật trên UI**, `enabled:false` + `unavailableReason` |
+| 7 | Dựng phim trong Trình chiếu | `PresentDocTypePicker.tsx:125-127` | như trên |
+| 7 | Bảng thông số · Phiếu trình duyệt | `PresentDocTypePicker.tsx` nhóm `schedule` | như trên |
+
+### Sổ khai quá tay — đã sửa
+`scripts/frontier-registry.mjs` mục **`material-a3`** khai *"Editor Bảng vật liệu A3 (lưu .idfp)"*
+trạng thái `xong`. Đo tại nguồn: `PresentSheets.tsx:784` chỉ gọi
+`chooseDeck('blank', { docType:'material-a3', stagePreset:'a3-landscape' })` — **mở đúng trình dàn
+trang đã có, ở khổ A3, gắn một nhãn loại hồ sơ**. `docType==='material-a3'` không được đọc ở đâu để
+dựng bảng. Bằng chứng cũ là **một chuỗi**, mà `soi:frontier` grep thấy chuỗi là đánh dấu xong.
+⇒ hạ về **`chua`**, tên viết lại cho đúng. *Không hạ về `engine`* — `engine` nghĩa là có engine mà
+chưa có đường tới người dùng; ở đây **ngược lại**.
+⚠️ Nhãn UI đã nói thật từ 06/09 (`PresentDocTypePicker.tsx:81-86`) — **chỉ sổ còn nói quá**.
+
+**Hai mục khác KHÔNG phải khai quá tay, nhưng bằng chứng MONG MANH** (máy tự báo, không chặn):
+`present-magic-cua-vao` và `demo-pdf-render-roundtrip` — `soi:frontier` xếp vào *"bằng chứng MẤT khi
+bóc chú thích"*. Kiểm tay: năng lực **có thật** (`Inspector.tsx:1185` UI "Chỉnh phối cảnh" ·
+`pdf-import.ts:786` `extractImagesWithBbox` là mã thật), chỉ **mẫu grep** trỏ vào dòng chú thích
+`[marker: …]`. Đó là *bằng chứng dễ vỡ*, khác hẳn *khai sai* — siết khi chạm tới, không mở việc riêng.
+
+### Mật độ (§11.6) — số đo, và đề xuất quyết được
+Đo 1600×900, trong trình dàn trang:
+
+| Đo được | Số | Nhận định |
+|---|---|---|
+| Bề ngang bị chrome chiếm trước canvas | rail 72 + navigator **224** + kệ Thiết kế **288** = **584 px** = **36,5 %** | navigator 224 px đang chỉ chứa **2 dòng liên kết** + 1 câu gợi ý |
+| Chiều cao nút trên CÙNG một thanh công cụ | **4 giá trị: 28 · 32 · 36 · 38 px** | vỡ **NHỊP** — §11.6 nói cái đẹp của workspace nghề đến từ *trật tự · nhịp · chính xác* |
+| Cỡ chữ tiêu đề màn vào | **36 px** (thân 16 px) | mật độ **Home**, không phải mật độ workspace nghề |
+
+**Đề xuất (04 DESIGN quyết, không phải câu hỏi chờ duyệt):** ① gộp navigator 224 px vào kệ
+Thiết kế 288 px khi chưa có trang nào — lấy lại ~224 px cho canvas; ② quy nút thanh công cụ về
+**một** chiều cao (32 px) + `--tap` cho cảm ứng; ③ tiêu đề màn vào hạ từ 36 px xuống thang chữ
+workspace. Cả ba đều là *bố cục/nhịp*, không phải đánh bóng (N-17).
+
+### PDF khổ giấy vật lý — truy người tiêu thụ (không có hồi quy im lặng)
+`buildDeckPdfDoc` (`export.ts:66`) là **một cỗ máy**: khổ nào có trong `PAPER_SIZE_MM` thì dựng
+trang bằng **mm thật**, còn 16:9 giữ nguyên đường px. `exportDeckToPdfBlob` (`:91`) — kênh PDF của
+**Gói Hồ Sơ Sống** — gọi **chính** builder đó ⇒ byte y hệt nút "Xuất PDF" của người dùng.
+`lib/ho-so-song/pack.ts:92-95` nhận PDF như **byte đục** (`toBytes` → `out/ho-so.pdf` + MIME +
+sha256), **không đọc kích thước trang** ⇒ đổi khổ vật lý **không thể** làm vỡ nó.
+Đo thêm trên tệp xuất thật lượt này (deck 16:9): `MediaBox 2560×1440 pt` — đúng đường px cũ, **0 hồi quy**.
+
+### Chỗ tắc thật của luồng nghề
+1. 🔴 **Không vào được chặng Trình chiếu nếu dự án chưa có bản vẽ.** `app/projects/[id]/present/page.tsx:21-24`
+   trả `ProjectScopeEmptyState` khi `status==='missing'`; màn chỉ mời *"Tạo bản vẽ mới / Nhập bản vẽ
+   có sẵn"*. Component tự khai là tuân X2 vì **sửa được tại chỗ** — đúng ở tầng scope, nhưng hệ quả
+   cho chặng 3 là **đường vào thứ ③ của luật X3** (*"vào thẳng chặng 3 từ ảnh/ý tưởng, không cần mô
+   hình"*) **không đi được**: mang một PDF tới, chưa vẽ gì, thì không có cửa nào.
+2. 🔴 **Hai nút "Chữ" cạnh nhau, một chết** (xem ô 3) — người dùng học sai công cụ ngay lần đầu.
+3. 🟡 **Canvas trang bị màn chọn chiếm chỗ**: vào editor rồi vẫn thấy bộ thẻ *Nhập tệp / Dàn từ mẫu /
+   Trang trống* ở giữa khung, trong khi dải slide dưới đã báo **1 slide**.
+
+### 8 giờ/ngày được không? — **CHƯA**
+Không phải vì thiếu tính năng (bảng trên cho thấy phần lớn đã có và chạy), mà vì **ba việc lặp
+nhiều nhất của nghề dàn trang — chọn · dời · chép — đều mờ trên thanh công cụ**, và người dùng phải
+tự đoán rằng chúng vẫn làm được bằng chuột trực tiếp trên trang. Cộng thêm 36,5 % bề ngang là chrome
+và một cửa vào chặn khi dự án chưa có bản vẽ. Đây là **khoảng cách cắm dây + bố cục**, không phải
+khoảng cách năng lực — nên nó rẻ hơn nhiều so với cảm giác ban đầu.
+
+### Lát cắt kế tiếp, theo thang §11.2 `DÙNG LẠI → NỐI DÂY → BÀY RA → TÁI CẤU TRÚC → MỞ RỘNG → XÂY LẠI`
+1. **NỐI DÂY** — bind 8 lệnh chung vào `useEditor` của Present. Rẻ nhất và có bằng chứng ngay
+   trong sổ lệnh: `registry.ts:299` tự ghi *"`onAddText` là callback cục bộ của `PresentEditor.tsx`
+   (props, không phải store)"* ⇒ **callback đã tồn tại, chỉ chưa nối**. Xoá luôn ca hai-nút-một-tên.
+2. **NỐI DÂY** — mở đường vào chặng 3 khi dự án chưa có bản vẽ (thi hành X3 lối ③), tái dùng đúng
+   `PresentDocTypePicker` đang có, không dựng màn mới.
+3. **BÀY RA** — `getMaterial()` (`lib/materials/resolve.ts:52`) đã trả đủ ba mặt mà 0 nơi gọi:
+   đây là nguồn thật cho bảng vật liệu, trước khi bàn tới việc dựng `material-a3`.
+4. **BÀY RA / bố cục** — ba đề xuất mật độ ở trên.
+
+⛔ **Không dựng Trình chiếu v2.** Bốn việc trên đều là *nối* và *bày*, không có việc nào là *xây lại*.
+
+---
+
 ## 3. LIBRARY
 
 | Mã | Tên | Bậc | Trạng thái | Phụ thuộc | File spec gốc |

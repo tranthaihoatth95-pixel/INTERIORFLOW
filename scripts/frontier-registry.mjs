@@ -79,8 +79,23 @@ export const FRONTIER = [
     ] },
   { id: 'vitals-doccontext', vai: 'mvp', ten: 'Vitals đọc ngữ cảnh bản vẽ + lỗi chuẩn', he: 'ThinkDial', dot: 0, trangThai: 'xong',
     bangChung: [{ file: 'components/studio/VitalsGesture.tsx', mau: 'docContext' }] },
-  { id: 'material-a3', vai: 'mvp', ten: 'Editor Bảng vật liệu A3 (lưu .idfp)', he: 'Workspace', dot: 0, trangThai: 'xong',
-    bangChung: [{ file: 'components/present-editor/PresentSheets.tsx', mau: 'material-a3' }] },
+  // 06/09 (lane KIỂM KÊ TRÌNH CHIẾU) — HẠ 'xong' → 'chua'. SỔ KHAI QUÁ TAY, đo tại nguồn:
+  //  · Tên cũ *"Editor Bảng vật liệu A3"* hứa một TRÌNH SOẠN BẢNG VẬT LIỆU. Không có cái đó.
+  //    `PresentSheets.tsx:784` gọi `chooseDeck('blank', { docType:'material-a3', stagePreset:
+  //    'a3-landscape' })` — tức MỞ ĐÚNG trình dàn trang đã có, ở khổ A3, gắn một nhãn loại hồ sơ.
+  //    `docType==='material-a3'` KHÔNG được đọc ở đâu để dựng bảng (grep toàn repo: 5 chỗ, đều là
+  //    khai kiểu/truyền tham số, 0 chỗ rẽ nhánh hành vi). Trang xuất ra đo được 17.389.760 px
+  //    ĐÚNG MỘT MÀU TRẮNG.
+  //  · Bằng chứng cũ là CHUỖI `'material-a3'` — `soi:frontier` grep thấy chuỗi là đánh dấu xong.
+  //    Đây đúng ca "thư mục tồn tại ≠ sản phẩm tồn tại" mà thang `trangThai` sinh ra để chặn.
+  //  · KHÔNG hạ xuống 'engine': 'engine' nghĩa là CÓ engine nhưng chưa có đường tới người dùng.
+  //    Ở đây ngược lại — có đường tới người dùng, KHÔNG có engine. Vậy là 'chua'.
+  //  ⚠️ Nhãn UI đã nói thật từ 06/09 (`PresentDocTypePicker.tsx:81-86`: *"Mở một khổ A3 trống để
+  //    bạn tự dàn vật liệu. App chưa tự ghép bảng từ dự án."*) — chỉ SỔ còn nói quá. Cửa vào A3
+  //    trống GIỮ NGUYÊN, nó là năng lực thật và có ích; thứ sai là lời hứa trong sổ.
+  //  Năng lực thật khi làm: xem entry `bang-vat-lieu-tu-phoi-canh` (đợt 9) — cùng một việc.
+  { id: 'material-a3', vai: 'mvp', ten: 'Editor Bảng vật liệu A3 — CHƯA CÓ. Nay chỉ là CỬA VÀO trang A3 TRỐNG dựng từ khuôn \'blank\' (người dùng tự dàn); không có trình soạn bảng vật liệu, không tự ghép mẫu/mã hàng/vùng dùng từ dự án', he: 'Workspace', dot: 0, trangThai: 'chua',
+    bangChung: [{ dir: 'components/present-editor', mau: 'MaterialBoardEditor|bang-vat-lieu-a3' }] },
   // 22/08 — BẰNG CHỨNG ĐỔI CHỖ, LUẬT MẠNH LÊN. Trước: dạng thu gọn lấy MỌI nút có engine rồi
   // `filter(!disabled)` (đo app thật: 13 chip). Nay là DANH SÁCH TRẮNG ĐÚNG BẢY chỗ đứng
   // (SESSION-01 điều 4: Chọn·Dời·Xoay·Tạo·Vật liệu·Máy ảnh·Thêm) — nút mờ không lọt vào được vì

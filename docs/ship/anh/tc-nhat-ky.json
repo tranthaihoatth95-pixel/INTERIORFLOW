@@ -1,0 +1,312 @@
+[
+ {
+  "tram": "01 cửa vào Trình chiếu",
+  "tong": 30,
+  "moVoHieu": 1,
+  "nhan": [
+   "InteriorFlow",
+   "Ngữ cảnh: Mat bang tang tret — Trì",
+   "Hoạt động — không có gì đang chạy",
+   "Tài khoản — Kiem",
+   "Vitals — không có gì cần xem",
+   "Trang chủ",
+   "Dự án",
+   "Cảm hứng",
+   "Thư viện",
+   "Thiết kế 2D",
+   "Thiết kế 3D",
+   "Trình chiếu",
+   "Mở rộng — Điều hướng",
+   "Bảng khối lượng (BOQ)",
+   "Bảng thống kê",
+   "Trang mới",
+   "Thu gọn — B",
+   "Thêm hồ sơ trình bày",
+   "Bắt đầu trình bày",
+   "Trang A3 trống để dàn vật liệu",
+   "Khối lượng (BOQ)",
+   "Bộ hồ sơ kể chuyện",
+   "Dựng nhanh bằng Magic",
+   "Thư viện mẫu",
+   "Bỏ qua",
+   "Mở bảng kiểm",
+   "Vitals — hỏi trợ lý (⌘J / Ctrl+J)",
+   "Đóng Thư viện"
+  ]
+ },
+ {
+  "tram": "01b mật độ cửa vào",
+  "chuTo": [
+   {
+    "t": "Trình bày dự án này.",
+    "px": 36
+   },
+   {
+    "t": "Thư viện",
+    "px": 16
+   },
+   {
+    "t": "InteriorFlow",
+    "px": 14
+   },
+   {
+    "t": "Bắt đầu từ một trang trắng, ho",
+    "px": 14
+   },
+   {
+    "t": "Hồ sơ 1",
+    "px": 13
+   },
+   {
+    "t": "Dàn hồ sơ trình khách.",
+    "px": 13
+   }
+  ],
+  "panel": [
+   {
+    "tag": "ASIDE.flex min-h-0 shrink-0 flex",
+    "x": 72,
+    "y": 42,
+    "w": 224,
+    "h": 826
+   }
+  ],
+  "man": {
+   "w": 1600,
+   "h": 900
+  }
+ },
+ {
+  "tram": "02 nút Bắt đầu trình bày",
+  "so": 1
+ },
+ {
+  "tram": "03 trong trình dàn trang",
+  "tong": 148,
+  "moVoHieu": 15,
+  "nhan": [
+   "InteriorFlow",
+   "Ngữ cảnh: Mat bang tang tret — Trì",
+   "Hoạt động — không có gì đang chạy",
+   "Tài khoản — Kiem",
+   "Vitals — không có gì cần xem",
+   "Trang chủ",
+   "Dự án",
+   "Cảm hứng",
+   "Thư viện",
+   "Thiết kế 2D",
+   "Thiết kế 3D",
+   "Trình chiếu",
+   "Mở rộng — Điều hướng",
+   "Bảng khối lượng (BOQ)",
+   "Bảng thống kê",
+   "Trang mới",
+   "Thu gọn — B",
+   "Thêm hồ sơ trình bày",
+   "Quay lại",
+   "Mở tệp",
+   "Xuất",
+   "Chữ",
+   "Ảnh",
+   "Hình",
+   "Thiết kế",
+   "Đo khoảng cách",
+   "Di chuyển",
+   "Sao chép",
+   "Xoay",
+   "Đối xứng",
+   "Chọn",
+   "Xoá",
+   "Hoàn tác",
+   "Làm lại",
+   "Thêm — Sắp xếp · Brand Kit · Khổ t",
+   "Tài nguyên",
+   "Hiệu ứng",
+   "INPUT",
+   "Tạo",
+   "Lưu mẫu",
+   "Bảng hỏi số liệu · 1–4 hình · sáng",
+   "Bìa (chữ trái · ảnh phải)",
+   "Sinh thêm biến thể (lật · nền tối)",
+   "Nhận gợi ý này (áp bố cục + dạy má",
+   "Bỏ gợi ý này (dạy máy khi bạn chọn",
+   "Ảnh tràn viền + tiêu đề",
+   "Bìa tối điện ảnh",
+   "Trang phân mục (số lớn)",
+   "Mục lục / Agenda",
+   "Nội dung + ảnh",
+   "Gợi ýHai cột chữ",
+   "Lưới ảnh (2×2)",
+   "Trích dẫn (giữa)",
+   "Moodboard (hero + swatch)",
+   "Bảng màu & vật liệu",
+   "Trang mặt bằng (kỹ thuật)",
+   "Triptych (3 panel dọc)",
+   "Catalog nội thất (nhãn + lưới)",
+   "So sánh (2 phương án)",
+   "Số liệu lớn (3 chỉ số)",
+   "Lưới 4 cột (triết lý + bullet)",
+   "Collage + watermark serif",
+   "Bảng vật liệu (flat-lay + nhãn)",
+   "Trang kết (thông điệp)",
+   "Trang kết (cảm ơn · liên hệ)",
+   "Ẩn panel Magic/Reference/Motion",
+   "Nhập tệpPDF · PPTX · ảnh",
+   "Dàn từ mẫuMở kệ Thiết kế",
+   "Trang trốngTự dàn từ đầu",
+   "Hoặc tạo từ ảnh đã dựng",
+   "Thu nhỏ (Ctrl/Cmd −)",
+   "Phóng to (Ctrl/Cmd +)",
+   "Vừa khung / 100% (Ctrl/Cmd 0)",
+   "Hiện panel Lớp",
+   "1",
+   "Lên",
+   "Xuống",
+   "Nhân bản",
+   "Thêm slide",
+   "Mở bảng kiểm"
+  ]
+ },
+ {
+  "tram": "03b mật độ trình dàn trang",
+  "chuTo": [
+   {
+    "t": "Chưa nối công cụ chữ cho trang",
+    "px": 16
+   },
+   {
+    "t": "Chưa có thước đo trên trang tr",
+    "px": 16
+   },
+   {
+    "t": "Chưa nối lệnh dời cho trang tr",
+    "px": 16
+   },
+   {
+    "t": "Chưa nối lệnh chép cho trang t",
+    "px": 16
+   },
+   {
+    "t": "Chưa nối lệnh xoay cho trang t",
+    "px": 16
+   },
+   {
+    "t": "Chưa nối lệnh lật cho trang tr",
+    "px": 16
+   }
+  ],
+  "panel": [
+   {
+    "tag": "ASIDE.flex min-h-0 shrink-0 flex",
+    "x": 72,
+    "y": 42,
+    "w": 224,
+    "h": 826
+   },
+   {
+    "tag": "ASIDE.",
+    "x": 296,
+    "y": 176,
+    "w": 288,
+    "h": 555
+   }
+  ],
+  "man": {
+   "w": 1600,
+   "h": 900
+  }
+ },
+ {
+  "tram": "04 sau khi thêm chữ",
+  "phanTu": 0,
+  "vanBan": 2782
+ },
+ {
+  "tram": "05 đường xuất/lưu thấy được",
+  "nhan": [
+   "Xuất",
+   "Lưu mẫu"
+  ]
+ },
+ {
+  "tram": "06 sau khi mở menu Tệp",
+  "nhan": []
+ },
+ {
+  "tram": "07 lỗi phiên 1",
+  "so": 0,
+  "loi": []
+ },
+ {
+  "tram": "08 MỞ LẠI sau khi đóng hẳn",
+  "conThayCuaVao": 0,
+  "soSlideHienThi": "1",
+  "tong": 63,
+  "moVoHieu": 15,
+  "nhan": [
+   "InteriorFlow",
+   "Ngữ cảnh: Mat bang tang tret — Trì",
+   "Hoạt động — không có gì đang chạy",
+   "Tài khoản — Kiem",
+   "Vitals — không có gì cần xem",
+   "Trang chủ",
+   "Dự án",
+   "Cảm hứng",
+   "Thư viện",
+   "Thiết kế 2D",
+   "Thiết kế 3D",
+   "Trình chiếu",
+   "Mở rộng — Điều hướng",
+   "Bảng khối lượng (BOQ)",
+   "Bảng thống kê",
+   "Trang mới",
+   "Thu gọn — B",
+   "Thêm hồ sơ trình bày",
+   "Quay lại",
+   "Mở tệp",
+   "Xuất",
+   "Chữ",
+   "Ảnh",
+   "Hình",
+   "Thiết kế",
+   "Đo khoảng cách",
+   "Di chuyển",
+   "Sao chép",
+   "Xoay",
+   "Đối xứng",
+   "Chọn",
+   "Xoá",
+   "Hoàn tác",
+   "Làm lại",
+   "Thêm — Sắp xếp · Brand Kit · Khổ t",
+   "Tài nguyên",
+   "Hiệu ứng",
+   "Thêm hình ảnh",
+   "Tạo hồ sơ",
+   "Chuyển sang chỉnh tay →",
+   "Ẩn panel Magic/Reference/Motion",
+   "Nhập tệpPDF · PPTX · ảnh",
+   "Dàn từ mẫuMở kệ Thiết kế",
+   "Trang trốngTự dàn từ đầu",
+   "Hoặc tạo từ ảnh đã dựng",
+   "Thu nhỏ (Ctrl/Cmd −)",
+   "Phóng to (Ctrl/Cmd +)",
+   "Vừa khung / 100% (Ctrl/Cmd 0)",
+   "Hiện panel Lớp",
+   "1",
+   "Lên",
+   "Xuống",
+   "Nhân bản",
+   "Thêm slide",
+   "Bỏ qua",
+   "Mở bảng kiểm",
+   "Vitals — hỏi trợ lý (⌘J / Ctrl+J)",
+   "Đóng Thư viện"
+  ]
+ },
+ {
+  "tram": "09 lỗi phiên 2",
+  "so": 0,
+  "loi": []
+ }
+]
