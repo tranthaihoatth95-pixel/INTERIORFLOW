@@ -72,7 +72,6 @@ import { markDemoStep } from '@/lib/studio/demo-spine';
  *     slide nào, và nguồn đổi thì tờ tự đánh dấu "Có bản mới".
  * Hai khoá sessionStorage riêng ⇒ dùng cùng phiên không giẫm nhau. Không có tờ ⇒ render `null`.
  */
-import CongThietLapTrang from './CongThietLapTrang';
 import {
   stashPhotoEditorIn,
   readPhotoEditorReturn,
@@ -1109,6 +1108,29 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
     [ed],
   );
 
+  /**
+   * XOAY LỰA CHỌN MỘT PHẦN TƯ VÒNG (06/09, nối lệnh chung `cad.edit.rotate` vào Trình chiếu).
+   *
+   * ⛔ KHÔNG dựng cơ chế xoay thứ hai: `Frame.rotation` đã có trong model, đã được `Element.tsx`
+   * (núm xoay, snap 5°) · `PlayerElements` · `SlideStrip` · `render.ts` (xuất PDF/PNG) vẽ đúng từ
+   * lâu. Thiếu duy nhất một ĐƯỜNG GỌI từ thanh công cụ — đó là thứ hàm này bù.
+   *
+   * Vì sao 90° chứ không phải một con số khác: xoay TINH đã có sẵn bằng núm trên phần tử (5°/nấc);
+   * cái thanh công cụ còn thiếu là bước THÔ, và một phần tư vòng là bước thô duy nhất không phải
+   * do ai đặt ra — nó giữ nguyên phương ngang/dọc của trang. Đi qua `ed.updateSlide` nên undo/redo
+   * phủ tự động; phần tử KHOÁ được bỏ qua, cùng luật `onNudge`.
+   */
+  const onRotateSelected = useCallback(() => {
+    if (!ed.selectedIds.length) return;
+    const ids = new Set(ed.selectedIds);
+    ed.updateSlide((s) => {
+      for (const el of s.elements) {
+        if (!ids.has(el.id) || el.locked) continue;
+        el.frame = { ...el.frame, rotation: (el.frame.rotation + 90) % 360 };
+      }
+    });
+  }, [ed]);
+
   const onAlign = useCallback(
     (mode: 'left' | 'hcenter' | 'right' | 'top' | 'vcenter' | 'bottom') => {
       if (!ed.selectedId) return;
@@ -2135,11 +2157,22 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
         onUngroup={onUngroupSelected}
         onToggleLock={onToggleLockSelected}
         onToggleHide={onToggleHideSelected}
+        onDeleteSelected={onDeleteSelected}
+        onDuplicateSelected={onDuplicateSelected}
+        onNudge={onNudge}
+        onRotateSelected={onRotateSelected}
+        onSelectNext={onSelectNext}
         onInsertBoqAppendix={onInsertBoqAppendix}
         boqAppendixBusy={boqAppendixBusy}
       />
-      {/* Cửa nhận tờ từ 2D/3D — tự ẩn khi chưa ai gửi tờ nào (không bày cửa rỗng). */}
-      <CongThietLapTrang />
+      {/* 🔴 06/09 — MOUNT THỨ HAI ĐÃ BỎ. `CongThietLapTrang` mount ở TẦNG CHẶNG
+          (`PresentStageScreen.tsx:113`, có lý do ghi tại chỗ: tờ phải nhận được cả khi Trình
+          chiếu còn rỗng, mà `Toolbar`/`PresentEditor` chỉ dựng khi đã có hồ sơ mở). Mount thêm
+          một cái ở đây làm HAI thanh "Thiết lập trang" cùng hiện.
+          Hại KHÔNG chỉ là thừa một thanh: hai bản là hai state React riêng ⇒ chúng **nói ngược
+          nhau**. Ảnh `docs/ship/anh/tc-21-sau-xuat.png` bắt tại trận — bấm "Cập nhật" xong, thanh
+          trên đọc "Hiện hành" còn thanh dưới vẫn "Có bản mới", cùng một tờ, cùng một màn hình.
+          Một sự thật hiện hai giá trị thì người dùng không biết tin cái nào. */}
 
       <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
         {/* trái: panel 3 tab (kéo dãn + ẩn/hiện — tham khảo Photoshop dock/Canva sidebar) */}

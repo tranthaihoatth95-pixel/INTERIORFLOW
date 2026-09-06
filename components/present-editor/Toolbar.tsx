@@ -10,7 +10,6 @@ import { createPortal } from 'react-dom';
 import { useParams } from 'next/navigation';
 import {
   ArrowLeft,
-  Type,
   Image as ImageIcon,
   Square,
   Circle,
@@ -20,8 +19,6 @@ import {
   MoveRight,
   LayoutTemplate,
   LayoutGrid,
-  Undo2,
-  Redo2,
   Play,
   Palette,
   Proportions,
@@ -139,6 +136,22 @@ interface Props {
    * 1 nút cạnh Khoá, cùng khuôn toggle-cả-cụm với onToggleLock. */
   /** ẩn/hiện cả lựa chọn — 1 nút, đổi icon/nhãn theo trạng thái (xem `anyVisible` bên dưới). */
   onToggleHide: () => void;
+  /* ── NỐI LỆNH CHUNG VÀO TRÌNH CHIẾU (06/09, việc 2 lane TRÌNH CHIẾU) ──────────────────────
+   * Năm callback dưới đây KHÔNG phải năng lực mới: cả năm đã sống trong `PresentEditor.tsx` từ
+   * trước (`onDeleteSelected` · `onDuplicateSelected` · `onNudge` · `onSelectNext`), chỉ chưa có
+   * đường nào từ thanh công cụ gọi tới. Đưa chúng vào props là để `bindStage` đắp được tay thi
+   * hành của chặng lên danh sách lấy từ sổ lệnh — đúng khuôn `lib/commands/toolbar-source.ts`
+   * đã dựng sẵn cho việc này, KHÔNG đẻ sổ lệnh thứ hai. */
+  /** xoá phần tử đang chọn. */
+  onDeleteSelected: () => void;
+  /** nhân bản phần tử đang chọn (giữ cụm) — tay thi hành của lệnh chung "Sao chép". */
+  onDuplicateSelected: () => void;
+  /** dời lựa chọn theo % sân khấu — tay thi hành của lệnh chung "Di chuyển". */
+  onNudge: (dx: number, dy: number) => void;
+  /** xoay lựa chọn 90° (xoay tinh vẫn ở núm trên phần tử) — lệnh chung "Xoay". */
+  onRotateSelected: () => void;
+  /** chọn phần tử kế tiếp trên trang — tay thi hành của lệnh chung "Chọn". */
+  onSelectNext: (dir: 1 | -1) => void;
   /* Phụ lục BOQ (02/09) — dựng/làm mới trang bảng khối lượng từ Doc 2D + Kho giá + sửa tay. Logic ở
    * PresentEditor#onInsertBoqAppendix; toolbar chỉ là mặt tiền (cùng khuôn export). */
   onInsertBoqAppendix?: () => void | Promise<void>;
@@ -154,6 +167,11 @@ export interface ToolbarHandle {
   /** mở hộp thoại chọn tệp (đặc cách PDF/PPTX/ảnh/IDFP/XLSX ở `onGatewayFile` bên dưới). */
   openGatewayPicker: () => void;
 }
+
+/** Một nấc dời của lệnh chung "Di chuyển" — tính theo % sân khấu, cùng đơn vị `Frame.x/y`. */
+const BUOC_DOI_PCT = 1;
+/** Lý do mờ khi chưa chọn gì — nói HIỆN TRẠNG, không nói "chưa nối" (năng lực đã có). */
+const LY_DO_CHUA_CHON = 'Chọn một phần tử trên trang rồi mới dùng được';
 
 const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
   const tr = useT();
@@ -195,6 +213,9 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
   const hoSoUserId = effectiveUserId(hoSoStoreUserId) ?? '';
   const hoSoBucketId = useSheetsBucketId();
   const [hoSoBusy, setHoSoBusy] = useState(false);
+
+  /** Có đang chọn phần tử nào không — gating chung cho các lệnh sửa (xoá · chép · dời · xoay). */
+  const coChon = p.selectedIds.length > 0;
 
   // P6b bước 1 — gating cụm "Sắp xếp", CÙNG công thức Inspector.tsx đang dùng (không bịa công
   // thức khác cho 2 chỗ hiện cùng 1 khái niệm) — xem Inspector.tsx dòng ~204-213/425-431.
@@ -688,9 +709,11 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
           consume-once, hai nơi cùng nhận thì nơi nào dựng trước cướp mất tờ của nơi kia. Toolbar
           chỉ dựng khi đã có hồ sơ mở nên nó là chỗ SAI để nhận. */}
       <Divider />
-      <Btn onClick={p.onAddText} title="Thêm chữ">
-        <Type size={18} /> Chữ
-      </Btn>
+      {/* 06/09 — NÚT "Chữ" RIÊNG ĐÃ BỎ. Đo trên app 1600×900 trước lượt này: HAI nút cùng tên
+          "Chữ" trên CÙNG một hàng — x=660 (có nhãn, chạy) và x=1052 (icon trần, mờ vì lệnh chung
+          chưa nối), cách nhau 392 px. Người dùng học sai công cụ ngay lần đầu. Nay lệnh chung
+          `cad.draw.text` đã nối vào chính `p.onAddText` nên nút bên phải LÀM ĐÚNG việc của nút
+          bên trái ⇒ giữ cả hai là nói một điều hai lần. Năng lực không mất đi chỗ nào. */}
       <Btn
         onClick={() => fileRef.current?.click()}
         title="Ảnh NỘI DUNG: tải ảnh lên và đưa thẳng vào slide đang dàn. (Ảnh tham khảo/style → tab Reference bên trái)"
@@ -751,6 +774,31 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
       {bindStage(commonCommandsFor({ stage: 'present' }), {
         'cad.sel.undo': { run: p.onUndo, unavailableReason: p.canUndo ? undefined : 'Chưa có thao tác nào để hoàn tác' },
         'cad.sel.redo': { run: p.onRedo, unavailableReason: p.canRedo ? undefined : 'Chưa hoàn tác gì để làm lại' },
+        /* ── 06/09 — SÁU LỆNH TỪNG MỜ, NAY NỐI. Đo trước khi nối: 8/10 lệnh chung mờ ở Trình
+         * chiếu với lý do "Chưa nối … cho trang trình chiếu", trong khi năng lực ĐÃ CHẠY ở
+         * `PresentEditor` (`registry.ts:299` tự ghi *"`onAddText` là callback cục bộ của
+         * PresentEditor (props, không phải store)"* — tức đã tồn tại, chỉ chưa với tới được).
+         * Đây là NỐI DÂY, không phải xây: không hàm nghiệp vụ nào mới ngoài xoay-90°.
+         *
+         * `unavailableReason` khác hẳn lý do mờ của sổ lệnh: kia là *chặng này chưa làm được bao
+         * giờ* (nợ tính năng), đây là *làm được, nhưng ngay bây giờ chưa chọn gì* (trạng thái
+         * bình thường) — `toolbar-source.ts` đã tách sẵn hai loại, chỗ này chỉ dùng đúng loại. */
+        'cad.draw.text': { run: p.onAddText },
+        'cad.sel.select': {
+          run: () => p.onSelectNext(1),
+          unavailableReason: (p.slide?.elements.length ?? 0) ? undefined : 'Trang đang trống — chưa có gì để chọn',
+        },
+        'cad.sel.delete': { run: p.onDeleteSelected, unavailableReason: coChon ? undefined : LY_DO_CHUA_CHON },
+        'cad.edit.copy': { run: p.onDuplicateSelected, unavailableReason: coChon ? undefined : LY_DO_CHUA_CHON },
+        /* Dời một bước bằng thanh công cụ = một nấc `onNudge` — cùng bước mà phím mũi tên đang
+         * dùng, không đặt ra bước thứ hai cho cùng một việc. */
+        'cad.edit.move': { run: () => p.onNudge(BUOC_DOI_PCT, 0), unavailableReason: coChon ? undefined : LY_DO_CHUA_CHON },
+        'cad.edit.rotate': { run: p.onRotateSelected, unavailableReason: coChon ? undefined : LY_DO_CHUA_CHON },
+        /* ⛔ HAI LỆNH CỐ Ý ĐỂ MỜ — Trình chiếu THẬT SỰ chưa có:
+         *  · `cad.dim.measure` — không có thước trên trang trình bày (`grep` công cụ đo = 0).
+         *  · `cad.edit.mirror` — không có phép lật phần tử (`grep flip|scaleX(-1)` trong
+         *    components/present-editor + lib/present-editor = 0; `Frame` chỉ có `rotation`).
+         * Nối bừa hai lệnh này là dựng nút giả (§9). Để mờ kèm lý do thật là nói đúng hiện trạng. */
       }).map((c) => (
         <IconOnly
           key={c.id}
@@ -967,7 +1015,16 @@ function Btn({
         display: 'flex',
         alignItems: 'center',
         gap: 6,
-        padding: '8px 12px',
+        /* 06/09 — MỘT NHỊP CHIỀU CAO. Đo trên app 1600×900 trước lượt này: CÙNG một thanh công cụ
+         * có **4 chiều cao khác nhau (28 · 32 · 36 · 38 px)** — `Btn` không khai chiều cao nên nó
+         * tự nở theo `padding: 8px 12px`, còn `ToolbarChip` cạnh bên đã đứng đúng `var(--tap)`.
+         * §11.6: cái đẹp của workspace nghề đến từ TRẬT TỰ · NHỊP · CHÍNH XÁC; bốn chiều cao trên
+         * một hàng là vỡ nhịp, không phải chuyện gu.
+         * Dùng `var(--tap)` (32 desktop · 44 cảm ứng, `app/globals.css`) chứ KHÔNG gõ 32: đó là
+         * cùng token `ToolbarChip` đang đọc, nên hai loại nút không thể trôi khỏi nhau nữa, và
+         * bản chạm được cỡ ngón tay miễn phí. */
+        height: 'var(--tap)',
+        padding: '0 12px',
         // 15/08 T audit `toolbar-mot-khuon`: r10 → capsule. Giữ nguyên lập luận đúng của TB
         // (Btn là pill NGANG icon+chữ, KHÔNG ép thành chip tròn — nav mất chữ, CTA mất tô đặc),
         // nhưng r10 để lại hậu quả nặng hơn: trong CÙNG một hàng có 2 chip r999 đứng cạnh 8 pill
