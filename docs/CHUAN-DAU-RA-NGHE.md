@@ -144,3 +144,37 @@ kèm bản cài (`specId` dạng `hat-giong:<uuid>`, **cố ý không mang giá*
 > **Việc phải làm, theo thứ tự tiền mất:** ① cột/ghi chú "sửa tay" + số máy vào XLSX ② nhãn "PDF"
 > không được ra tệp sai khổ khi deck là A4/A3 ③ nguồn+ngày đơn giá ④ trộn hạt giống vào route BOQ
 > ⑤ nội dung cho Bảng vật liệu A3 (hoặc đổi nhãn cho đúng thứ đang giao).
+
+## §7b · VÒNG 2 — VÁ CHỖ ĐẦU RA NÓI SAI, 06/09/2026 (cùng lane)
+
+Bốn việc ①②④⑤ ở trên đã xử. ③ (nguồn + ngày đơn giá) **chưa** — nó là thêm dữ liệu, không phải
+sửa lời nói sai, để lượt sau. Dữ liệu dựng lại **qua app thật** (dự án mới · 2 hình chữ nhật ·
+2 vùng tô · gán vật liệu qua panel "Vật liệu (Hatch)" có bước duyệt *"Áp cho 1 chỗ"*), xuất qua
+**đúng nút người dùng bấm**, rồi **mở từng tệp ra đọc** (`openpyxl` cho .xlsx · đọc `/MediaBox`
+cho .pdf). Tệp gốc: `docs/ship/anh/dau-ra-2026-09-06-vong-2/`.
+
+Hai vùng tô cố ý khác bản chất: một neo `ProductSpec` **có giá** (`ps-truth-go-soi`), một neo vật
+liệu **hạt giống không giá** (`hat-giong:e1f4694e…` — "Gỗ óc chó"). Đó là ca máy-sạch thu nhỏ.
+
+| # | dòng checklist | trước | sau | bằng chứng mở-tệp |
+|---|---|---|---|---|
+| ① | **số sửa tay mang badge sửa-tay** | 🔴 KHÔNG ĐẠT | ✅ **ĐẠT** | sửa 20,35 → 35 m²: `K2='Người sửa tay'` · `L2=20.35` (số máy còn sống) · dòng `A4='TỔNG theo số máy (trước khi sửa tay)' J4=27472500` cạnh tổng đang hiện 47.250.000. Tệp trước khi sửa: `K2='Đo được'`, không có `L2` |
+| ② | khổ giấy đúng ISO 216 ở nút "PDF" | 🔴 1277,5×903,1 mm | ✅ **ĐẠT** | deck A3 ngang → `/MediaBox` **1190,6×841,9 pt = 420,0×297,0 mm**. Deck 16:9 vẫn 2560×1440 pt (tỉ lệ 1,778) — **không hồi quy** |
+| ⑤ | cửa vào không hứa quá | 🔴 nhãn hứa một bảng dựng sẵn | ✅ **ĐẠT** (nhãn) | lối tắt nay đọc **"Trang A3 trống để dàn vật liệu"**; `lead` nói thẳng *"App chưa tự ghép bảng từ dự án"*; `count` '04' → '03' (bên dưới đúng 3 thẻ). **Bảng vật liệu vẫn CHƯA CÓ — cố ý, khai chưa làm là đủ trung thực** |
+| ④ | vật liệu hạt giống lên được BOQ | 🔴 `spec-not-found` *"có thể đã bị xoá/đổi"* | ✅ **ĐẠT** (lý do) | `POST /api/boq/<id>` trên app thật trả `missing-priceVnd` — *"Vật liệu **Gỗ óc chó** (1 vùng tô) chưa có đơn giá… Bổ sung giá rồi tính lại"*, kèm nút **Mở vật liệu** trên màn |
+
+⚠️ **④ KHÔNG làm bảng đầy lên, và đó là ĐÚNG.** Vật liệu hạt giống cố ý không mang giá (luật
+2.1.9.i); BOQ chỉ nhận số đo được (Hoà chốt 15/09). Nên bảng vẫn 0 dòng cho vùng đó — thứ được
+sửa là **lý do nói thật**. Khi studio nhập giá cho đúng `matId` ấy thì vùng tô cũ **ra dòng thật**
+(`dongBoqHatGiong` mượn mặt thương mại qua `getMaterial`) — ca này đã tái hiện bằng hàm thuần và
+khoá bằng `lib/materials/kho-mo-dau-boq.test.ts`.
+
+⭐ **Bài học lượt này: §7 là văn bản chép tay, một lần sửa `xlsx.ts` là nó thành lời khai cũ mà
+không máy nào báo.** Nên phần ① nay có **test MỞ TỆP** (`lib/boq/xlsx.test.ts` [14]) đọc lại zip
+vừa dựng và khẳng định `12.76`/`20.35` còn sống, bảng sạch không bị bịa thêm dòng tổng thứ hai.
+Phần ④ có test grep chính route (chống ai đó gỡ một dòng import mà mọi test khác vẫn xanh).
+
+🟡 **Chưa chắc, khai thẳng:** ca máy sạch **thuần** (bảng `ProductSpec` rỗng) chứng minh bằng hàm
+thuần chứ không chạy trên app — DB máy này đã gieo kho, xoá đi để thử là rủi ro không đáng. Ca
+đo trên app là ca thu nhỏ (một vùng neo hạt giống giữa kho đã có hàng), đủ để chứng minh nhánh
+lý do nhưng không phải cùng một ca.
