@@ -30,6 +30,7 @@ import { useEffect, useRef, useState } from 'react';
 import { FileText, ArrowLeft } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { getLastUserId, saveResume } from '@/lib/resume';
+import { loadSheets, saveSheets, clearSheets, type PersistedSheet } from '@/lib/sheets-persist';
 import ThietLapTrang from './ThietLapTrang';
 import ThietLapTrangDayDu, { type KhaNang } from './ThietLapTrangDayDu';
 import {
@@ -75,14 +76,33 @@ const KHA_NANG: KhaNang = {
 let toDaNhan: ToBanVe | null = null;
 
 /**
- * BẢN LƯU TỜ ĐÃ NHẬN (21/08) — vá lỗi cùng họ với vụ mất deck.
- * TRƯỚC: tờ gửi từ 2D chỉ sống ở biến module `toDaNhan` ⇒ TẢI LẠI TRANG là mất sạch — chip
- * "Thiết lập trang" lẫn nút "Quay lại 2D" biến mất, người dùng phải sang 2D gửi lại. Đo thật
- * trên app: gửi xong, F5, cả hai không còn.
- * NAY: soi gương xuống `sessionStorage` theo TỪNG DỰ ÁN. Chọn sessionStorage chứ không phải
- * localStorage vì tờ mang `anh` (dataURL xem trước ~1400px) — localStorage trần ~5MB là vỡ, còn
- * đây là ngữ cảnh của MỘT phiên làm việc, đúng vòng đời của nó. Vỡ hạn mức thì im lặng bỏ qua:
- * đây là tiện nghi, không được phép làm gãy editor (cùng luật `sheets-persist`).
+ * BẢN LƯU TỜ ĐÃ NHẬN (21/08 · **mở rộng 06/09**) — vá lỗi cùng họ với vụ mất deck.
+ * TRƯỚC 21/08: tờ gửi từ 2D chỉ sống ở biến module `toDaNhan` ⇒ TẢI LẠI TRANG là mất sạch — chip
+ * "Thiết lập trang" lẫn nút "Quay lại 2D" biến mất, người dùng phải sang 2D gửi lại.
+ *
+ * 🔴 LỖ ĐO ĐƯỢC 06/09 (vòng nghề thật, `scripts/nghiem-thu-ban-lam-viec/luong-trinh-chieu.mjs`
+ * mắt xích **M6b**): bản 21/08 soi gương xuống `sessionStorage` ⇒ tờ sống qua F5 nhưng **CHẾT khi
+ * đóng hẳn trình duyệt**. Chạy trọn vòng nghề thì hỏng đúng chỗ đắt nhất: gửi tờ → tắt máy → hôm
+ * sau sửa bản vẽ → quay lại Trình chiếu thì **không còn tờ nào để đánh dấu "Có bản mới"**, và
+ * không một lời nào nói vì sao. Ba mắt xích cuối của vòng (thấy tác động · người xác nhận lại ·
+ * phát hành) đứt theo. Đo thật: M6b/M8/M9 KHÔNG ĐẠT trước lượt vá này.
+ *
+ * NAY — HAI TẦNG, KHÔNG ĐẺ CƠ CHẾ THỨ BA:
+ *  · `sessionStorage` GIỮ NGUYÊN làm tầng NHANH (đọc đồng bộ ngay lúc dựng ⇒ không nháy chip,
+ *    và đỡ đúng ca StrictMode dựng hai lần mà cầu là consume-once).
+ *  · **IndexedDB qua `lib/sheets-persist.ts`** làm tầng BỀN — CHÍNH cỗ máy deck Present đang dùng
+ *    (`userId::route::projectId`), lý do chọn nó đã ghi sẵn ở đầu tệp đó: *"deck Present có thể
+ *    chứa ảnh dataURL hàng MB — localStorage trần ~5MB là vỡ; IDB trần theo đĩa"*. Tờ mang `anh`
+ *    xem trước ~1400px nên rơi đúng vào lý lẽ ấy ⇒ localStorage là đường SAI, IDB là đường ĐÚNG.
+ *
+ * ⚖️ VÌ SAO TỜ ĐÁNG ĐƯỢC LƯU BỀN (không phải chuyện tiện tay): luật lưu **CHUNG ↔ MÁY** (Hoà chốt
+ * 16/08) xếp *"cách bày trên màn"* vào máy, còn **VẬT** và **CẤU TRÚC VIỆC** thì lưu chung. Một tờ
+ * mang **khổ giấy · tỉ lệ · lề · khung tên · neo nguồn** — đó là QUYẾT ĐỊNH HỒ SƠ, không phải
+ * cách bày. Chú thích 21/08 xếp nó là *"ngữ cảnh của MỘT phiên làm việc"* — chỗ đó đọc sai bản
+ * chất của tờ, và vòng nghề đã trả giá bằng ba mắt xích đứt.
+ *
+ * Hỏng/hết hạn mức ở CẢ HAI tầng thì im lặng bỏ qua: đây là tiện nghi, không được phép làm gãy
+ * editor (cùng luật `sheets-persist`).
  */
 const KHOA_TO = 'interiorflow.toBanVe.';
 function khoaTo(): string {
@@ -103,6 +123,52 @@ function ghiToDaLuu(t: ToBanVe | null): void {
     else sessionStorage.removeItem(khoaTo());
   } catch {
     /* hết hạn mức / chế độ riêng tư — bỏ qua, tờ vẫn sống trong phiên qua biến module */
+  }
+  void ghiToVaoIdb(t);
+}
+
+/* ── TẦNG BỀN: IndexedDB, dùng LẠI `sheets-persist` (không mở kho thứ hai) ─────────────── */
+
+/** Route riêng của tờ trong kho chung — tách khỏi `/present-editor` (deck) để hai thứ không đè
+ *  nhau, nhưng vẫn CÙNG một `objectStore`, cùng luật khoá `userId::route::projectId`. */
+const ROUTE_TO = '/present-to-ban-ve' as const;
+
+/** Dự án đang mở, đọc từ chính đường đang đứng — cùng nguồn `khoaTo()` đã dùng. */
+function duAnHienTai(): string {
+  return /\/projects\/([^/]+)/.exec(typeof location === 'undefined' ? '' : location.pathname)?.[1] ?? '';
+}
+
+/** `ToBanVe` mặc `PersistedSheet` (đòi `id` + `name`) mà không đổi hình hài của chính nó. */
+interface ToDaLuu extends PersistedSheet {
+  to: ToBanVe;
+}
+
+async function ghiToVaoIdb(t: ToBanVe | null): Promise<void> {
+  const uid = getLastUserId();
+  const pid = duAnHienTai();
+  if (!uid || !pid) return;
+  try {
+    if (!t) {
+      await clearSheets(uid, ROUTE_TO, pid);
+      return;
+    }
+    const ban: ToDaLuu = { id: t.id, name: t.nhan, to: t };
+    await saveSheets(uid, ROUTE_TO, { v: 1, activeId: t.id, sheets: [ban], ts: Date.now() }, pid);
+  } catch {
+    /* IDB hỏng/đầy — tờ vẫn sống trong phiên qua sessionStorage + biến module */
+  }
+}
+
+async function docToTuIdb(): Promise<ToBanVe | null> {
+  const uid = getLastUserId();
+  const pid = duAnHienTai();
+  if (!uid || !pid) return null;
+  try {
+    const rec = await loadSheets<ToDaLuu>(uid, ROUTE_TO, pid);
+    const t = rec?.sheets?.[0]?.to;
+    return t && typeof t.id === 'string' ? t : null;
+  } catch {
+    return null;
   }
 }
 
@@ -133,6 +199,18 @@ export default function CongThietLapTrang({ onMoBangNet }: { onMoBangNet?: () =>
       if (cu) {
         toDaNhan = cu;
         setTo(cu);
+      } else {
+        // sessionStorage cũng trống ⇒ đây là PHIÊN TRÌNH DUYỆT MỚI (đã đóng hẳn rồi mở lại).
+        // Tầng bền IDB là nơi duy nhất còn tờ. Bất đồng bộ nên đặt sau cùng: hai tầng trên đã
+        // trả lời được thì không đụng tới đĩa.
+        let song = true;
+        void docToTuIdb().then((ben) => {
+          if (!song || !ben) return;
+          toDaNhan = ben;
+          setTo(ben);
+          ghiToDaLuu(ben); // soi lại xuống sessionStorage để phiên này đọc đồng bộ như thường
+        });
+        return () => { song = false; };
       }
     }
   }, []);

@@ -1141,6 +1141,32 @@ export default function CadSheets() {
  * biết tờ đã cũ chưa. Nó chỉ GHI SỔ, không đụng vào tờ nào đã gửi (luật ②: nguồn đổi thì ĐÁNH
  * DẤU, máy không tự sửa đầu ra).
  */
+/**
+ * DẤU VẾT NỘI DUNG NGUỒN — MỘT công thức, dùng chung cho cả effect ghi sổ lẫn lúc gửi tờ.
+ *
+ * 🔴 LỖI ĐO ĐƯỢC 06/09 (vòng nghề thật, mắt xích **M6c** của
+ * `scripts/nghiem-thu-ban-lam-viec/luong-trinh-chieu.mjs`): gửi tờ xong, **không sửa gì**, đóng
+ * trình duyệt rồi mở lại thì tờ ở Trình chiếu tự đổi sang "Có bản mới". Cùng một `docId`, dấu vết
+ * nhảy `vz8x4f15ibqx0` → `1gee2x2pozgt7`.
+ *
+ * GỐC: dấu vết băm `JSON.stringify(doc.entities)` của doc ĐANG SỐNG trong store. Lúc vẽ mới từ
+ * mẫu, doc chưa qua chuẩn hoá; lần ĐẦU nạp lại từ IndexedDB thì `backfillRoomTypes` chạy
+ * (`CadSheets.tsx:301,305` · `lib/cad/cad3d-autosave-core.ts:126`) và gắn `roomType` cho các nhãn
+ * phòng ⇒ chuỗi JSON đổi ⇒ dấu vết đổi, **dù người dùng không chạm gì**.
+ *
+ * Hại thật sự KHÔNG phải một nhãn sai: nó dạy người dùng phớt lờ huy hiệu "Có bản mới". Một cảnh
+ * báo kêu cả khi không có chuyện gì thì lần có chuyện thật cũng không ai nhìn.
+ *
+ * SỬA Ở GỐC: băm doc ĐÃ CHUẨN HOÁ bằng CHÍNH hàm mà đường nạp lại dùng — `backfillRoomTypes`
+ * (thuần · luỹ đẳng · trả nguyên doc cũ khi không có gì để bù). Nhờ vậy hai bên đường lưu-nạp
+ * băm cùng một thứ. ⛔ Không đẻ hàm chuẩn hoá thứ hai: dùng lại đúng hàm đó là điều kiện để dấu
+ * vết bám sát thực tế nạp, không phải để cho tiện.
+ */
+function dauVetCuaDoc(docId: string, doc: Doc): string {
+  const chuan = backfillRoomTypes(doc);
+  return dauVetNguon([docId, chuan.entities.length, JSON.stringify(chuan.entities)]);
+}
+
 function GuiSangTrinhChieu({ sheets, activeId }: { sheets: Sheet[]; activeId: string }) {
   const router = useRouter();
   const doc = useCadStore((s) => s.doc);
@@ -1153,7 +1179,7 @@ function GuiSangTrinhChieu({ sheets, activeId }: { sheets: Sheet[]; activeId: st
   useEffect(() => {
     const t = setTimeout(() => {
       try {
-        ghiDauVetNguon(docId, dauVetNguon([docId, doc.entities.length, JSON.stringify(doc.entities)]));
+        ghiDauVetNguon(docId, dauVetCuaDoc(docId, doc));
       } catch {
         /* doc quá lớn/vòng lặp tham chiếu — bỏ qua, Present sẽ báo 'Cần xem lại' thay vì đoán bừa */
       }
@@ -1168,7 +1194,7 @@ function GuiSangTrinhChieu({ sheets, activeId }: { sheets: Sheet[]; activeId: st
       ? { rongMm: Math.max(0, box.maxX - box.minX), caoMm: Math.max(0, box.maxY - box.minY) }
       : { rongMm: 0, caoMm: 0 };
     const vp = sheet.viewports[0];
-    const dauVet = dauVetNguon([docId, doc.entities.length, JSON.stringify(doc.entities)]);
+    const dauVet = dauVetCuaDoc(docId, doc);
     ghiDauVetNguon(docId, dauVet);
     const to: ToBanVe = {
       id: `to-${sheet.id}-${Date.now().toString(36)}`,
