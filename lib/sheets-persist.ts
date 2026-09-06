@@ -250,6 +250,15 @@ export interface SheetsAutosaver {
   touch: (kind?: SaveKind) => void;
   /** Ghi NGAY nếu đang có thay đổi treo (beforeunload / đổi tab trình duyệt). */
   flush: () => void;
+  /**
+   * Ghi NGAY **và CHỜ ghi xong** — resolve `true` khi bản ghi đã thật sự nằm trong IndexedDB.
+   *
+   * Khác `flush()` đúng hai điểm: (1) ghi CẢ KHI không có thay đổi treo — người gọi cần câu trả
+   * lời "đã bền chưa", không phải "có gì mới không"; (2) CHỜ ĐƯỢC. Sinh ra cho luật
+   * **chỉ buông tay khi hàng đã hạ cánh** ở cầu 2D → Trình chiếu: ở đó dữ liệu bàn giao là bản
+   * DUY NHẤT, xoá nó trước khi deck ghi bền là mất trắng (xem `lib/cad/present-handoff.ts`).
+   */
+  flushCho: () => Promise<boolean>;
   /** Huỷ timer khi unmount. */
   dispose: () => void;
 }
@@ -294,9 +303,16 @@ export function createSheetsAutosaver(
    * chế, không chép bản thứ hai. Hành vi không đổi một dòng. */
   const henIdle = (fn: () => void): (() => void) => henLucRanh(fn, 1500);
 
-  const write = () => {
+  /**
+   * `ep = true` ⇒ ghi cả khi không có thay đổi treo (đường `flushCho`). Trả PROMISE resolve khi
+   * bản ghi đã vào IndexedDB — `flush()`/timer vẫn bỏ giá trị trả về nên hành vi cũ y nguyên.
+   */
+  const write = (ep = false): Promise<boolean> => {
     huyIdle = null;
-    if (!dirty) return;
+    // Không có thay đổi treo và không bị ép ⇒ bỏ lượt (hành vi cũ y nguyên). Giá trị `true` ở đây
+    // KHÔNG có người đọc: chỉ `flush()` và timer đi vào nhánh này, cả hai đều bỏ giá trị trả về;
+    // `flushCho` luôn truyền `ep = true` nên nó không bao giờ nhận một lời "đã bền" chưa kiểm.
+    if (!dirty && !ep) return Promise.resolve(true);
     const kind = dirty;
     dirty = null;
 
@@ -304,11 +320,11 @@ export function createSheetsAutosaver(
       const nhe = opts.applyLight(lastClean);
       if (nhe) {
         lastClean = nhe;
-        void putRecord(userId, route, nhe, opts?.projectId).then((ok) => {
+        return putRecord(userId, route, nhe, opts?.projectId).then((ok) => {
           if (ok) opts?.onSavedLight?.();
           opts?.onSavingChange?.(false);
+          return ok;
         });
-        return;
       }
       // applyLight từ chối (đổi tab/cấu trúc lệch) → rơi về lưu đầy ngay dưới — an toàn trước.
     }
@@ -316,22 +332,23 @@ export function createSheetsAutosaver(
     const record = getRecord();
     if (!record) {
       opts?.onSavingChange?.(false);
-      return;
+      return Promise.resolve(false);
     }
     let json: string;
     try {
       json = JSON.stringify(record);
     } catch {
       opts?.onSavingChange?.(false);
-      return; // payload có giá trị không serialize được — bỏ qua, không crash (hành vi cũ)
+      return Promise.resolve(false); // giá trị không serialize được — bỏ qua, không crash (hành vi cũ)
     }
     const clean = JSON.parse(json) as SheetsRecord;
     lastClean = clean;
     // Ghi vào ĐÚNG bucket dự án đã chốt lúc tạo autosaver — dù store có đổi dự án giữa
     // chừng thì nhịp ghi cuối vẫn về đúng chỗ cũ, không đè lên dự án khác.
-    void putRecord(userId, route, clean, opts?.projectId).then((ok) => {
+    return putRecord(userId, route, clean, opts?.projectId).then((ok) => {
       if (ok) opts?.onSaved?.(json.length);
       opts?.onSavingChange?.(false);
+      return ok;
     });
   };
 
@@ -354,7 +371,14 @@ export function createSheetsAutosaver(
       timer = null;
       huyIdle?.();
       huyIdle = null;
-      write();
+      void write();
+    },
+    flushCho: () => {
+      if (timer) clearTimeout(timer);
+      timer = null;
+      huyIdle?.();
+      huyIdle = null;
+      return write(true);
     },
     dispose: () => {
       if (timer) clearTimeout(timer);

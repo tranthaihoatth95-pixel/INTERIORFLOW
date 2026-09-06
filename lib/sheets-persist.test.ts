@@ -225,6 +225,20 @@ async function main() {
   await tick();
   ok('⑥ dispose trước debounce → không ghi bucket mới', !store.has('u1::/cad-editor::prjY'));
 
+  /**
+   * ⑦ `flushCho` — CHỖ DỰA CỦA LUẬT "chỉ buông tay khi hàng đã hạ cánh" (06/09).
+   * Khác `flush()` đúng hai điểm, và cả hai đều phải đúng nếu không cầu 2D→Trình chiếu mất dữ
+   * liệu trở lại: (a) ghi CẢ KHI không có thay đổi treo — người gọi hỏi "đã bền chưa" chứ không
+   * hỏi "có gì mới không"; (b) resolve SAU khi bản ghi đã nằm trong kho, không phải trước.
+   */
+  const saver4 = createSheetsAutosaver('u1', '/present-editor', getRecord, { projectId: 'prjZ' });
+  ok('⑦a chưa flushCho thì bucket chưa có gì', !store.has('u1::/present-editor::prjZ'));
+  const daGhi = await saver4.flushCho();
+  ok('⑦b flushCho ghi CẢ KHI không dirty (flush thường thì im lặng)', daGhi === true);
+  ok('⑦c resolve xong thì bản ghi ĐÃ nằm trong kho, không phải "sắp có"',
+    store.has('u1::/present-editor::prjZ'));
+  saver4.dispose();
+
   console.log(`\n${pass} pass, ${fail} fail`);
   if (fail > 0) process.exit(1);
 }

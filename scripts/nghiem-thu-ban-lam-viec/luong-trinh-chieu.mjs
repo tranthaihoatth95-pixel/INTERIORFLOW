@@ -70,6 +70,21 @@ async function moPhien() {
   await p0.close();
   const page = await ctx.newPage();
   const loi = [];
+  /**
+   * 🔴 SỬA BỘ ĐO 06/09 — LÝ DO M10 "bấm PDF nhưng không có tệp tải về" SUỐT MẤY LƯỢT.
+   *
+   * Đường xuất đi qua CỔNG CHUẨN ĐẦU RA (`PresentEditor.quaCongChuanDauRa`): deck còn ô chữ mẫu
+   * thì app mở `window.confirm` hỏi "xuất luôn?". Playwright **tự động TỪ CHỐI** mọi hộp thoại
+   * khi không ai đăng ký `dialog` — tức bộ đo âm thầm bấm "Huỷ" rồi kết luận app hỏng. App làm
+   * ĐÚNG; thứ hỏng là chỗ đo.
+   *
+   * Nay: nhận hộp thoại (đúng động tác người dùng bấm OK) và GHI LẠI nguyên văn — cổng nói gì
+   * phải nằm trong bằng chứng, không được nuốt im lặng.
+   */
+  page.on('dialog', async (d) => {
+    ghi({ tram: 'hộp thoại', kieu: d.type(), loi: d.message().replace(/\s+/g, ' ').slice(0, 300) });
+    await d.accept().catch(() => {});
+  });
   page.on('console', (m) => { if (m.type() === 'error') loi.push(m.text().slice(0, 200)); });
   page.on('pageerror', (e) => loi.push('PAGEERROR ' + String(e).slice(0, 200)));
   page.on('response', (r) => { if (!r.ok() && /\/api\//.test(r.url())) loi.push(`HTTP ${r.status()} ${r.request().method()} ${r.url().replace(GOC, '')}`); });
@@ -280,14 +295,24 @@ ghi({ tram: 'M4b mật độ trình dàn trang', ...(await doMatDo(page)) });
 await page.goto(`${GOC}/projects/${PID}/cad`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(4000);
 const daDua = await menu(page, /^Xuất$/, /Đưa ảnh bản vẽ sang Trình chiếu/);
-// đường ảnh đẩy sang `/present-editor` rồi mới redirect về `/projects/<id>/present` — chờ ĐÍCH,
-// không chờ mù theo đồng hồ (lượt chạy trước trượt đúng ở đây).
-await page.waitForURL(/\/present/, { timeout: 30000 }).catch(() => {});
-// Deck ghi xuống IDB qua autosave có debounce + `flush()` lúc rời trang. Đo ngay sau khi chèn thì
-// lúc trúng lúc trượt (đã trượt 2 lượt — lỗi của BỘ ĐO, không phải của app: mắt xích M6 đọc lại
-// sau khi mở lại trang thì luôn thấy đủ). Nạp lại trang một lần để ép `flush()` rồi mới đo.
-await page.waitForTimeout(4000);
-await page.reload({ waitUntil: 'networkidle' });
+/**
+ * 🔴 SỬA BỘ ĐO 06/09 — khối này TRƯỚC ĐÂY sai hai chỗ, và cả hai đều làm nó báo oan:
+ *
+ *  ① `waitForURL(/\/present/)` khớp CẢ `/present-editor` — mà đó chỉ là trạm chuyển hướng, chưa
+ *     phải đích. Đồng hồ 4 s vì thế bắt đầu SỚM hơn ý định, có lượt nạp lại trang lúc điều hướng
+ *     còn dở dang (đo được: một lượt kết thúc ở `/cad`, rồi báo "mất slide").
+ *  ② "nạp lại một lần để ép flush" — nạp lại KHÔNG ép được gì; nó chỉ vô hại khi bản ghi đã kịp
+ *     xuống đĩa. Trục thời gian đo trên app thật cho thấy có cửa sổ ~1,3–3,5 s mà tờ bản vẽ chỉ
+ *     nằm trong bộ nhớ. Cửa sổ đó nay đã đóng ở tầng SẢN PHẨM (peek → chèn → chỉ xoá nguồn khi
+ *     IndexedDB xác nhận, xem `lib/cad/present-handoff.ts`) — chứ không phải đóng bằng cách bộ đo
+ *     bấm thêm một cái F5.
+ *
+ * ⇒ Nay: chờ ĐÚNG đích, rồi hỏi ĐÚNG câu hỏi của người dùng — "mở hồ sơ trình bày của dự án này
+ * ra thì tờ bản vẽ có đó không".
+ */
+await page.waitForURL(new RegExp(`/projects/${PID}/present`), { timeout: 45000 }).catch(() => {});
+await page.waitForTimeout(6000);
+await page.goto(`${GOC}/projects/${PID}/present`, { waitUntil: 'networkidle' });
 await page.waitForTimeout(6000);
 await page.screenshot({ path: `${RA}/tc-15-anh-ban-ve-trong-deck.png` });
 const deck1 = await docDeckTuIdb(page);

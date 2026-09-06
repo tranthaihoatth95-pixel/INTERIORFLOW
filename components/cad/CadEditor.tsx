@@ -24,6 +24,7 @@ import {
 import IOMenu from '@/components/ui/IOMenu';
 import MenuButton from '@/components/ui/MenuButton';
 import { useCadStore } from '@/lib/cad/store';
+import { useSheetsBucketId } from '@/lib/scope';
 import { dwgImportEnabled, dwgTatMessage } from '@/lib/cad/dwg-flag';
 import { thoiLuong, NHIP, DUONG_CONG } from '@/lib/ui/nhip';
 import { useChinhLenh } from '@/lib/commands/chinh-lenh-store';
@@ -119,6 +120,8 @@ import { routeFormat } from '@/lib/gateway/route';
 
 export default function CadEditor() {
   const router = useRouter();
+  /** Dự án đang mở — đóng dấu lên tờ bản vẽ gửi sang Trình chiếu (xem `stashCadPresentHandoff`). */
+  const banGiaoProjectId = useSheetsBucketId();
   const [furnitureOpen, setFurnitureOpen] = useState(false);
   const [materialOpen, setMaterialOpen] = useState(false);
   // Toolbelt ổ ⑤ (CadToolbelt trong AppShell) không với tới 2 state panel cục bộ này →
@@ -667,6 +670,9 @@ export default function CadEditor() {
       snapshot: JSON.stringify(doc),
       fromRole: useCadStore.getState().role,
       toRole: null,
+      // Đóng dấu NHÀ GỬI: từ 06/09 tờ bản vẽ được GIỮ tới lúc ghi bền, nên nó có thể còn sống
+      // lúc người dùng mở Trình chiếu của dự án khác — thiếu dấu này thì tờ rơi nhầm nhà.
+      projectId: banGiaoProjectId || null,
     });
     router.push('/present-editor');
   };
@@ -686,6 +692,9 @@ export default function CadEditor() {
       snapshot: JSON.stringify(doc),
       fromRole: useCadStore.getState().role,
       toRole: null,
+      // Đóng dấu NHÀ GỬI: từ 06/09 tờ bản vẽ được GIỮ tới lúc ghi bền, nên nó có thể còn sống
+      // lúc người dùng mở Trình chiếu của dự án khác — thiếu dấu này thì tờ rơi nhầm nhà.
+      projectId: banGiaoProjectId || null,
     });
     router.push('/present-editor');
   };

@@ -61,7 +61,8 @@ import { evaluateDeck } from '@/lib/present-editor/layout-check';
 import { slidesFromReference, detectGridFromUrl } from '@/lib/present-editor/reference-layout';
 import type { GridGeometryInput } from '@/lib/present-editor/suggest';
 import { consumePresentHandoffWithIds, deckImagesWithIdsFromNodes } from '@/lib/present-editor/handoff';
-import { consumeCadPresentHandoff } from '@/lib/cad/present-handoff';
+import { peekCadPresentHandoffPayload, clearCadPresentHandoff } from '@/lib/cad/present-handoff';
+import { useSheetsBucketId } from '@/lib/scope';
 import { consumeSpecPresentHandoff } from '@/lib/present-editor/spec-present-handoff';
 import { consumePresentReturn, peekPresentReturn } from '@/lib/present-editor/present-return';
 import { markDemoStep } from '@/lib/studio/demo-spine';
@@ -139,6 +140,13 @@ interface Props {
    * = false = hành vi cũ (tab Mẫu luôn mở bằng GenerateFlow trước).
    */
   skipGenerateFlow?: boolean;
+  /**
+   * Ghi bền NGAY bản ghi chứa deck hiện tại; resolve `true` khi đã nằm trong IndexedDB.
+   * Chỉ dùng cho luật **chỉ buông tay khi hàng đã hạ cánh** ở cầu 2D → Trình chiếu (xem
+   * `lib/cad/present-handoff.ts`). Không truyền ⇒ editor vẫn chạy đủ, chỉ là tờ bản vẽ được
+   * GIỮ trong sessionStorage thêm một vòng mở trang — thà giữ thừa còn hơn xoá mất.
+   */
+  luuNgay?: () => Promise<boolean>;
 }
 
 type LeftTab = 'layout' | 'reference' | 'motion';
@@ -159,8 +167,12 @@ const ZOOM_STEP = 0.1;
 const STAGE_MAX_W = 1100; // rộng tối đa sân khấu ở zoom 100% (khớp giá trị cũ EditorCanvas).
 const STAGE_PAD = 48; // padding ngang của <main> (24px × 2).
 
-export default function PresentEditor({ initialDeck, onDeckChange, initialTab, skipGenerateFlow }: Props) {
+export default function PresentEditor({ initialDeck, onDeckChange, initialTab, skipGenerateFlow, luuNgay }: Props) {
   const ed = useEditor(initialDeck);
+  // `luuNgay` là arrow inline ở PresentSheets ⇒ đổi định danh mỗi render. Giữ qua ref để effect
+  // "buông tay" chỉ chạy theo DECK, không chạy theo mỗi lần cha vẽ lại.
+  const luuNgayRef = useRef(luuNgay);
+  luuNgayRef.current = luuNgay;
 
   // Multi-sheet: đẩy deck hiện tại ra wrapper (nếu có) để lưu khi đổi tab. Phụ-thêm, vô hại
   // khi onDeckChange không truyền.
@@ -398,11 +410,41 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
   // Cầu nối CAD→Present (SONG SONG với A-4 Render→Present ở trên, KHÔNG thay thế): 1 ảnh
   // snapshot bản vẽ CAD hiện tại (stash ở CadEditor.tsx khi bấm "Đưa sang Present") → CHÈN
   // THẲNG vào 1 SLIDE MỚI ở cuối deck — không đè slide/deck có sẵn, giống hệt hành vi người
-  // dùng tự upload ảnh vào slide (onAddImageUrl). Consume-once: không có handoff ⇒ noop, editor
-  // y hệt cũ.
+  // dùng tự upload ảnh vào slide (onAddImageUrl). Không có handoff ⇒ noop, editor y hệt cũ.
+  // 🔴 06/09 — dòng cũ ở đây ghi "Consume-once"; nay KHÔNG còn consume-once nữa (nó là nguyên
+  // nhân mất tờ bản vẽ, xem `lib/cad/present-handoff.ts`). Đường mới: peek → chèn → chỉ xoá
+  // nguồn khi IndexedDB đã xác nhận. Hai vai mà `consume` từng gánh một mình nay tách rõ:
+  // chống-chèn-đôi = `daNhanToRef` + id suy từ lô hàng · buông-tay = effect "BUÔNG TAY" bên dưới.
+  const banGiaoBucketId = useSheetsBucketId();
+  /** Tờ bản vẽ ĐÃ chèn vào deck sống nhưng CHƯA xác nhận ghi bền — chưa được xoá nguồn. */
+  const toChoHaCanhRef = useRef<string | null>(null);
+  /**
+   * 🔴 CHỐNG CHÈN HAI LẦN — vai này TRƯỚC ĐÂY do chính `consume` gánh: xoá nguồn ngay lúc đọc thì
+   * lượt chạy thứ hai tự thành no-op. Bỏ consume mà không dựng lại chốt là chèn đôi NGAY, đo được
+   * trên app thật: React StrictMode (dev) chạy effect mount hai lần, effect khai `[]` nên `ed.deck`
+   * trong thân là ẢNH CHỤP của lần render đầu — nó KHÔNG thấy slide vừa chèn ⇒ chèn thêm lần nữa
+   * (lượt đo đầu sau khi sửa: 3 slide / 2 ảnh thay vì 2 / 1). Cờ ref đặt TRƯỚC `ed.update` là thứ
+   * duy nhất tất định ở đây, vì nó không đi qua vòng render nào.
+   */
+  const daNhanToRef = useRef(false);
   useEffect(() => {
-    const dataUrl = consumeCadPresentHandoff();
-    if (!dataUrl) return;
+    if (daNhanToRef.current) return;
+    const p = peekCadPresentHandoffPayload(); // ĐỌC MÀ GIỮ — xem docstring present-handoff.ts
+    if (!p) return;
+    // Tờ gửi từ dự án KHÁC: không nhận, và cũng KHÔNG xoá (nó là hàng của nhà bên kia).
+    if (p.projectId && banGiaoBucketId && p.projectId !== banGiaoBucketId) return;
+    /**
+     * ID SUY TỪ CHÍNH LÔ HÀNG (không phải `newId` ngẫu nhiên) ⇒ phép chèn IDEMPOTENT: mở lại
+     * trang mà deck khôi phục ĐÃ có slide này nghĩa là lô hàng đã hạ cánh bền ⇒ buông tay.
+     * Chưa có ⇒ chèn lại — nạp lại trang giữa chừng không còn mất tờ bản vẽ.
+     */
+    const slideId = `sld-cad-${p.timestamp}-${p.version}`;
+    if (ed.deck.slides.some((s) => s.id === slideId)) {
+      clearCadPresentHandoff();
+      return;
+    }
+    daNhanToRef.current = true; // chốt TRƯỚC khi chèn — xem docstring `daNhanToRef`
+    const dataUrl = p.dataUrl;
     const insertAt = ed.deck.slides.length;
     ed.update((d) => {
       // Nền giấy SÁNG cố định (KHÔNG kế thừa slide[0] — slide đầu deck mẫu có thể là slide
@@ -412,7 +454,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
       // toàn màu TỐI, lấy mù sẽ tái phát đúng lỗi chữ-tối-trên-nền-tối mà dòng trên đang chặn —
       // người dùng đổi nền slide này bằng tay như mọi slide khác (model.ts:460 `background`).
       d.slides.push({
-        id: newId('sld'),
+        id: slideId,
         background: '#F4F1EA',
         backgroundImage: null,
         elements: [
@@ -430,8 +472,34 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
       });
     });
     ed.selectSlide(insertAt);
+    toChoHaCanhRef.current = slideId;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * BUÔNG TAY — và chỉ buông khi tờ bản vẽ đã THẬT SỰ nằm trong IndexedDB.
+   *
+   * Chạy theo `ed.deck` chứ không nằm chung effect chèn ở trên: lúc `ed.update` vừa xong, cha
+   * (`PresentSheets`) CHƯA nhận deck mới — nó nhận qua `onDeckChange` ở effect khai TRƯỚC effect
+   * này, nên tới lượt chạy này `liveDeck.current` mới đúng và `luuNgay()` mới ghi đúng thứ vừa
+   * chèn. Ghi hỏng / chưa có `luuNgay` ⇒ GIỮ NGUYÊN nguồn: lần mở trang sau phép chèn idempotent
+   * ở trên tự dọn. Không có nhánh nào xoá nguồn mà không có bằng chứng đã ghi.
+   */
+  useEffect(() => {
+    const slideId = toChoHaCanhRef.current;
+    if (!slideId) return;
+    if (!ed.deck.slides.some((s) => s.id === slideId)) return;
+    let huy = false;
+    void (async () => {
+      const ok = await (luuNgayRef.current?.() ?? Promise.resolve(false));
+      if (huy || !ok) return;
+      toChoHaCanhRef.current = null;
+      clearCadPresentHandoff();
+    })();
+    return () => {
+      huy = true;
+    };
+  }, [ed.deck]);
 
   // Cầu nối Spec (G1-G4 CuaAnhThanhSpec) → Present — LANE F, đóng gap "Spec Portal to Present"
   // (IF-LIVE-BRIDGE.md MISSING). Cùng pattern consume-once + chèn 1 SLIDE MỚI như cầu CAD→Present

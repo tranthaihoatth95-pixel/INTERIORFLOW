@@ -792,6 +792,11 @@ export default function PresentSheets({ initialDeck: initialDeckProp, onRequestB
             initialDeck={active.deck}
             initialTab="layout"
             skipGenerateFlow={deckStartBySheet[activeId] === 'blank'}
+            /* Luật "chỉ buông tay khi hàng đã hạ cánh" (cầu 2D → Trình chiếu): editor cần HỎI
+               ĐƯỢC "deck đã ghi bền chưa" trước khi xoá nguồn bàn giao. Chỉ tầng này biết —
+               nó giữ autosaver. `flushCho` ghi ngay + chờ xong; không có saver ⇒ `false` ⇒
+               editor GIỮ nguồn lại, không xoá. */
+            luuNgay={async () => (await saverRef.current?.flushCho()) ?? false}
             onDeckChange={(d) => {
               liveDeck.current = d;
               setSlideCount(d.slides.length);
