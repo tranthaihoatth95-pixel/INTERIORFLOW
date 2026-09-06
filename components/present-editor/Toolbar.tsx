@@ -624,7 +624,11 @@ const Toolbar = forwardRef<ToolbarHandle, Props>(function Toolbar(p, ref) {
         busy={p.busy}
         resultMsg={p.exportMsg}
         items={[
-          { id: 'pdf', label: 'PDF', sub: '1:1 với editor · đúng khổ đã chọn (màn hình/chiếu)', icon: <FileDown size={16} />, onSelect: p.onExportPdf },
+          /* 06/09 nhãn-nói-thật (lane ĐẦU RA NÓI THẬT): trước ghi "(màn hình/chiếu)" trong khi
+             deck A3/A4 vẫn ra trang px khổng lồ (đo: 1277,5×903,1 mm cho A3 — không phải ISO 216).
+             `buildDeckPdfDoc` nay dựng đúng khổ giấy; chỗ mục này KHÁC mục "PDF in 300dpi" không
+             còn là khổ giấy nữa mà là ĐỘ PHÂN GIẢI — nói thẳng ra, đừng để người dùng đoán. */
+          { id: 'pdf', label: 'PDF (xem nhanh · gửi duyệt)', sub: '1:1 với editor · đúng khổ đã chọn · độ phân giải màn hình, KHÔNG phải bản in 300dpi', icon: <FileDown size={16} />, onSelect: p.onExportPdf },
           /* R9a (19/08) nhãn-nói-thật: "luôn khổ 16:9" lỗi thời — export.ts đọc
              deck.stagePreset (quyết định 16:9-cứng đã HUỶ 07/08 p12). */
           { id: 'pptx', label: 'PowerPoint (.pptx)', sub: 'Chữ còn chỉnh được trong PPT · đúng khổ đã chọn', icon: <FileText size={16} />, onSelect: p.onExportPptx },

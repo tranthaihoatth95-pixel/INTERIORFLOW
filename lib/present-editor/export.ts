@@ -53,13 +53,25 @@ async function buildDeckPdfDoc(
 ): Promise<{ doc: import('jspdf').jsPDF; name: string }> {
   if (!deck.slides.length) throw new Error('Deck rỗng — cần ít nhất 1 slide.');
   const stage = stageFor(deck.stagePreset);
-  const orientation = stage.w >= stage.h ? 'landscape' : 'portrait';
+  // ⭐ 06/09 (lane ĐẦU RA NÓI THẬT) — TRANG PHẢI ĐÚNG KHỔ NGƯỜI DÙNG ĐÃ CHỌN.
+  // Trước: LUÔN `unit:'px'` với `format:[stage.w, stage.h]`. Đo file thật 06/09
+  // (`docs/CHUAN-DAU-RA-NGHE.md` §7): deck A3 ngang ra `/MediaBox` 3621×2560 pt =
+  // **1277,5×903,1 mm** — gấp ~3 lần A3, KHÔNG nằm trong ISO 216. Người dùng chọn "A3 ngang"
+  // rồi bấm mục tên "PDF" thì nhận một tệp không phần mềm in nào coi là A3.
+  // Nay: khổ nào có kích thước GIẤY THẬT (`PAPER_SIZE_MM`) thì trang dựng bằng mm đúng khổ đó;
+  // khổ 16:9 (màn hình/chiếu, không phải giấy) giữ NGUYÊN đường px cũ — 0 hồi quy.
+  // ⚠️ Đây KHÔNG phải đường in 300dpi: ảnh vẫn render ở độ phân giải sân khấu, nên A3 ra
+  // ~164 dpi. Đúng vai "xem nhanh / gửi duyệt"; muốn 300dpi thật thì dùng
+  // `exportDeckToPdfAtPaperSize` (mục "PDF in 300dpi") — nhãn hai mục nói rõ chỗ khác nhau.
+  const mm = deck.stagePreset ? PAPER_SIZE_MM[deck.stagePreset] : undefined;
+  const page = mm ? { w: mm.w, h: mm.h, unit: 'mm' as const } : { w: stage.w, h: stage.h, unit: 'px' as const };
+  const orientation = page.w >= page.h ? 'landscape' : 'portrait';
   const { jsPDF } = await import('jspdf');
-  const doc = new jsPDF({ orientation, unit: 'px', format: [stage.w, stage.h] });
+  const doc = new jsPDF({ orientation, unit: page.unit, format: [page.w, page.h] });
   for (let i = 0; i < deck.slides.length; i++) {
     const img = await renderEditorSlide(deck.slides[i], deck.fonts, deck.watermark, stage);
-    if (i > 0) doc.addPage([stage.w, stage.h], orientation);
-    doc.addImage(img, 'JPEG', 0, 0, stage.w, stage.h);
+    if (i > 0) doc.addPage([page.w, page.h], orientation);
+    doc.addImage(img, 'JPEG', 0, 0, page.w, page.h);
   }
   return { doc, name: safeName(deck.project || deck.brand || 'deck') };
 }
