@@ -1,8 +1,393 @@
 [
  {
-  "tram": "01 cửa vào Trình chiếu",
-  "tong": 30,
+  "tram": "M0 fixture",
+  "PID": "cmtpnkpif005j7dw3bbbcy1i8"
+ },
+ {
+  "matXich": "M1 · 2D có bản vẽ thật",
+  "ket": "ĐẠT",
+  "bangChung": {
+   "moMenu": true,
+   "soEntity": 28,
+   "trangThai": []
+  }
+ },
+ {
+  "tram": "M2a nút Vật liệu",
+  "so": 1
+ },
+ {
+  "tram": "M2b bảng vật liệu",
+  "tong": 99,
+  "moVoHieu": 3,
+  "nhan": [
+   "InteriorFlow",
+   "Ngữ cảnh: Mat bang tang tret — Thi",
+   "Hoạt động — không có gì đang chạy",
+   "Tài khoản — Kiem",
+   "Vitals — không có gì cần xem",
+   "Trang chủ",
+   "Dự án",
+   "Cảm hứng",
+   "Thư viện",
+   "Thiết kế 2D",
+   "Thiết kế 3D",
+   "Trình chiếu",
+   "Mở rộng — Điều hướng",
+   "Mở lại Lớp",
+   "Thêm bản vẽ",
+   "Gửi sang Trình chiếu",
+   "Mở tệp",
+   "Xuất",
+   "Bắt đầu",
+   "Công cụ bản vẽ",
+   "Tỉ lệ",
+   "Trình bày",
+   "INPUT",
+   "Bỏ qua",
+   "Chọn ảnh nguồn",
+   "Dựng hình ảnh",
+   "Ảnh thành khối",
+   "Sơ phác",
+   "Chuyên",
+   "Chọn",
+   "Nét tay",
+   "Đường",
+   "Chữ nhật",
+   "Tròn",
+   "Tường",
+   "Phòng chữ nhật + nhãn diện tích",
+   "Hatch",
+   "Vật liệu",
+   "Cửa đi",
+   "Di chuyển",
+   "Ống hút thuộc tính",
+   "Đo khoảng cách",
+   "Markup",
+   "Nội thất",
+   "Bắt điểm: BẬT",
+   "Snap lưới: BẬT",
+   "Kéo màn hình",
+   "Xem vừa màn",
+   "Xoá",
+   "Hoàn tác",
+   "Làm lại",
+   "Ortho tắt — khoá hướng ngang/dọc k",
+   "Nhập số theo con trỏ BẬT — hiện độ",
+   "Mở ô nhập lệnh (trên bàn phím: gõ ",
+   "Kéo màn hình (trên bàn phím: giữ S",
+   "Bật vẽ bằng ngón tay khi thiết bị ",
+   "Hoàn tác bước gần nhất (⌘Z/Ctrl+Z)",
+   "Làm lại bước vừa hoàn tác (⌘⇧Z/Ctr",
+   "Chốt/kết thúc thao tác đang vẽ (ph",
+   "Huỷ thao tác đang vẽ, về công cụ C",
+   "Mở bảng kiểm",
+   "Vitals — hỏi trợ lý (⌘J / Ctrl+J)",
+   "Đóng Thư viện",
+   "Đóng",
+   "Gỗ óc chóIF-MAT-GO-OC-CHO · —",
+   "Đá cẩm thạch trắngIF-MAT-DA-CAM-TH",
+   "Vải lanh beIF-MAT-VAI-LANH-BE · —",
+   "Đồng xướcIF-MAT-KIM-LOAI-DONG-XUOC",
+   "Sơn matt trắng ngàIF-MAT-SON-MATT-",
+   "A4 Đá Marble 473564— · 999.000",
+   "Gạch terrazzo xámOT-T-400 · 890.00",
+   "Sàn gỗ sồiKIEM-W-210 · 1.250.000/m",
+   "Sàn gỗ sồi tự nhiênOT-W-210 · 1.25",
+   "Sàn gỗ óc chóKIEM-W-102 · 2.400.00",
+   "Tất cả",
+   "Sàn",
+   "Sơn",
+   "Tường/Ốp",
+   "Gạch bông",
+   "Gạch ceramic trắng",
+   "Sàn gỗ óc chó",
+   "Sàn gỗ sồi",
+   "Đá marble trắng",
+   "Đá granite đen",
+   "Đá granite trắng",
+   "Sơn trắng",
+   "Sơn xám ấm",
+   "Sơn xanh rêu",
+   "Gạch mosaic",
+   "Đá travertine"
+  ]
+ },
+ {
+  "tram": "M2c dòng KHO \"Sàn gỗ sồi\" (SKU KIEM-W-210)",
+  "daChon": true
+ },
+ {
+  "matXich": "M2 · vật liệu THẬT có mã kho gắn vào bản vẽ",
+  "ket": "ĐẠT",
+  "bangChung": {
+   "specIds": [
+    "ps-kiem-go-soi"
+   ],
+   "matIds": [],
+   "soEntity": 29,
+   "trangThai": []
+  }
+ },
+ {
+  "tram": "M2d BOQ đọc từ bản vẽ",
+  "soDong": 1
+ },
+ {
+  "tram": "M3a nút Gửi sang Trình chiếu",
+  "so": 1
+ },
+ {
+  "matXich": "M3 · tờ bản vẽ (khổ · tỉ lệ · neo nguồn) sang được Trình chiếu",
+  "ket": "ĐẠT",
+  "bangChung": {
+   "chip": "Thiết lập trangA3 · 1:100Hiện hành",
+   "dauVet": {
+    "cmtpnkpif005j7dw3bbbcy1i8": "19e3k50wi06nn"
+   },
+   "url": "http://localhost:3000/projects/cmtpnkpif005j7dw3bbbcy1i8/present"
+  }
+ },
+ {
+  "tram": "M4a deck đã mở",
+  "tong": 44,
   "moVoHieu": 1,
+  "nhan": [
+   "InteriorFlow",
+   "Ngữ cảnh: Mat bang tang tret — Trì",
+   "Hoạt động — không có gì đang chạy",
+   "Tài khoản — Kiem",
+   "Vitals — chưa đo được",
+   "Trang chủ",
+   "Dự án",
+   "Cảm hứng",
+   "Thư viện",
+   "Thiết kế 2D",
+   "Thiết kế 3D",
+   "Trình chiếu",
+   "Mở rộng — Điều hướng",
+   "Bảng khối lượng (BOQ)",
+   "Bảng thống kê",
+   "Trang mới",
+   "Thu gọn — B",
+   "Thêm hồ sơ trình bày",
+   "Thiết lập trangA3 · 1:100Hiện hành",
+   "Quay lại 2D",
+   "Đóng thiết lập trang",
+   "A0",
+   "A1",
+   "A2",
+   "A3",
+   "A4",
+   "Ngang",
+   "Dọc",
+   "1:20",
+   "1:25",
+   "1:50",
+   "1:100",
+   "Vừa khung",
+   "Tỉ lệ tuỳ chỉnh, mẫu số của 1 trên",
+   "Lề trang, milimét",
+   "INPUT",
+   "Thiết lập đầy đủ",
+   "Bỏ qua",
+   "Mở bảng kiểm",
+   "Vitals — hỏi trợ lý (⌘J / Ctrl+J)",
+   "Đóng Thư viện"
+  ]
+ },
+ {
+  "tram": "M4b mật độ trình dàn trang",
+  "chuTo": [
+   {
+    "t": "Thư viện",
+    "px": 16
+   },
+   {
+    "t": "InteriorFlow",
+    "px": 14
+   },
+   {
+    "t": "Hồ sơ 1",
+    "px": 13
+   },
+   {
+    "t": "Dàn hồ sơ trình khách.",
+    "px": 13
+   },
+   {
+    "t": "Mat bang tang tret",
+    "px": 12
+   },
+   {
+    "t": "Trình chiếu",
+    "px": 12
+   }
+  ],
+  "panel": [
+   {
+    "tag": "ASIDE.flex min-h-0 shrink-0 flex",
+    "x": 72,
+    "y": 42,
+    "w": 224,
+    "h": 826
+   },
+   {
+    "tag": "ASIDE.",
+    "x": 1300,
+    "y": 48,
+    "w": 300,
+    "h": 808
+   }
+  ],
+  "caoTheoHang": [
+   {
+    "y": 0,
+    "cao": [
+     35,
+     900
+    ]
+   },
+   {
+    "y": 8,
+    "cao": [
+     26,
+     28
+    ]
+   },
+   {
+    "y": 48,
+    "cao": [
+     26
+    ]
+   },
+   {
+    "y": 64,
+    "cao": [
+     32
+    ]
+   },
+   {
+    "y": 120,
+    "cao": [
+     28
+    ]
+   },
+   {
+    "y": 144,
+    "cao": [
+     28
+    ]
+   },
+   {
+    "y": 176,
+    "cao": [
+     32
+    ]
+   }
+  ],
+  "man": {
+   "w": 1600,
+   "h": 900
+  }
+ },
+ {
+  "matXich": "M4 · ảnh bản vẽ THẬT nằm trong trang trình bày",
+  "ket": "KHÔNG ĐẠT",
+  "bangChung": {
+   "daDua": true,
+   "soHoSo": 1,
+   "soSlide": 0,
+   "soPhanTu": 0,
+   "anhThat": 0,
+   "chu": 0,
+   "url": "http://localhost:3000/projects/cmtpnkpif005j7dw3bbbcy1i8/present"
+  }
+ },
+ {
+  "tram": "M5a nút Chữ",
+  "so": 0
+ },
+ {
+  "matXich": "M5 · chú thích đặt được lên trang",
+  "ket": "KHÔNG ĐẠT",
+  "bangChung": {
+   "chuTruoc": 0,
+   "chuSau": 0,
+   "soPhanTu": 0
+  }
+ },
+ {
+  "tram": "M6a lỗi phiên 1",
+  "so": 0,
+  "loi": []
+ },
+ {
+  "matXich": "M6 · đóng HẲN trình duyệt rồi mở lại — deck còn nguyên",
+  "ket": "KHÔNG ĐẠT",
+  "bangChung": {
+   "soHoSo": 1,
+   "soSlide": 0,
+   "soPhanTu": 0,
+   "anhThat": 0,
+   "chu": 0
+  }
+ },
+ {
+  "matXich": "M6b · tờ bản vẽ (neo nguồn) còn sống qua lần đóng trình duyệt",
+  "ket": "ĐẠT",
+  "bangChung": {
+   "chip": "Thiết lập trangA3 · 1:100Hiện hành"
+  }
+ },
+ {
+  "matXich": "M6c · chưa sửa gì thì tờ phải còn \"Hiện hành\"",
+  "ket": "ĐẠT",
+  "bangChung": {
+   "chip": "Thiết lập trangA3 · 1:100Hiện hành",
+   "dauVetLucGui": {
+    "cmtpnkpif005j7dw3bbbcy1i8": "19e3k50wi06nn"
+   },
+   "dauVetSauMoLai": {
+    "cmtpnkpif005j7dw3bbbcy1i8": "19e3k50wi06nn"
+   }
+  }
+ },
+ {
+  "tram": "M7a dòng KHO \"Sàn gỗ óc chó\" (SKU KIEM-W-102)",
+  "daChon": true
+ },
+ {
+  "matXich": "M7 · sửa thượng nguồn — bản vẽ mang thêm vật liệu thứ hai",
+  "ket": "ĐẠT",
+  "bangChung": {
+   "specIdsTruoc": [
+    "ps-kiem-go-soi"
+   ],
+   "specIdsSau": [
+    "ps-kiem-go-soi",
+    "ps-kiem-go-ocho"
+   ],
+   "boqTruoc": {
+    "soDong": 1
+   },
+   "boqSau": {
+    "soDong": 2
+   },
+   "trangThai": []
+  }
+ },
+ {
+  "matXich": "M8 · Trình chiếu THẤY tác động của sửa thượng nguồn",
+  "ket": "ĐẠT",
+  "bangChung": {
+   "chip": "Thiết lập trangA3 · 1:100Có bản mới"
+  }
+ },
+ {
+  "tram": "M9a panel Thiết lập trang",
+  "tong": 56,
+  "moVoHieu": 2,
   "nhan": [
    "InteriorFlow",
    "Ngữ cảnh: Mat bang tang tret — Trì",
@@ -23,289 +408,62 @@
    "Thu gọn — B",
    "Thêm hồ sơ trình bày",
    "Bắt đầu trình bày",
+   "30 đối tượng 2D",
+   "15 khối 3D",
+   "2 dòng BOQ",
    "Trang A3 trống để dàn vật liệu",
    "Khối lượng (BOQ)",
    "Bộ hồ sơ kể chuyện",
    "Dựng nhanh bằng Magic",
    "Thư viện mẫu",
-   "Bỏ qua",
+   "Thiết lập trangA3 · 1:100Có bản mớ",
+   "Quay lại 2D",
+   "Đóng thiết lập trang",
+   "Cập nhật",
+   "So sánh",
+   "Giữ bản hiện tại",
+   "A0",
+   "A1",
+   "A2",
+   "A3",
+   "A4",
+   "Ngang",
+   "Dọc",
+   "1:20",
+   "1:25",
+   "1:50",
+   "1:100",
+   "Vừa khung",
+   "Tỉ lệ tuỳ chỉnh, mẫu số của 1 trên",
+   "Lề trang, milimét",
+   "INPUT",
+   "Thiết lập đầy đủ",
    "Mở bảng kiểm",
    "Vitals — hỏi trợ lý (⌘J / Ctrl+J)",
    "Đóng Thư viện"
   ]
  },
  {
-  "tram": "01b mật độ cửa vào",
-  "chuTo": [
-   {
-    "t": "Trình bày dự án này.",
-    "px": 36
-   },
-   {
-    "t": "Thư viện",
-    "px": 16
-   },
-   {
-    "t": "InteriorFlow",
-    "px": 14
-   },
-   {
-    "t": "Bắt đầu từ một trang trắng, ho",
-    "px": 14
-   },
-   {
-    "t": "Hồ sơ 1",
-    "px": 13
-   },
-   {
-    "t": "Dàn hồ sơ trình khách.",
-    "px": 13
-   }
-  ],
-  "panel": [
-   {
-    "tag": "ASIDE.flex min-h-0 shrink-0 flex",
-    "x": 72,
-    "y": 42,
-    "w": 224,
-    "h": 826
-   }
-  ],
-  "man": {
-   "w": 1600,
-   "h": 900
-  }
- },
- {
-  "tram": "02 nút Bắt đầu trình bày",
+  "tram": "M9b nút Cập nhật",
   "so": 1
  },
  {
-  "tram": "03 trong trình dàn trang",
-  "tong": 148,
-  "moVoHieu": 15,
-  "nhan": [
-   "InteriorFlow",
-   "Ngữ cảnh: Mat bang tang tret — Trì",
-   "Hoạt động — không có gì đang chạy",
-   "Tài khoản — Kiem",
-   "Vitals — không có gì cần xem",
-   "Trang chủ",
-   "Dự án",
-   "Cảm hứng",
-   "Thư viện",
-   "Thiết kế 2D",
-   "Thiết kế 3D",
-   "Trình chiếu",
-   "Mở rộng — Điều hướng",
-   "Bảng khối lượng (BOQ)",
-   "Bảng thống kê",
-   "Trang mới",
-   "Thu gọn — B",
-   "Thêm hồ sơ trình bày",
-   "Quay lại",
-   "Mở tệp",
-   "Xuất",
-   "Chữ",
-   "Ảnh",
-   "Hình",
-   "Thiết kế",
-   "Đo khoảng cách",
-   "Di chuyển",
-   "Sao chép",
-   "Xoay",
-   "Đối xứng",
-   "Chọn",
-   "Xoá",
-   "Hoàn tác",
-   "Làm lại",
-   "Thêm — Sắp xếp · Brand Kit · Khổ t",
-   "Tài nguyên",
-   "Hiệu ứng",
-   "INPUT",
-   "Tạo",
-   "Lưu mẫu",
-   "Bảng hỏi số liệu · 1–4 hình · sáng",
-   "Bìa (chữ trái · ảnh phải)",
-   "Sinh thêm biến thể (lật · nền tối)",
-   "Nhận gợi ý này (áp bố cục + dạy má",
-   "Bỏ gợi ý này (dạy máy khi bạn chọn",
-   "Ảnh tràn viền + tiêu đề",
-   "Bìa tối điện ảnh",
-   "Trang phân mục (số lớn)",
-   "Mục lục / Agenda",
-   "Nội dung + ảnh",
-   "Gợi ýHai cột chữ",
-   "Lưới ảnh (2×2)",
-   "Trích dẫn (giữa)",
-   "Moodboard (hero + swatch)",
-   "Bảng màu & vật liệu",
-   "Trang mặt bằng (kỹ thuật)",
-   "Triptych (3 panel dọc)",
-   "Catalog nội thất (nhãn + lưới)",
-   "So sánh (2 phương án)",
-   "Số liệu lớn (3 chỉ số)",
-   "Lưới 4 cột (triết lý + bullet)",
-   "Collage + watermark serif",
-   "Bảng vật liệu (flat-lay + nhãn)",
-   "Trang kết (thông điệp)",
-   "Trang kết (cảm ơn · liên hệ)",
-   "Ẩn panel Magic/Reference/Motion",
-   "Nhập tệpPDF · PPTX · ảnh",
-   "Dàn từ mẫuMở kệ Thiết kế",
-   "Trang trốngTự dàn từ đầu",
-   "Hoặc tạo từ ảnh đã dựng",
-   "Thu nhỏ (Ctrl/Cmd −)",
-   "Phóng to (Ctrl/Cmd +)",
-   "Vừa khung / 100% (Ctrl/Cmd 0)",
-   "Hiện panel Lớp",
-   "1",
-   "Lên",
-   "Xuống",
-   "Nhân bản",
-   "Thêm slide",
-   "Mở bảng kiểm"
-  ]
- },
- {
-  "tram": "03b mật độ trình dàn trang",
-  "chuTo": [
-   {
-    "t": "Chưa nối công cụ chữ cho trang",
-    "px": 16
-   },
-   {
-    "t": "Chưa có thước đo trên trang tr",
-    "px": 16
-   },
-   {
-    "t": "Chưa nối lệnh dời cho trang tr",
-    "px": 16
-   },
-   {
-    "t": "Chưa nối lệnh chép cho trang t",
-    "px": 16
-   },
-   {
-    "t": "Chưa nối lệnh xoay cho trang t",
-    "px": 16
-   },
-   {
-    "t": "Chưa nối lệnh lật cho trang tr",
-    "px": 16
-   }
-  ],
-  "panel": [
-   {
-    "tag": "ASIDE.flex min-h-0 shrink-0 flex",
-    "x": 72,
-    "y": 42,
-    "w": 224,
-    "h": 826
-   },
-   {
-    "tag": "ASIDE.",
-    "x": 296,
-    "y": 176,
-    "w": 288,
-    "h": 555
-   }
-  ],
-  "man": {
-   "w": 1600,
-   "h": 900
+  "matXich": "M9 · người xác nhận lại — tờ về \"Hiện hành\"",
+  "ket": "ĐẠT",
+  "bangChung": {
+   "chipSauCapNhat": "Thiết lập trangA3 · 1:100Hiện hành"
   }
  },
  {
-  "tram": "04 sau khi thêm chữ",
-  "phanTu": 0,
-  "vanBan": 2782
+  "matXich": "M10 · xuất PDF ra tệp thật",
+  "ket": "KHÔNG ĐẠT",
+  "bangChung": {
+   "ok": false,
+   "vi": "không mở được menu Xuất hoặc không thấy mục PDF"
+  }
  },
  {
-  "tram": "05 đường xuất/lưu thấy được",
-  "nhan": [
-   "Xuất",
-   "Lưu mẫu"
-  ]
- },
- {
-  "tram": "06 sau khi mở menu Tệp",
-  "nhan": []
- },
- {
-  "tram": "07 lỗi phiên 1",
-  "so": 0,
-  "loi": []
- },
- {
-  "tram": "08 MỞ LẠI sau khi đóng hẳn",
-  "conThayCuaVao": 0,
-  "soSlideHienThi": "1",
-  "tong": 63,
-  "moVoHieu": 15,
-  "nhan": [
-   "InteriorFlow",
-   "Ngữ cảnh: Mat bang tang tret — Trì",
-   "Hoạt động — không có gì đang chạy",
-   "Tài khoản — Kiem",
-   "Vitals — không có gì cần xem",
-   "Trang chủ",
-   "Dự án",
-   "Cảm hứng",
-   "Thư viện",
-   "Thiết kế 2D",
-   "Thiết kế 3D",
-   "Trình chiếu",
-   "Mở rộng — Điều hướng",
-   "Bảng khối lượng (BOQ)",
-   "Bảng thống kê",
-   "Trang mới",
-   "Thu gọn — B",
-   "Thêm hồ sơ trình bày",
-   "Quay lại",
-   "Mở tệp",
-   "Xuất",
-   "Chữ",
-   "Ảnh",
-   "Hình",
-   "Thiết kế",
-   "Đo khoảng cách",
-   "Di chuyển",
-   "Sao chép",
-   "Xoay",
-   "Đối xứng",
-   "Chọn",
-   "Xoá",
-   "Hoàn tác",
-   "Làm lại",
-   "Thêm — Sắp xếp · Brand Kit · Khổ t",
-   "Tài nguyên",
-   "Hiệu ứng",
-   "Thêm hình ảnh",
-   "Tạo hồ sơ",
-   "Chuyển sang chỉnh tay →",
-   "Ẩn panel Magic/Reference/Motion",
-   "Nhập tệpPDF · PPTX · ảnh",
-   "Dàn từ mẫuMở kệ Thiết kế",
-   "Trang trốngTự dàn từ đầu",
-   "Hoặc tạo từ ảnh đã dựng",
-   "Thu nhỏ (Ctrl/Cmd −)",
-   "Phóng to (Ctrl/Cmd +)",
-   "Vừa khung / 100% (Ctrl/Cmd 0)",
-   "Hiện panel Lớp",
-   "1",
-   "Lên",
-   "Xuống",
-   "Nhân bản",
-   "Thêm slide",
-   "Bỏ qua",
-   "Mở bảng kiểm",
-   "Vitals — hỏi trợ lý (⌘J / Ctrl+J)",
-   "Đóng Thư viện"
-  ]
- },
- {
-  "tram": "09 lỗi phiên 2",
+  "tram": "M10b lỗi phiên 2",
   "so": 0,
   "loi": []
  }

@@ -500,8 +500,8 @@ N/A ngoài phạm vi code IF (thuộc ArchiNote — app khác, hoặc thuộc lu
 | 1 | Xuất **PPTX** / PNG / PDF-theo-tờ-giấy / Gói Hồ Sơ `.zip` | `export.ts:354` `exportDeckToPptxFromModel` · `:152` PNG · `lib/ho-so-song/pack.ts:92` | menu Xuất có đủ 6 mục, 5 bật 1 mờ-kèm-lý-do |
 | 1 | Lưu + mở lại | `lib/present-editor/luu-len-may-chu.ts` + `idfp.ts` | ✅ **chứng minh lượt này**: đóng HẲN trình duyệt → mở lại → deck còn, hiện "1 slide", không quay về màn chọn |
 | 1 | Nhập PDF/PPTX (Smart Convert) | `lib/present-editor/pdf-import.ts:786` `extractImagesWithBbox` · `pptx-import.ts` | cửa "Mở tệp" · "Nhập tệp PDF · PPTX · ảnh" |
-| **3 CHƯA CẮM DÂY** | 🔴 **8/10 lệnh chung của thanh công cụ CHẾT ở Present** | khai `lib/commands/registry.ts:296,344,394,403,411,418,511` (`stages:['cad','render','present']`) · bày `components/present-editor/Toolbar.tsx:62` `commonCommandsFor` | Chữ · Đo khoảng cách · Di chuyển · Sao chép · Xoay · Đối xứng · Chọn · Xoá — **mờ hết**, lý do đọc được: *"Chưa nối … cho trang trình chiếu"*. Hoàn tác/Làm lại mờ đúng nghĩa (chưa có thao tác nào) |
-| 3 | Hệ quả nhìn thấy được | đo app thật 1600×900 | **HAI nút "Chữ" trên CÙNG một hàng**: x=660 (có nhãn, **chạy**) và x=1052 (icon trần, **chết**) — cách nhau 392 px |
+| ~~3 CHƯA CẮM DÂY~~ → **1 ĐÃ CÓ VÀ CHẠY** (06/09) | ✅ **6/8 lệnh đã nối; 2 lệnh còn mờ ĐÚNG** | khai `lib/commands/registry.ts` · bày `Toolbar.tsx:62` `commonCommandsFor` · nối `Toolbar.tsx` `bindStage` | **Trước**: cả 8 mờ với lý do *"Chưa nối … cho trang trình chiếu"*. **Sau**: Chữ · Chọn · Xoá · Dời · Chép · Xoay chạy thật (tay thi hành có sẵn trong `PresentEditor`); Đo · Đối xứng **giữ mờ** — Trình chiếu chưa có thước và chưa có phép lật, nối bừa là nút giả |
+| ~~3~~ ✅ | Hệ quả nhìn thấy được | đo app thật 1600×900 | trước: **HAI nút "Chữ" cùng một hàng** (x=660 chạy · x=1052 chết, cách 392 px). Sau 06/09: **một nút duy nhất** |
 | 3 | Vật liệu ↔ Trình chiếu | `lib/materials/resolve.ts:52` `getMaterial()` | (nợ đã biết từ 17/08) trả đủ 3 mặt PBR·thương mại·hatch nhưng **0 nơi gọi ngoài test** ⇒ bảng vật liệu chưa có nguồn thật để ăn |
 | **5 MỘT PHẦN** | Kiểm chuẩn deck | `lib/review/luat/deck.ts:16` `luatDeck` · `lib/present-editor/export-checks.ts:62` | có luật + có cổng lúc xuất; chưa cắm ở **mọi** cửa chuyển công đoạn (entry `kiem-chang-moi-cong-doan`) |
 | 5 | PDF in 300 dpi | `export.ts:112` `exportDeckToPdfAtPaperSize` | có thật, nhưng **mờ** khi khổ là 16:9 — mờ **đúng** kèm lý do ("chỉ xuất được ở khổ giấy") |
@@ -549,22 +549,34 @@ trang bằng **mm thật**, còn 16:9 giữ nguyên đường px. `exportDeckToP
 sha256), **không đọc kích thước trang** ⇒ đổi khổ vật lý **không thể** làm vỡ nó.
 Đo thêm trên tệp xuất thật lượt này (deck 16:9): `MediaBox 2560×1440 pt` — đúng đường px cũ, **0 hồi quy**.
 
-### Chỗ tắc thật của luồng nghề
-1. 🔴 **Không vào được chặng Trình chiếu nếu dự án chưa có bản vẽ.** `app/projects/[id]/present/page.tsx:21-24`
-   trả `ProjectScopeEmptyState` khi `status==='missing'`; màn chỉ mời *"Tạo bản vẽ mới / Nhập bản vẽ
-   có sẵn"*. Component tự khai là tuân X2 vì **sửa được tại chỗ** — đúng ở tầng scope, nhưng hệ quả
-   cho chặng 3 là **đường vào thứ ③ của luật X3** (*"vào thẳng chặng 3 từ ảnh/ý tưởng, không cần mô
-   hình"*) **không đi được**: mang một PDF tới, chưa vẽ gì, thì không có cửa nào.
-2. 🔴 **Hai nút "Chữ" cạnh nhau, một chết** (xem ô 3) — người dùng học sai công cụ ngay lần đầu.
-3. 🟡 **Canvas trang bị màn chọn chiếm chỗ**: vào editor rồi vẫn thấy bộ thẻ *Nhập tệp / Dàn từ mẫu /
-   Trang trống* ở giữa khung, trong khi dải slide dưới đã báo **1 slide**.
+### Chỗ tắc thật của luồng nghề — ✅ ĐÃ ĐÓNG 06/09 (lane VÒNG THẬT + NỐI DÂY)
+1. ✅ **Vào được chặng Trình chiếu khi dự án chưa có bản vẽ** (luật X3 lối ③). `app/projects/[id]/present/page.tsx`
+   nay truyền `loiVaoThang` cho `ProjectScopeEmptyState` — lối thứ ba *"Trình bày mà chưa cần bản vẽ"*,
+   nhớ theo dự án. `unknown` (đường dẫn hỏng) KHÔNG mở lối này.
+2. ✅ **Hết hai nút "Chữ"** — lệnh chung `cad.draw.text` nối vào chính `p.onAddText`, nút riêng bỏ.
+3. 🟡 **Canvas bị màn chọn chiếm chỗ — ĐO LẠI: KHÔNG PHẢI LỖI.** `PresentEditor.tsx:1409`
+   `showTaskFirstStart` chỉ bật khi hồ sơ **thực sự trống** (0 slide, hoặc đúng 1 slide · 0 phần tử ·
+   0 ảnh nền · chưa xác nhận). "Dải dưới báo 1 slide" chính là ca đó — ba lối to là **empty state có
+   chủ đích**, không phải overlay che việc đang làm. Không sửa.
 
-### 8 giờ/ngày được không? — **CHƯA**
-Không phải vì thiếu tính năng (bảng trên cho thấy phần lớn đã có và chạy), mà vì **ba việc lặp
-nhiều nhất của nghề dàn trang — chọn · dời · chép — đều mờ trên thanh công cụ**, và người dùng phải
-tự đoán rằng chúng vẫn làm được bằng chuột trực tiếp trên trang. Cộng thêm 36,5 % bề ngang là chrome
-và một cửa vào chặn khi dự án chưa có bản vẽ. Đây là **khoảng cách cắm dây + bố cục**, không phải
-khoảng cách năng lực — nên nó rẻ hơn nhiều so với cảm giác ban đầu.
+### 🔴 HAI LỖI VÒNG NGHỀ BẮT ĐƯỢC (chỉ lộ khi chạy trọn vòng, `tsc`/test/grep đều mù)
+| | Lỗi | Bằng chứng | Đã sửa |
+|---|---|---|---|
+| **M6b** | **Tờ bản vẽ chết khi đóng trình duyệt** — `CongThietLapTrang` chỉ soi gương xuống `sessionStorage` ⇒ gửi tờ → tắt máy → hôm sau mở lại thì **không còn tờ nào**, và ba mắt xích cuối (thấy tác động · người xác nhận · phát hành) đứt theo, im lặng | vòng nghề M6b/M8/M9 KHÔNG ĐẠT | ✅ thêm tầng bền **IndexedDB qua `lib/sheets-persist`** — chính cỗ máy deck đang dùng, không mở kho thứ hai |
+| **M6c** | **Tờ bị đánh dấu OAN "Có bản mới"** — dấu vết băm doc CHƯA chuẩn hoá, lần đầu nạp lại `backfillRoomTypes` chạy ⇒ dấu vết đổi dù người dùng không chạm gì. Cảnh báo kêu khi không có chuyện thì lần có chuyện thật cũng không ai nhìn | `vz8x4f15ibqx0` → `1gee2x2pozgt7`, cùng `docId`, 0 thao tác | ✅ `CadSheets.dauVetCuaDoc()` băm doc ĐÃ chuẩn hoá bằng đúng hàm đường nạp dùng; đo lại: dấu vết **giữ nguyên** |
+| **+** | **Hai thanh "Thiết lập trang" NÓI NGƯỢC NHAU** — `CongThietLapTrang` mount 2 chỗ (tầng chặng + trong `PresentEditor`) ⇒ 2 state riêng: bấm Cập nhật xong, thanh trên "Hiện hành", thanh dưới "Có bản mới" | `docs/ship/anh/tc-21-sau-xuat.png` | ✅ bỏ mount trong `PresentEditor`, giữ mount tầng chặng (có lý do ghi tại chỗ) |
+
+### 8 giờ/ngày được không? — **GẦN HƠN, CHƯA TRỌN**
+06/09 đã đóng phần *cắm dây*: **6/8 lệnh chung hết mờ** (Chữ · Chọn · Xoá · Dời · Chép · Xoay —
+tay thi hành lấy nguyên `onAddText`/`onSelectNext`/`onDeleteSelected`/`onNudge`/`onDuplicateSelected`
+đã sống sẵn trong `PresentEditor`, chỉ chưa ai gọi tới). **Hai lệnh CỐ Ý còn mờ vì Trình chiếu thật
+sự chưa có**: `cad.dim.measure` (không có thước trên trang) · `cad.edit.mirror` (`grep flip|scaleX(-1)`
+= 0; `Frame` chỉ có `rotation`) — nối bừa là dựng nút giả (§9).
+Nhịp cũng đã chỉnh: `Btn` + `IOMenu size="md"` nay đứng đúng `var(--tap)` như `ToolbarChip`, thay vì
+tự nở theo padding (trước: **4 chiều cao 28·32·36·38 px trên cùng một hàng**); tiêu đề màn vào
+36px → `clamp(20,2.2vw,28)`.
+**Còn nợ**: navigator 224 px vẫn giữ 2 dòng liên kết khi chưa có trang (chưa gộp — là thay đổi cấu
+trúc vỏ dùng chung, cần một lượt riêng có đo).
 
 ### Lát cắt kế tiếp, theo thang §11.2 `DÙNG LẠI → NỐI DÂY → BÀY RA → TÁI CẤU TRÚC → MỞ RỘNG → XÂY LẠI`
 1. **NỐI DÂY** — bind 8 lệnh chung vào `useEditor` của Present. Rẻ nhất và có bằng chứng ngay
