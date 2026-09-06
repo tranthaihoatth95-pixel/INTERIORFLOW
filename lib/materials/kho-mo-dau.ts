@@ -25,6 +25,7 @@
  */
 import type { MaterialSpecDto } from './warehouse/dto';
 import { VAT_LIEU_HAT_GIONG, type VatLieuHatGiong } from './hat-giong';
+import { getMaterial, type CommercialFacet } from './resolve';
 import { normalizeMatIdCanonical } from './matid-identity';
 import type { MaterialDef, MaterialTexture } from '../cad/materials';
 import { mixHex } from '../cad/plan-depth';
@@ -281,4 +282,70 @@ export function tronDefsHatGiong(defs: readonly MaterialDef[] | null | undefined
       .filter((x): x is string => !!x),
   );
   return [...defsHatGiong().filter((d) => !daCo.has(d.matId ?? '')), ...co];
+}
+
+/* ═════════ MẶT TIỀN THỨ SÁU — BOQ (`app/api/boq/[projectId]/route.ts`) ═════════ */
+
+/**
+ * Hình THƯƠNG MẠI tối thiểu mà `computeBoq` cần — khớp cấu trúc `ProductSpecDtoLite`
+ * (`lib/boq/from-project.ts`) mà KHÔNG import type đó, giữ `lib/materials/` không phụ thuộc
+ * ngược lên `lib/boq/` (cùng kỷ luật `PickHatGiong` ở trên).
+ */
+export interface DongBoqHatGiong {
+  id: string;
+  name: string;
+  vendor: string | null;
+  sku: string | null;
+  unit: string | null;
+  priceVnd: number | null;
+  wastagePercent: number | null;
+}
+
+/**
+ * ⭐ 06/09 (lane ĐẦU RA NÓI THẬT) — DÒNG TRA CỨU cho BOQ, kèm MƯỢN mặt thương mại theo `matId`.
+ *
+ * 🔴 CA HỎNG ĐÃ TÁI HIỆN (chạy `computeBoqForProject` với `specDtos = []`, đúng thứ route có
+ * trên máy sạch): người dùng mới tô một vùng bằng vật liệu ship kèm bản cài
+ * (`HatchEntity.specId = 'hat-giong:<uuid>'`) rồi mở BOQ ⇒ **0 dòng**, kèm lỗi `spec-not-found`
+ * nói *"không tìm thấy vật liệu này… **có thể vật liệu đã bị xoá/đổi**"*. Câu đó SAI: vật liệu
+ * không bị ai xoá — nó chưa bao giờ là bản ghi `ProductSpec`, nó là tệp trong repo. Người dùng
+ * đọc xong đi tìm một thứ không tồn tại.
+ *
+ * Nối hạt giống vào danh sách tra thì lỗi trở thành `missing-priceVnd` — *"chưa có đơn giá…
+ * bổ sung giá rồi tính lại"*. Vẫn **0 dòng**, và đó là ĐÚNG: hạt giống cố ý không mang giá
+ * (luật 2.1.9.i), còn BOQ chỉ nhận số đo được (Hoà chốt 15/08) nên không được đoán giá. Thứ
+ * lượt này sửa là **LÝ DO NÓI THẬT**, không phải làm bảng đầy lên.
+ *
+ * 🔴 CA THỨ HAI, cũng đã tái hiện: studio SAU ĐÓ nhập bản thương mại có giá cho đúng vật liệu ấy
+ * (`ProductSpec` mới, `matId` trùng, `id` cuid khác). Vùng tô cũ vẫn neo `hat-giong:<uuid>` ⇒ nếu
+ * chỉ nối suông thì BOQ vẫn kêu *"chưa có đơn giá"* trong khi kho ĐÃ có giá — nói sai lần thứ hai,
+ * nặng hơn lần đầu. ⇒ Dòng hạt giống MƯỢN mặt thương mại qua `getMaterial()` — hàm hợp nhất ba
+ * mặt viết từ 07/08 mà tới nay chưa có nơi gọi nào ngoài test của chính nó ("dây có, chưa cắm
+ * điện", sổ 17/08). Đây là chỗ cắm.
+ *
+ * ⛔ KHÔNG dùng `tronHatGiong` cho việc này: hàm đó khử trùng theo `matId` để DANH SÁCH hiển thị
+ * không đếm hai lần một vật. Ở đây là TRA CỨU THEO `id` — bỏ dòng hạt giống đi vì kho đã có vật
+ * cùng `matId` sẽ làm chính những vùng tô đang neo vào nó thành mồ côi.
+ */
+export function dongBoqHatGiong(dbSpecs: readonly CommercialFacet[]): DongBoqHatGiong[] {
+  return hangHatGiong().map((m) => {
+    const matId = m.matId ?? '';
+    const tm = matId ? getMaterial(matId, { specs: dbSpecs }).commercial : null;
+    const so = (v: number | string | null | undefined): number | null => {
+      if (v === null || v === undefined) return null;
+      const n = typeof v === 'number' ? v : Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+    return {
+      id: m.id,
+      // Tên/mã giữ của hạt giống — đó là thứ người dùng đã chọn trên bản vẽ. Chỉ MẶT THƯƠNG MẠI
+      // (nhà cung cấp · đơn vị · đơn giá · hao hụt) mới mượn từ kho.
+      name: m.name,
+      sku: m.sku,
+      vendor: tm?.vendor ?? null,
+      unit: tm?.unit ?? m.unit,
+      priceVnd: so(tm?.priceVnd) ?? m.priceVnd,
+      wastagePercent: so(tm?.wastagePercent),
+    };
+  });
 }

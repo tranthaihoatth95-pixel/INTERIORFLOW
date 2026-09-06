@@ -3,6 +3,7 @@ import { prisma } from '@/lib/server/db';
 import { getSessionUser } from '@/lib/server/auth';
 import { AccessError, assertProjectAccess } from '@/lib/server/access';
 import { specToDto } from '@/lib/server/specs';
+import { dongBoqHatGiong } from '@/lib/materials/kho-mo-dau';
 import { computeBoqForProject, type ProductSpecDtoLite } from '@/lib/boq/from-project';
 import type { Doc } from '@/lib/cad/model';
 
@@ -56,7 +57,19 @@ export async function POST(req: Request, { params }: { params: { projectId: stri
   // hơn, người dùng tưởng bảng đúng. Sửa NGOÀI vùng file được giao nhưng BẮT BUỘC: cờ giá không
   // tự tới engine được nếu server không đọc lên (cùng lý do đã ghi ở P12/`lib/ai/client.ts`).
   const specRows = await prisma.productSpec.findMany();
-  const specDtos: ProductSpecDtoLite[] = specRows.map(specToDto);
+  // ⭐ 06/09 (lane ĐẦU RA NÓI THẬT) — NỐI TẦNG HẠT GIỐNG. Route này là mặt tiền cuối cùng còn
+  // đọc MỖI bảng `ProductSpec`; bốn mặt kia (Kho vật liệu · Files/ngăn phần thô · Render Studio ·
+  // ô chọn vật liệu 2D) đã trộn tầng hạt giống từ 04-05/09. Hậu quả đo được (tái hiện bằng
+  // `computeBoqForProject(..., [])`): máy sạch tô được vật liệu ship kèm bản cài, mở BOQ ra
+  // **0 dòng** kèm câu *"không tìm thấy… có thể vật liệu đã bị xoá/đổi"* — sai hướng, vì nó chưa
+  // bao giờ là bản ghi DB. Nối vào thì lỗi thành `missing-priceVnd` (đúng: chưa có giá), và khi
+  // studio đã nhập giá cho đúng `matId` đó thì vùng tô cũ RA DÒNG THẬT (`dongBoqHatGiong` mượn
+  // mặt thương mại qua `getMaterial`). Hạt giống xếp SAU: `id` của chúng mang tiền tố
+  // `hat-giong:` nên không bao giờ đụng `id` của bản ghi DB — nối thêm, không đè ai.
+  // `specToDto` đã Number()-hoá `Decimal` của Prisma — `dongBoqHatGiong` đọc DTO, không đọc
+  // hàng thô (Decimal không phải number, so giá sẽ hỏng âm thầm).
+  const dbDtos = specRows.map(specToDto);
+  const specDtos: ProductSpecDtoLite[] = [...dbDtos, ...dongBoqHatGiong(dbDtos)];
 
   const { result, hit } = computeBoqForProject(projectId, doc as Doc, specDtos);
 
