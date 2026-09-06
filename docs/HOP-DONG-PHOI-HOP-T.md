@@ -454,7 +454,20 @@ phòng/zone · tường/lỗ mở · đồ thiết kế · gán vật liệu · 
 sheet · view · hình 3D · vật liệu/PBR · tham chiếu · bình luận/duyệt · phiên bản · trang trình chiếu ·
 dòng BOQ · tệp dự án · ảnh/render.
 Số liệu phải **đo từ dự án/bằng chứng đang có**; không có dữ liệu an toàn thì **suy ra và ghi rõ GIẢ ĐỊNH**.
-Dữ liệu tổng hợp/ẩn danh — **không chép dữ liệu riêng tư của TTT**.
+Dữ liệu fixture phải **TỔNG HỢP · ẨN DANH · TRUNG TÍNH VỚI SẢN PHẨM**.
+
+> ### 🧱 TƯỜNG LỬA CỨNG (Hoà ban 06/09) — IF và CÔNG VIỆC CỦA MỘT STUDIO CỤ THỂ LÀ HAI HỆ TÁCH BIỆT
+> ⛔ **CẤM dùng tên studio, dự án, khách hàng, quy trình nội bộ, nhân sự hay dữ liệu riêng tư của
+> BẤT KỲ studio cụ thể nào** làm bối cảnh sản phẩm · chuẩn đối sánh mặc định · fixture · hay
+> thẩm quyền cho InteriorFlow.
+> 🔧 **ĐỌC LẠI mọi cách nói cũ kiểu *"quy mô của studio X"* / *"dự án lớn như X"* thành:
+> DỰ ÁN NỘI THẤT CHUYÊN NGHIỆP LỚN / PHỨC TẠP.** Đây là cách hiểu duy nhất còn hiệu lực.
+> IF làm cho **giới thiết kế nội thất chuyên nghiệp nói chung**, không cho một studio.
+> Công việc của một studio cụ thể **chỉ được ánh xạ sang IF khi Hoà yêu cầu RÕ trong một việc cụ
+> thể** — cấm tự đọc, tự nhập, tự suy diễn, tự đưa dữ liệu đó vào IF.
+> ⚠️ Đây **KHÔNG chỉ là luật thương hiệu** (LUẬT TRUNG TÍNH 24/07 đã cấm logo/màu/tên trong sản
+> phẩm). Tường lửa này rộng hơn: cấm cả ở tầng **bối cảnh · chuẩn đối sánh · fixture · thẩm quyền**
+> — tức những chỗ không ai nhìn thấy trên giao diện nhưng lại **định hình app được xây thế nào**.
 
 ### §11.8 · ĐÚNG Ở QUY MÔ LỚN — nhanh thôi chưa đủ
 Ở tier L phải kiểm: **không mất vật · không sai danh tính vật liệu · không trùng/mất id ·
