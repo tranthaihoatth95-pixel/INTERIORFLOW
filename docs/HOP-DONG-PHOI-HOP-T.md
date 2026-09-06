@@ -385,3 +385,110 @@ nguyên văn + nêu nguồn + hỏi, tuyệt đối không tự thi hành.
 định dạng) và `meeting-distill` (chưng cất biên bản) phải cùng khuôn — bước ĐỌC tách khỏi bước
 GHI VÀO DỰ ÁN, ở giữa là `ProposalSheet` cho người duyệt. Không có ngoại lệ vì "tệp này của khách
 quen".
+
+---
+
+## §11 · QUY MÔ NGHỀ — KIỂM KÊ TRƯỚC, XÂY SAU (Hoà ban 06/09, áp cho MỌI mặt)
+
+> **Áp từ lát cắt kế tiếp trở đi, cho toàn bộ**: 2D · 3D · Vật liệu · Thư viện · Trình chiếu ·
+> BOQ/Spec · Duyệt · Files. Đây là **siết chặt và làm sắc** luật B25 NO-REBUILD
+> (`docs/IF-ARCHITECTURE-BLUEPRINT.md` §B25), **không phải luật thứ hai** — B25 vẫn là gốc.
+
+### §11.1 · LUẬT TUYỆT ĐỐI — TRA REPO TRƯỚC KHI VIẾT
+Trước khi viết bất kỳ năng lực/công cụ/component mới, phải xếp nó vào **ĐÚNG MỘT** trong bảy ô:
+
+| # | trạng thái | việc phải làm |
+|---|---|---|
+| 1 | **ĐÃ CÓ VÀ CHẠY** | dùng lại nguyên |
+| 2 | **CÓ NHƯNG CHƯA MOUNT** | mount |
+| 3 | **CÓ NHƯNG CHƯA CẮM DÂY** | nối |
+| 4 | **CÓ NHƯNG SAI MẶT TIỀN** | sửa mặt tiền, **không** đẻ engine thứ hai |
+| 5 | **CÓ NHƯNG MỘT PHẦN** | mở rộng |
+| 6 | **CÓ NHƯNG ĐÃ BỊ THAY** | đóng dấu lỗi thời tại chỗ, trỏ sang bản sống |
+| 7 | **THẬT SỰ CHƯA CÓ** | mới được xây |
+
+⛔ **KHÔNG được kết luận THIẾU chỉ vì giao diện hiện tại không thấy nó.**
+⭐ **Tra theo HÀNH VI, không chỉ theo tên hàm/tên component mình đoán ra.**
+
+**Sáu ca đã trả giá thật trong repo này** — không ca nào là "thiếu", tất cả là "chưa nối":
+đăng xuất tồn tại dưới `DELETE /api/auth/me` · Cửa sổ Thảo luận có mà không mount ·
+engine PBR có mà scene không gọi · 9 ảnh vân thật có mà **0 nơi dùng, mồ côi 16 ngày** ·
+where-used gần đủ mà thiếu nhảy-tới + phạm vi · `MaterialDef.matId` có mà chưa ai ghi xuống entity.
+
+### §11.2 · THANG PHỤC HỒI — thứ tự mặc định
+`DÙNG LẠI NGUYÊN → NỐI LẠI DÂY → BÀY RA → TÁI CẤU TRÚC → MỞ RỘNG → XÂY LẠI`
+Xây lại **chỉ khi ghi được bằng chứng** vì sao bản đang có **không thể** đáp ứng yêu cầu.
+
+### §11.3 · THƯỚC ĐO CÔNG CỤ — không phải "đã có nút chưa"
+> # MỘT NGƯỜI THIẾT KẾ CÓ LÀM VIỆC 8 GIỜ/NGÀY VỚI NÓ ĐƯỢC KHÔNG?
+
+Đại tu là đại tu **kiến trúc công cụ · tương tác · tìm thấy được · ngữ cảnh · hiệu suất · phản hồi ·
+phím tắt · chọn · inspector · undo/redo · điều hướng · liên tục xuyên workspace · lưu · hiệu năng** —
+không phải chỉ vẽ lại cho đẹp.
+
+### §11.4 · LUỒNG NGHỀ THẬT, KHÔNG AUDIT TỪNG MÀN RỜI
+`ĐỀ BÀI → THAM CHIẾU → LẬP KẾ HOẠCH → 2D → VẬT LIỆU → 3D → DUYỆT → SỬA BÀI → TRÌNH CHIẾU → BOQ/SPEC → PHÁT HÀNH`
+⭐ **Và vòng sửa bài — thứ quyết định IF có sống nổi không**:
+`DUYỆT → QUAY LẠI 2D → ĐỔI → 3D CẬP NHẬT → VẬT LIỆU LAN → TRÌNH CHIẾU/BOQ PHẢI KIỂM LẠI → PHÁT HÀNH LẠI`
+⛔ **Cấm giả định người dùng đi tuyến tính.**
+
+### §11.5 · MA SÁT TỐI THIỂU, KHÔNG PHẢI ÍT CLICK NHẤT
+Đo các thao tác nghề lặp nhiều (chọn · chọn nhiều · pan · zoom · orbit · vẽ · di · xoay · co giãn ·
+nhân bản · canh · đo · ghi kích thước · chú thích · đặt/thay tài sản · gán/thay vật liệu ·
+dùng-ở-đâu · undo/redo · camera · sheet · duyệt · phiên bản) theo:
+**số bước · quãng đường con trỏ · có phím không · đổi ngữ cảnh · hộp thoại chắn ·
+mất lựa chọn · mất camera/ngữ cảnh · xác nhận thừa · hỏng im lặng.**
+⛔ Không tối ưu số click một cách mù. **Cửa quyết định của con người có giá trị thì GIỮ.**
+
+### §11.6 · MẬT ĐỘ CHUYÊN NGHIỆP ≠ MẬT ĐỘ HOME
+Home: **thoáng · cá nhân · biểu cảm.** Workspace nghề: **dày · chính xác · nhanh · theo ngữ cảnh.**
+⛔ Cấm lấy "quiet luxury" làm cớ cho: chữ quá to · trắng quá nhiều · inspector quá rộng ·
+công cụ giấu quá sâu.
+Cái đẹp của workspace nghề đến từ **TRẬT TỰ · NHỊP · CHÍNH XÁC · THỨ BẬC · PHẢN HỒI**.
+
+### §11.7 · BA TIER QUY MÔ — và stress phải giống DỰ ÁN THẬT
+**S nhỏ** (test tất định, nhanh) · **M nghề** (một dự án văn phòng/khách sạn thật) ·
+**L lớn** (dự án lớn, để ép).
+⛔ **Không nhân 10.000 khối lập phương.** Tải phải phản ánh **CẤU TRÚC DỰ ÁN NGHỀ**: nhiều tầng/khu ·
+phòng/zone · tường/lỗ mở · đồ thiết kế · gán vật liệu · **bản sao lặp lại** · đồ riêng · bản vẽ ·
+sheet · view · hình 3D · vật liệu/PBR · tham chiếu · bình luận/duyệt · phiên bản · trang trình chiếu ·
+dòng BOQ · tệp dự án · ảnh/render.
+Số liệu phải **đo từ dự án/bằng chứng đang có**; không có dữ liệu an toàn thì **suy ra và ghi rõ GIẢ ĐỊNH**.
+Dữ liệu tổng hợp/ẩn danh — **không chép dữ liệu riêng tư của TTT**.
+
+### §11.8 · ĐÚNG Ở QUY MÔ LỚN — nhanh thôi chưa đủ
+Ở tier L phải kiểm: **không mất vật · không sai danh tính vật liệu · không trùng/mất id ·
+BOQ không cũ · gia phả không đứt · tác động phiên bản không rơi · tham chiếu Trình chiếu không mất ·
+lưu không hỏng im lặng.** Dự án lớn hơn phải giữ **CÙNG MỘT SỰ THẬT THIẾT KẾ**.
+
+### §11.9 · ĐỪNG LẪN KHO KHỞI TẠO VỚI QUY MÔ DỰ ÁN
+Kho đi kèm bản cài **được phép nhỏ**, trong khi dự án đem test có **rất nhiều bản chèn/tham chiếu**.
+⛔ Không sinh 500 tài sản riêng chỉ để ép tải — **dùng lại tài sản đại diện ở tần suất thật**.
+
+### §11.10 · KHUÔN BÁO CÁO — khai REUSED / REWIRED / NEW
+Mỗi thay đổi phải mang **đúng một** nhãn; mỗi **NEW** kèm **một dòng bằng chứng** vì sao thứ đang
+có không đáp ứng được. **Mục đích: phát hiện sớm việc xây lại thứ đã có.**
+Báo cáo hội tụ mở đầu bằng **"NGƯỜI DÙNG NAY LÀM ĐƯỢC GÌ TỐT HƠN?"**, rồi chỉ gồm:
+*luồng thật đã tốt lên · năng lực đã dùng lại · năng lực thật sự mới · kết quả ở quy mô nghề ·
+chỗ tắc thật · lát cắt kế tiếp.*
+
+### §11.11 · KHÔNG ĐẺ HỆ AUDIT MỚI
+Dựng **fixture/harness quy mô nghề NHỎ NHẤT dùng lại được** để lộ nút thắt thật; tái dùng bộ chạy
+hành trình đang có. ⛔ Không dừng hội tụ để xây một khung benchmark khổng lồ.
+
+### §11.12 · ZERO-LOSS VẪN ÁP
+Fixture · ảnh · số đo · bằng chứng đắt tiền **không được nằm lại** ở `tmp`, thư mục bị gitignore,
+Downloads, hay worktree riêng của worker. **Chỉ giữ bằng chứng đáng giữ** — đừng tích ảnh vô hạn.
+
+### §11.13 · LÁT CẮT KẾ TIẾP — TRÌNH CHIẾU: KIỂM KÊ TRƯỚC, KHÔNG THIẾT KẾ LẠI
+Sau khi Output Truth của Vật liệu đóng: **KIỂM KÊ năng lực Trình chiếu ĐANG CÓ** — editor · hệ trang ·
+mẫu · đặt bản vẽ · logic tỉ lệ · liên kết nguồn · deep link · media · duyệt · xuất · PDF/PPTX ·
+module mồ côi. **Xếp từng cái vào bảy ô §11.1**, rồi cải thiện **ĐƯỜNG NGHỀ ĐANG CÓ**.
+⛔ **Không dựng Trình chiếu v2 nằm cạnh v1.**
+
+> ### LUẬT CUỐI
+> **INTERIORFLOW KHÔNG PHẢI BẢN DEMO. NÓ PHẢI SỐNG SÓT QUA MỘT DỰ ÁN NỘI THẤT THẬT.**
+> Trước khi xây: **tìm thứ đã có**. Trước khi thiết kế lại: **chạy luồng nghề thật**.
+> Trước khi gọi PASS: **test ở mật độ nghề**. Trước khi ship: **test một dự án lớn**.
+> **DÙNG LẠI TRƯỚC KHI XÂY LẠI · LUỒNG TRƯỚC KHI MÀN · QUY MÔ NGHỀ TRƯỚC KHI SHIP ·
+> SỰ THẬT THIẾT KẾ PHẢI SỐNG SÓT QUA TẤT CẢ.**
