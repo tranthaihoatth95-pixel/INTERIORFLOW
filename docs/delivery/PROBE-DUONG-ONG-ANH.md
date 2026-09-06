@@ -199,3 +199,121 @@ Kết quả đo sau khi thi công, cùng phép đo với bảng trên: tường 
 **đúng 10 chu kỳ**, vân liền mạch hai bên hố cửa.
 ⇒ Hàng **F · 3D TIÊU THỤ MAP** và **F0 · CHỤP ẢNH/VIDEO** trong bảng tầng chuyển **FAIL → PASS
 (máy)**; vế **HỮU DỤNG** vẫn chờ mắt nghề.
+
+---
+
+## ✅ NGHIỆM THU TRÊN APP THẬT — 06/09 (lượt V8-PASS)
+
+Mọi số dưới đây đo **qua Next/React chạy thật** (dev server, Chromium 1194 + WebGL 2.0
+swiftshader), không phải mã đã transpile chạy ngoài app. Kịch bản đi trọn một mạch:
+**2D vẽ → gán vật liệu → 3D → đo → xuất ảnh → lưu → ĐÓNG HẲN trình duyệt → mở lại.**
+
+Bối cảnh: tài khoản mới đăng ký qua `/api/auth/register`, dự án tạo bằng **bảng khởi tạo thật**
+(`POST /api/flows`), tường vẽ bằng công cụ `W` + gõ độ dài, vật liệu gán bằng **panel Vật liệu
+(Hatch) → kệ "Kho vật liệu · gán mã"**. Không gọi thẳng hàm nào của app để dựng dữ liệu.
+
+**Bàn thử:** ba tường, mỗi tường **đúng 4000 mm** (đo trong `doc`), cao mặc định 2700 mm, đặt
+cạnh nhau, **ba `matId` khác nhau**.
+
+### A · ĐÚNG — ảnh chẩn đoán, quy ước 1 chu kỳ = 400×400 mm
+
+| phép đo | kết quả | phán |
+|---|---|---|
+| số chu kỳ trên tường 4000 mm | đếm dấu `IF`: **10 cụm**, tâm cách đều **68,4 px** (lệch max **0,5 px** trên 9 bước) ⇒ **9,97 chu kỳ**, 1 chu kỳ = **401,1 mm** | **ĐẠT** |
+| bước lặp theo phương ĐỨNG | 68,0–69,0 px — **bằng phương ngang** ⇒ không kéo giãn một chiều | **ĐẠT** |
+| lật / xoay | khớp hình 8 phép nhị diện, **chỉ lấy phần CÓ MÀU** (ô cờ đối xứng nên không phân biệt được): **"gốc (0°)" thắng, hơn á quân (lật ngang) 31%** | **ĐẠT** |
+| ô cờ còn không (mất map?) | biến thiên RGB toàn mặt lớn, 4×4 ô/chu kỳ đọc rõ | **ĐẠT** |
+
+⚠️ Ảnh chẩn đoán vào hệ qua **tầng STUDIO** (`localStorage` `if.materials.pbr.v1`, thứ
+`nguonVatLieuMacDinh()` đọc) — **KHÔNG có ô nhập ảnh nào trong UI**: `MaterialPbrEditor` chỉ lộ
+`uvScaleMm` khi vật liệu ĐÃ có map, không có trường `baseColorMapUrl`. Đây là fixture, khai thẳng.
+
+### A′ · ĐÚNG — kiểm lại bằng VẬT LIỆU THẬT ship kèm (không dùng fixture)
+
+| vật liệu | `uvScaleMm` khai | đo trên ảnh dựng | phán |
+|---|---|---|---|
+| **Gạch terrazzo xám** | 400×400 | tự tương quan đỉnh trội **68 px = 400 mm** | **ĐẠT** |
+| **Gỗ sồi tự nhiên** | 190×1200 | đỉnh **32 px = 188 mm**; biến thiên ngang 3,75 ≫ dọc 0,68 ⇒ **vân chạy ĐỨNG**, đúng chiều dài tấm ván | **ĐẠT** |
+
+⇒ Tỉ lệ vật lý đúng **không phụ thuộc fixture**.
+
+### B · HỮU DỤNG — kiến trúc sư phán được vật liệu chưa?
+
+**ĐẠT phần máy đo được, CHƯA ĐẠT phần chỉ mắt nghề phán được** (còn nợ mắt Hoà):
+· ba mặt cạnh nhau **phân biệt được ngay** — ô cờ · thớ gỗ dọc · hạt terrazzo (`v8pass-02`)
+· gỗ ra **đúng khổ ván 190 mm, vân chạy đúng chiều** — thứ người nghề nhìn một nhịp là thấy sai
+· panel phải trong 3D **gọi đúng tên** vật liệu kèm quả cầu xem trước ("Tường 2 · Cao 2.700 mm ·
+  Vật liệu: Gỗ sồi tự nhiên", `v8pass-03`) ⇒ danh tính gán ở 2D đọc lại được ở 3D bằng CHỮ.
+⛔ **Chưa phán được**: đẹp/không, hợp/không — đó là mắt nghề, máy không thay được.
+
+### C · ĐƯỜNG ẢNH XUẤT RA (F0) — thứ khách nhìn
+
+Bấm **Kết xuất khung nhìn này** ở chế độ **"Xem trước thiết kế · 0 credit"** (đường
+`capture-live.ts`), lấy PNG 1280×720 app trả về:
+
+| tường | chu kỳ kỳ vọng | đo trên ẢNH APP XUẤT RA | phán |
+|---|---|---|---|
+| chẩn đoán | 400 mm | **394 mm** | **ĐẠT** |
+| gỗ sồi | 190 mm | **190 mm** | **ĐẠT** |
+| terrazzo | 400 mm | **396 mm** | **ĐẠT** |
+
+⚠️ Ở 1280×720 một chu kỳ chỉ còn ~21 px nên **đỉnh tự tương quan MẠNH NHẤT là bội số** (789/1183
+mm) — đó là giới hạn độ phân giải của phép đo, không phải lỗi dựng: đỉnh ở đúng chu kỳ vẫn có mặt.
+
+### D · LƯU → ĐÓNG HẲN → MỞ LẠI
+
+| phép thử | kết quả | phán |
+|---|---|---|
+| `browser.close()` rồi mở **tiến trình Chromium mới**, cùng hồ sơ | entity + `matId` **giống hệt**; ảnh 3D chính diện **trùng TỪNG BYTE** (`sha256` 16 ký tự đầu `8ed4cae1b8304e4e` ↔ `8ed4cae1b8304e4e`) | **ĐẠT** |
+| **hồ sơ trình duyệt MỚI TINH** (xoá sạch localStorage/IndexedDB/cookie, đăng nhập lại) | ba `matId` **còn nguyên**; **gỗ sồi + terrazzo vẫn có vân** | **ĐẠT** |
+| cũng ở hồ sơ mới — tường chẩn đoán | **rơi về màu phẳng** | **ĐẠT có điều kiện** (xem dưới) |
+
+🔴 **PHÁT HIỆN — tầng STUDIO của PBR KHÔNG ĐI THEO DỰ ÁN.** Bản chỉnh vật liệu nằm ở
+`localStorage` (`lib/materials/pbr-store.ts` tự khai lý do và tự khai đây là chỗ tạm). Hệ quả đo
+được: studio chỉnh vật liệu ở máy A, mở dự án ở máy B ⇒ **mặt đó phẳng lại**. Vật liệu **hạt
+giống** thì không dính vì chúng đi theo bản cài. Đây là **nợ đã khai trong mã**, không phải hồi
+quy của lượt này — nhưng nay có **con số và ảnh** (`v8pass-06`).
+
+### E · GIÁ PHẢI TRẢ
+
+| mục | đo được |
+|---|---|
+| **draw call/khung** (đếm thẳng trên GL, bọc `drawElements`/`clear`, không sửa mã app) | 3 tường **cùng 1** vật liệu: **10** · 3 tường **3** vật liệu: **10** ⇒ **+0** |
+| vì sao +0 | ở mode **Vẽ 3D**, tường đi đường `buildMassingWalls` — **mỗi tường một mesh, CỐ Ý không gộp** (`Scene3DViewer.tsx:446-452`, để raycast push-pull). Khoá gộp `colorHex\|matId` **không tác động ở mode này**. |
+| trần rủi ro của khoá gộp | khoá chỉ đẻ thêm nhóm khi hai vật liệu **trùng `colorHex`**. Đo 7 vật liệu ship: **7 màu khác nhau, 0 trùng** ⇒ với hàng ship, chi phí = **0**. Trùng chỉ xảy ra ở dòng kho studio tự nhập. |
+| texture GL (tạo − xoá) qua 5 lượt mở/đóng | +32/lượt (cảnh có 3 vật liệu) · **+18/lượt cảnh RỖNG** ⇒ phần lớn **không thuộc đường vật liệu** |
+| giải thích | mỗi lượt mở/đóng tạo **5 context WebGL mới**, và sau khi đóng **0 canvas còn trong DOM** ⇒ con số tăng là **churn context**, không phải texture chồng đống trong một context |
+
+### F · CÒN SAI — nhãn nói dối việc app vừa làm
+
+Ba chỗ chữ vẫn khai cảnh là **"khối xám, chưa vật liệu"** trong khi màn hình đang có vân:
+· chip trên khung nhìn: *"**Khối xám** · 3/4 đã gán vật liệu"*
+· chú thích góc dưới trái: *"**Khối xám trơn — chưa vật liệu**, chưa đèn. Vật liệu chỉ lưu matId;
+  ảnh thật do D5 dựng."*
+· bảng Kết xuất, chế độ 0 credit: *"Chụp đúng khung nhìn 3D đang mở — **khối xám, chưa vật liệu**,
+  chưa đèn."*
+⇒ Không phải lỗi dựng, nhưng **trái luật "nút không được nói dối việc nó vừa làm"**. Việc chữ,
+chưa làm ở lượt này (lượt này là nghiệm thu, không thi công).
+
+### G · ẢNH BẰNG CHỨNG
+`docs/ship/anh/v8pass-01..06` — 2D ba tường ba mã · 3D chính diện ba vật liệu · panel 3D gọi tên
+vật liệu · một chu kỳ ảnh chẩn đoán · ảnh app xuất ra · hồ sơ trình duyệt mới.
+
+### ⑦b CHƯA CHẮC / CHƯA KIỂM (lượt này)
+1. **MẶT SAU của tường chưa soi** — không lái được camera tới hướng SAU (ViewCube chỉ tới
+   TRƯỚC/PHẢI; chuột giữa là **PAN chứ không orbit**). UV toạ độ thế giới **về lý thuyết** làm
+   mặt sau đọc ngược, nhưng **tôi KHÔNG đo được**, nên không khai là đã kiểm.
+2. **AO** — không kiểm; `uv1` vẫn chưa có đường (nợ đã nhận). Không tuyên bố hỗ trợ AO.
+3. Chỉ **Chromium 1194 + swiftshader**, một cỡ màn 1440×900. Không thử GPU thật, Safari, Firefox.
+4. Texture GL: con số là **tạo − xoá**, **không** chứng minh được GPU đã trả bộ nhớ — chỉ chứng
+   minh được canvas rời DOM và context được tạo mới mỗi lượt.
+5. **Khối ĐANG CHỌN** ở 3D bị phủ lớp tím chọn ⇒ lúc đó không nhìn được vân (hành vi đã khai
+   trong mã, không phải lỗi mới).
+6. 2D: ba tường mang **ba màu hatch khác nhau** (`#ece7dd`/`#b98a54`/`#c9c7c1`) nhưng **cùng hoạ
+   tiết ANSI31** và màu đều nhạt ⇒ trên màn 2D **rất khó phân biệt bằng mắt**. Chưa hỏi người dùng
+   thật xem đó có phải vấn đề không.
+
+### ⑦c HẠN DÙNG
+Kết luận A/A′/C/D đúng cho `nen-checkpoint` @ `b71f2a0d`. Hết hiệu lực khi: đổi `geometryOf()` ·
+đổi khoá gộp · đổi `uvScaleMm` của vật liệu ship · dời tầng studio khỏi `localStorage` · đổi
+`buildMassingWalls`. Số draw call chỉ đúng cho **mode Vẽ 3D**; mode tĩnh chưa đo.
