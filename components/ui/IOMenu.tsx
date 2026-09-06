@@ -86,7 +86,12 @@ export default function IOMenu({
     : baseLabel;
 
   const accent = variant === 'accent';
-  const pad = size === 'md' ? '8px 12px' : '5px 10px';
+  /* 06/09 — nhịp chiều cao. `md` (chỉ chặng Trình chiếu dùng, `grep size="md"` = 2 chỗ, cả hai ở
+   * `present-editor/Toolbar.tsx`) nay đứng đúng `var(--tap)` như `ToolbarChip` cạnh nó thay vì tự
+   * nở theo padding — xem lập luận đầy đủ ở `Btn` trong tệp đó. `sm` giữ nguyên: nó là nhịp của
+   * thanh 2D/3D, đổi ở đây là đổi hai chặng khác trong một lượt không đo được. */
+  const cao = size === 'md' ? 'var(--tap)' : undefined;
+  const pad = size === 'md' ? '0 12px' : '5px 10px';
   const fontSize = size === 'md' ? 13 : 12;
   const iconSize = size === 'md' ? 15 : 14;
 
@@ -104,6 +109,7 @@ export default function IOMenu({
           alignItems: 'center',
           gap: 6,
           padding: pad,
+          ...(cao ? { height: cao } : {}),
           borderRadius: RADIUS.r2,
           fontSize,
           cursor: busy ? 'default' : 'pointer',

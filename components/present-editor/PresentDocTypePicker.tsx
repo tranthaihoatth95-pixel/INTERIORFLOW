@@ -181,7 +181,12 @@ export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onC
     return (
       <div style={{ height: '100%', overflowY: 'auto', display: 'grid', placeItems: 'center', padding: '32px 26px 64px' }}>
         <section style={{ width: '100%', maxWidth: 640, textAlign: 'center' }}>
-          <h1 style={{ margin: 0, color: 'var(--t1)', fontSize: 'clamp(26px, 3.4vw, 36px)', lineHeight: 1.12, letterSpacing: '-.04em', fontWeight: 600 }}>
+          {/* 06/09 — HẠ VỀ THANG CHỮ WORKSPACE. Đo trước: 36px trong khi thân là 14-16px, tức
+              nhịp chữ của Home (thoáng · cá nhân · biểu cảm) đặt vào một bàn làm việc. §11.6 tách
+              rõ hai mật độ: workspace nghề là dày · chính xác · theo ngữ cảnh. Vẫn giữ `clamp`
+              (co theo khổ màn) và vẫn là chữ LỚN NHẤT màn — thứ hạ xuống là biên độ, không phải
+              thứ bậc. */}
+          <h1 style={{ margin: 0, color: 'var(--t1)', fontSize: 'clamp(20px, 2.2vw, 28px)', lineHeight: 1.15, letterSpacing: '-.03em', fontWeight: 600 }}>
             {tr('Trình bày dự án này.', 'Present this project.')}
           </h1>
           <p style={{ maxWidth: 430, margin: '10px auto 0', color: 'var(--t3)', fontSize: 14, lineHeight: 1.55 }}>
