@@ -176,6 +176,12 @@ export interface SceneGroup {
    * NHAT §6) tra `ProductSpec` qua id này để vẽ quả cầu vật liệu — undefined = CHƯA gán, hiện
    * đúng trạng thái "chưa gán vật liệu", không suy đoán/không hiện quả cầu giả. */
   specId?: string;
+  /** 05/09 (V8c bước 4) — `Base.matId`, **UUID vật liệu**, đọc NGUYÊN VĂN từ entity gốc.
+   * KHÁC `specId` ở trên (cuid `ProductSpec`) — hai namespace, xem `Base.matId` (`lib/cad/model.ts`).
+   * Đây là khoá mà `matIdCuaNhom` đọc để tra ảnh vân; thiếu nó thì vật liệu studio tự nhập (có
+   * `matId` nhưng `specId` là cuid) không bao giờ lên được 3D — chỉ hàng hạt giống chạy, tức
+   * "chạy với hàng mẫu, chết với hàng thật". */
+  matId?: string;
   /** NC-12 §4.2 — `Base.ops` của entity gốc, đọc NGUYÊN VĂN (chỉ tường/`HatchEntity` truyền vào
    * hôm nay, cùng điều kiện với `entityId`/`heightMm`). Tầng ba.js (`lib/three/build-ops.ts`) đọc
    * field này để biết có cần chạy CSG hay không — file NÀY (`cad-to-obj.ts`) KHÔNG import `three`,
@@ -335,7 +341,7 @@ class ObjBuilder {
   faces = 0;
   private posByIndex: number[][] = []; // posByIndex[i] = vị trí (m, Y-up) của vertex OBJ #(i+1)
   private groupList: SceneGroup[] = [];
-  private cur: { name: string; colorHex: string; tris: number[]; entityId?: string; semanticKind?: SpatialKind; semanticProvenance?: SemanticProvenance; levelId?: string; typeId?: string; heightMm?: number; baseMm?: number; inferred?: true; storey?: string; specId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]>; recipe?: BuildRecipe } | null = null;
+  private cur: { name: string; colorHex: string; tris: number[]; entityId?: string; semanticKind?: SpatialKind; semanticProvenance?: SemanticProvenance; levelId?: string; typeId?: string; heightMm?: number; baseMm?: number; inferred?: true; storey?: string; specId?: string; matId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]>; recipe?: BuildRecipe } | null = null;
 
   constructor(mtlFile: string) {
     this.lines.push('# InteriorFlow — OBJ sinh tất định từ bản vẽ CAD (mm → m)');
@@ -347,11 +353,11 @@ class ObjBuilder {
    * `storey` (SPEC-DUNG-3D-THONG-NHAT §5.1/D1) — tầng của entity gốc, group hình học tổng hợp
    * (Sàn/Phòng/Trần) không truyền. `ops`/`opCutters` (NC-12 §4.2/§4.3) — ngăn xếp dựng hình +
    * hình học cutter đã tam-giác-hoá sẵn (`boxPositionsMm`), tầng ba.js đọc để chạy CSG. */
-  object(name: string, mat: Mat, meta?: { entityId?: string; semanticKind?: SpatialKind; semanticProvenance?: SemanticProvenance; levelId?: string; typeId?: string; heightMm?: number; baseMm?: number; inferred?: true; storey?: string; specId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]>; recipe?: BuildRecipe }) {
+  object(name: string, mat: Mat, meta?: { entityId?: string; semanticKind?: SpatialKind; semanticProvenance?: SemanticProvenance; levelId?: string; typeId?: string; heightMm?: number; baseMm?: number; inferred?: true; storey?: string; specId?: string; matId?: string; ops?: BuildOp[]; opCutters?: Record<string, number[]>; recipe?: BuildRecipe }) {
     this.lines.push(`o ${name}`);
     this.lines.push(`usemtl ${mat.name}`);
     this.flushGroup();
-    this.cur = { name, colorHex: mat.hex, tris: [], entityId: meta?.entityId, semanticKind: meta?.semanticKind, semanticProvenance: meta?.semanticProvenance, levelId: meta?.levelId, typeId: meta?.typeId, heightMm: meta?.heightMm, baseMm: meta?.baseMm, inferred: meta?.inferred, storey: meta?.storey, specId: meta?.specId, ops: meta?.ops, opCutters: meta?.opCutters, recipe: meta?.recipe };
+    this.cur = { name, colorHex: mat.hex, tris: [], entityId: meta?.entityId, semanticKind: meta?.semanticKind, semanticProvenance: meta?.semanticProvenance, levelId: meta?.levelId, typeId: meta?.typeId, heightMm: meta?.heightMm, baseMm: meta?.baseMm, inferred: meta?.inferred, storey: meta?.storey, specId: meta?.specId, matId: meta?.matId, ops: meta?.ops, opCutters: meta?.opCutters, recipe: meta?.recipe };
   }
 
   private flushGroup() {
@@ -370,6 +376,7 @@ class ObjBuilder {
         inferred: this.cur.inferred,
         storey: this.cur.storey,
         specId: this.cur.specId,
+        matId: this.cur.matId,
         ops: this.cur.ops,
         opCutters: this.cur.opCutters,
         recipe: this.cur.recipe,
@@ -677,6 +684,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
       ...(baseMm !== 0 ? { baseMm } : {}),
       storey: sl.storey,
       specId: sl.specId,
+      matId: sl.matId,
       ops: sl.ops,
       opCutters,
       recipe: sl.recipe,
@@ -790,6 +798,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
       ...(baseMm !== 0 ? { baseMm } : {}),
       storey: h.storey,
       specId: h.specId,
+      matId: h.matId,
       ops: h.ops,
       opCutters,
       recipe: h.recipe,
@@ -837,7 +846,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     // không khai `heightMm`), lấy nó sẽ là bịa. Đáy sai thì cái ghế nằm dưới sàn tầng 2 — nhìn
     // thấy ngay; nên chỉ vá đúng cái sai, không nhân tiện đổi luôn chiều cao.
     const fBase = computeHeights(b, doc).baseMm;
-    builder.object(`Furn_${i + 1}_${def.id}`, mats.furn, { ...spatialIdentity(b, 'furniture', b.elementType === 'furniture' ? 'declared' : 'inferred'), storey: b.storey, specId: b.specId, ...(fBase !== 0 ? { baseMm: fBase } : {}) });
+    builder.object(`Furn_${i + 1}_${def.id}`, mats.furn, { ...spatialIdentity(b, 'furniture', b.elementType === 'furniture' ? 'declared' : 'inferred'), storey: b.storey, specId: b.specId, matId: b.matId, ...(fBase !== 0 ? { baseMm: fBase } : {}) });
     builder.box4(base, fBase, fBase + furnitureHeightMm(def.id));
   });
 
@@ -882,7 +891,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
       // tấm kính mỏng LẮP VÀO lỗ — dày tối đa 30mm hoặc hết bề dày tường (tường rất mỏng), không
       // còn "đè tường" như khối proxy cũ (§ VIỆC 2).
       const paneT = Math.min(30, thickness) / 2;
-      builder.object(`Window_${windowIdx}`, mats.wall, { ...spatialIdentity(b, 'window', b.elementType === 'window' ? 'declared' : 'inferred'), storey: b.storey, specId: b.specId, ...(hostBaseMm !== 0 ? { baseMm: hostBaseMm } : {}) });
+      builder.object(`Window_${windowIdx}`, mats.wall, { ...spatialIdentity(b, 'window', b.elementType === 'window' ? 'declared' : 'inferred'), storey: b.storey, specId: b.specId, matId: b.matId, ...(hostBaseMm !== 0 ? { baseMm: hostBaseMm } : {}) });
       builder.box4(quad(b, -hw, hw, -paneT, paneT), sillMm, headMm);
       return;
     }
@@ -891,7 +900,7 @@ export function docToObjScene(doc: Doc, opts: SceneOptions = {}): ObjScene {
     // KHÔNG PBR (`docs/SPEC-3D-CORE.md` §6 — đẹp là việc D5, IF chỉ cần đúng hình học tối thiểu).
     doorIdx += 1;
     const frameT = Math.min(60, Math.max(20, hw)); // nẹp 60mm, tự co với cửa rất hẹp (hiếm)
-    const meta = { ...spatialIdentity(b, 'door', b.elementType === 'door' ? 'declared' : 'inferred'), storey: b.storey, specId: b.specId, ...(hostBaseMm !== 0 ? { baseMm: hostBaseMm } : {}) };
+    const meta = { ...spatialIdentity(b, 'door', b.elementType === 'door' ? 'declared' : 'inferred'), storey: b.storey, specId: b.specId, matId: b.matId, ...(hostBaseMm !== 0 ? { baseMm: hostBaseMm } : {}) };
     builder.object(`Door_${doorIdx}_khung`, mats.wall, meta);
     builder.box4(quad(b, -hw, -hw + frameT, -ht, ht), sillMm, headMm); // nẹp trái
     builder.box4(quad(b, hw - frameT, hw, -ht, ht), sillMm, headMm); // nẹp phải

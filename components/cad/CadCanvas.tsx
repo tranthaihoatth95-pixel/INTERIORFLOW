@@ -2314,6 +2314,10 @@ export default function CadCanvas() {
       // lên 3D không mang vật liệu. `null` = đang cầm pattern kỹ thuật chỉnh tay, không phải vật
       // liệu có mã ⇒ để trống THẬT, không bịa mã (BOQ báo thiếu là đúng, không phải lỗi).
       ...(st.hatchSpecId ? { specId: st.hatchSpecId } : {}),
+      // V8c bước 4 (05/09) — DANH TÍNH VẬT LIỆU (UUID) đi cùng lượt với danh tính thương mại.
+      // Đây là thứ chặng 3D tra ra ảnh vân; thiếu nó thì vùng tô vừa vẽ lên 3D vẫn phẳng một màu.
+      // Khác `specId`: `specId` là cuid ProductSpec, KHÔNG suy ra UUID được — xem `Base.matId`.
+      ...(st.hatchMatId ? { matId: st.hatchMatId } : {}),
     });
     const materialTxt = st.hatchMaterialId ? ` vật liệu "${st.hatchMaterialId}"` : ` ${st.hatchPattern}`;
     st.setStatus(`Hatch: đã tô${materialTxt} (${poly.length} đỉnh biên).`);

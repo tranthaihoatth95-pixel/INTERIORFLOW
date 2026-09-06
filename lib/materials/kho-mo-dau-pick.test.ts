@@ -81,10 +81,19 @@ ok('MaterialPalette CÓ gọi phép trộn khi nạp kho (không chỉ import ch
   'đường nạp kho phải đi qua tronPickHatGiong, nếu không máy sạch lại hiện kho rỗng');
 
 /* Ràng buộc vừa nối xong ở lượt trước — đừng để lượt sau đánh rơi: dòng kho phải truyền `specId`
-   xuống `applyMaterial` (tham số thứ 6). Rơi tham số này là mở lại đúng đứt gãy moat. */
-ok('dòng kho vẫn mang `specId` đi tiếp xuống applyMaterial (tham số thứ 6)',
-  /applyMaterial\([^)]*r\.id\s*\)/.test(nguon.replace(/\s+/g, ' ')),
-  'không thấy r.id ở vị trí cuối lời gọi applyMaterial');
+   xuống `applyMaterial` (tham số thứ 6). Rơi tham số này là mở lại đúng đứt gãy moat.
+   🔧 SỬA 05/09 (V8c bước 4): bản cũ neo vào **VỊ TRÍ CUỐI** (`r.id` rồi `)`), nên vừa thêm tham số
+   thứ 7 (`matId`) là nó đỏ — dù `r.id` vẫn được truyền đúng. Đó là test neo vào thứ KHÔNG PHẢI
+   điều nó muốn khẳng định: nó quan tâm "specId có đi tiếp không", không quan tâm nó đứng thứ mấy.
+   Nay neo vào CHÍNH điều đó, và có thêm ca cho `matId` — hai vế của cùng một danh tính. */
+const goiApply = nguon.replace(/\s+/g, ' ').match(/applyMaterial\([^;]*?\);/g) ?? [];
+const goiDongKho = goiApply.find((g) => g.includes('r.name')) ?? '';
+ok('dòng kho vẫn mang `specId` (r.id) đi tiếp xuống applyMaterial',
+  /\br\.id\b/.test(goiDongKho), `lời gọi thấy được: ${goiDongKho || '(không tìm thấy)'}`);
+ok('dòng kho mang CẢ `matId` (UUID) — thứ chặng 3D tra ra ảnh vân',
+  /matIdCuaNhom\(/.test(goiDongKho), `lời gọi thấy được: ${goiDongKho || '(không tìm thấy)'}`);
+ok('preset đã khai matId cũng truyền UUID xuống (hạt giống trộn vào ô chọn 2D)',
+  /applyMaterial\(\s*m\.name[^;]*m\.matId/.test(nguon.replace(/\s+/g, ' ')));
 
 console.log(`\n${pass} pass, ${fail} fail`);
 if (fail) process.exit(1);

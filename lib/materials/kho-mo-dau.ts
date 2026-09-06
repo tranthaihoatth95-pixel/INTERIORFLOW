@@ -136,10 +136,11 @@ export function tronHatGiong(dbItems: readonly MaterialSpecDto[] | null | undefi
  *
  * 🔴 KHỬ TRÙNG Ở ĐÂY YẾU HƠN Ở TẦNG DTO — nói thẳng, đừng để phiên sau tưởng hai chỗ ngang nhau:
  * `tronHatGiong` khử theo `matId` (danh tính máy); ở đây chỉ khử được theo `sku` (mã nghề người
- * đọc), vì picks không mang `matId`. Hệ quả: studio nhập một `ProductSpec` mang ĐÚNG `matId` của
- * một hạt giống nhưng đặt `sku` khác thì ô chọn 2D hiện HAI dòng cho cùng một vật. Nhìn thấy
- * được, không âm thầm — cách chữa tận gốc là cho `MaterialPick` mang `matId`, việc của lượt sau
- * (đụng `lib/library/spec-refs.ts`, ngoài vùng ghi của lượt này).
+ * đọc), vì `PickHatGiong` khi ấy chưa mang `matId`. Hệ quả: studio nhập một `ProductSpec` mang
+ * ĐÚNG `matId` của một hạt giống nhưng đặt `sku` khác thì ô chọn 2D hiện HAI dòng cho cùng một vật.
+ *
+ * ✅ 05/09 (V8c bước 4) — `PickHatGiong` VÀ `MaterialPick` nay ĐỀU mang `matId`, nên khử trùng
+ * dưới đây khử theo `matId` TRƯỚC rồi mới tới `sku`. Ca hai-dòng-cho-một-vật ở trên ĐÓNG.
  *
  * Trả hình CẤU TRÚC khớp `MaterialPick` mà KHÔNG import type đó — giữ `lib/materials/` không phụ
  * thuộc ngược lên `lib/library/`.
@@ -147,6 +148,10 @@ export function tronHatGiong(dbItems: readonly MaterialSpecDto[] | null | undefi
 export interface PickHatGiong {
   /** `id` của dòng hạt giống (`hat-giong:<uuid>`) — thứ rơi xuống `HatchEntity.specId`. */
   id: string;
+  /** 05/09 (V8c bước 4) — UUID trần, thứ rơi xuống `Base.matId`. Chính là `id` đã gỡ tiền tố;
+   * mang thẳng ra đây để nơi gọi khỏi phải tự cắt chuỗi lần nữa (cắt ở nhiều nơi là đẻ nguồn thứ
+   * hai cho cùng một quy ước). */
+  matId: string;
   name: string;
   sku: string | null;
   colorHex: string | null;
@@ -164,6 +169,7 @@ function chuanSku(s: string | null | undefined): string | null {
 export function pickHatGiong(): PickHatGiong[] {
   return hangHatGiong().map((m) => ({
     id: m.id,
+    matId: m.matId ?? '',
     name: m.name,
     sku: m.sku,
     colorHex: m.colorHex,
@@ -176,12 +182,18 @@ export function pickHatGiong(): PickHatGiong[] {
  * Trộn hạt giống vào danh sách kho của ô chọn 2D. Cùng thứ tự và cùng luật nhường như
  * `tronHatGiong`: hạt giống đứng TRƯỚC, dòng kho thật THẮNG khi trùng.
  */
-export function tronPickHatGiong<T extends { sku: string | null }>(
+export function tronPickHatGiong<T extends { sku: string | null; matId?: string | null }>(
   kho: readonly T[] | null | undefined,
 ): (T | PickHatGiong)[] {
   const db = kho ?? [];
-  const daCo = new Set(db.map((m) => chuanSku(m.sku)).filter((x): x is string => !!x));
-  return [...pickHatGiong().filter((h) => !daCo.has(chuanSku(h.sku) ?? '')), ...db];
+  const skuDaCo = new Set(db.map((m) => chuanSku(m.sku)).filter((x): x is string => !!x));
+  const matIdDaCo = new Set(
+    db.map((m) => (typeof m.matId === 'string' && m.matId ? normalizeMatIdCanonical(m.matId) : null)).filter((x): x is string => !!x),
+  );
+  return [
+    ...pickHatGiong().filter((h) => !matIdDaCo.has(h.matId) && !skuDaCo.has(chuanSku(h.sku) ?? '')),
+    ...db,
+  ];
 }
 
 /**

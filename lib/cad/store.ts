@@ -277,6 +277,13 @@ interface CadState {
    * BOQ sẽ báo `missing-specId` chứ KHÔNG tự bịa mã).
    */
   hatchSpecId: string | null;
+  /** 05/09 (V8c bước 4) — UUID vật liệu ĐANG CẦM để vẽ tiếp, cặp đôi với `hatchSpecId`.
+   * Vì sao phải là field RIÊNG chứ không suy từ `hatchSpecId`: `specId` của dòng kho thật là cuid
+   * `ProductSpec`, KHÔNG suy ra UUID được. Chỉ dòng hạt giống mới suy được (gỡ tiền tố) — dựa vào
+   * đó là đúng bẫy "chạy được với hàng mẫu, chết với hàng thật".
+   * null = preset thị giác thuần / dòng kho chưa backfill `matId` ⇒ 3D rơi về màu phẳng, và đó là
+   * sự thật của bản ghi đó. */
+  hatchMatId: string | null;
   past: Doc[];
   future: Doc[];
   /** dòng lệnh mini + thông báo trạng thái */
@@ -399,7 +406,7 @@ interface CadState {
    * đang có — xoá mã im lặng là mất dữ liệu). Truyền chuỗi ⇒ ghi mã đó xuống entity đang chọn VÀ
    * giữ lại làm mã cho vùng tô vẽ tiếp theo.
    */
-  applyMaterial: (id: string, pattern: HatchPattern, scale: number, angle: number, color: string, specId?: string) => void;
+  applyMaterial: (id: string, pattern: HatchPattern, scale: number, angle: number, color: string, specId?: string, matId?: string) => void;
   /**
    * G4 · MOAT (04/09) — ĐỔI VẬT LIỆU TRONG PHẠM VI RỘNG, qua ĐÚNG engine đã có
    * (`lib/materials/impact.ts` `replaceMaterialReferences`), không đường thứ hai.
@@ -525,6 +532,7 @@ export const useCadStore = create<CadState>((set, get) => ({
   hatchColor: '',
   hatchMaterialId: null,
   hatchSpecId: null,
+  hatchMatId: null,
   past: [],
   future: [],
   status: 'Sẵn sàng — chọn công cụ hoặc gõ lệnh (L, PL, REC, C…).',
@@ -878,11 +886,11 @@ export const useCadStore = create<CadState>((set, get) => ({
   // "nét gạch tự chỉnh" KHÔNG được mang danh tính của vật liệu vừa bỏ — vùng tô vẽ sau đó mà vẫn
   // khai là gỗ óc chó thì BOQ tính tiền cho thứ người dùng không hề chọn. Bốn setter này chỉ đụng
   // vật liệu ĐANG CẦM, không sửa entity nào ⇒ không mất mã của vùng tô đã vẽ.
-  setHatchPattern: (hatchPattern) => set({ hatchPattern, hatchMaterialId: null, hatchSpecId: null }),
-  setHatchScale: (hatchScale) => set({ hatchScale, hatchMaterialId: null, hatchSpecId: null }),
-  setHatchAngle: (hatchAngle) => set({ hatchAngle, hatchMaterialId: null, hatchSpecId: null }),
-  setHatchColor: (hatchColor) => set({ hatchColor, hatchMaterialId: null, hatchSpecId: null }),
-  applyMaterial: (hatchMaterialId, hatchPattern, hatchScale, hatchAngle, hatchColor, specId) => {
+  setHatchPattern: (hatchPattern) => set({ hatchPattern, hatchMaterialId: null, hatchSpecId: null , hatchMatId: null }),
+  setHatchScale: (hatchScale) => set({ hatchScale, hatchMaterialId: null, hatchSpecId: null , hatchMatId: null }),
+  setHatchAngle: (hatchAngle) => set({ hatchAngle, hatchMaterialId: null, hatchSpecId: null , hatchMatId: null }),
+  setHatchColor: (hatchColor) => set({ hatchColor, hatchMaterialId: null, hatchSpecId: null , hatchMatId: null }),
+  applyMaterial: (hatchMaterialId, hatchPattern, hatchScale, hatchAngle, hatchColor, specId, matId) => {
     // "Đổi vật liệu" trên đối tượng ĐÃ CHỌN (menu chuột phải, VIỆC ①, 28/07) — nếu đang có vùng
     // tô (hatch) trong selection, áp pattern/scale/angle NGAY lên entity đã vẽ, không chỉ đổi
     // "vật liệu đang cầm để vẽ tiếp" như hành vi applyMaterial cũ.
@@ -911,10 +919,14 @@ export const useCadStore = create<CadState>((set, get) => ({
           solid: hatchPattern === 'SOLID',
           ...(hatchColor ? { color: hatchColor } : {}),
           ...(specId ? { specId } : {}),
+          // V8c bước 4 — DANH TÍNH VẬT LIỆU (UUID) đi cùng lượt với danh tính thương mại. Cùng
+          // luật với `specId`: `undefined` ⇒ GIỮ NGUYÊN mã đang có, KHÔNG xoá. Mất mã im lặng
+          // còn tệ hơn không đổi — người dùng không thấy gì xảy ra mà BOQ/3D thì mất neo.
+          ...(matId ? { matId } : {}),
         })),
       );
       // Giữ nguyên tool/selection — user đang sửa vùng tô đã chọn, không phải bắt đầu vẽ mới.
-      set({ hatchMaterialId, hatchPattern, hatchScale, hatchAngle, hatchColor, ...(specId ? { hatchSpecId: specId } : {}) });
+      set({ hatchMaterialId, hatchPattern, hatchScale, hatchAngle, hatchColor, ...(specId ? { hatchSpecId: specId } : {}), ...(matId ? { hatchMatId: matId } : {}) });
       return;
     }
     set({
@@ -922,6 +934,7 @@ export const useCadStore = create<CadState>((set, get) => ({
       // Không chọn gì ⇒ đây là "vật liệu đang cầm để vẽ tiếp". Danh tính đi kèm để vùng tô vẽ ra
       // sau đó MANG SẴN mã (`handleHatch`), thay vì rơi xuống bản vẽ không mã như trước 04/09.
       hatchSpecId: specId ?? null,
+      hatchMatId: matId ?? null,
       tool: 'hatch', status: toolHint('hatch'),
     });
   },

@@ -17,7 +17,7 @@ import { geometryOf } from './build-ops';
 // build-ops) — không sửa ngược `build-ops.ts` để gọi vào `build-recipe.ts`, tránh vòng lặp import
 // giữa 2 file cùng thư mục `lib/three/`.
 import { resolveSceneGroupGeometry } from './build-recipe';
-import { matIdCuaNhom } from './vat-lieu-nhom';
+import { matIdCuaNhom } from '../materials/danh-tinh-vat-lieu';
 
 export interface BuiltGroup {
   name: string;

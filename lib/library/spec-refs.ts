@@ -44,6 +44,11 @@ let cache: Promise<unknown> | null = null;
 export interface MaterialPick {
   /** `ProductSpec.id` — thứ ghi xuống `HatchEntity.specId`. */
   id: string;
+  /** 05/09 (V8c bước 4) — `ProductSpec.matId`, **UUID** IF sở hữu, thứ ghi xuống `Base.matId` và
+   * là khoá 3D tra vật liệu PBR. KHÁC `id` ở trên (cuid) — xem `Base.matId` trong `lib/cad/model.ts`.
+   * `null` = bản ghi kho chưa backfill matId ⇒ entity không nhận danh tính vật liệu, 3D rơi về màu
+   * phẳng. Đó là SỰ THẬT của bản ghi đó, KHÔNG bịa UUID từ cuid để lấp chỗ trống. */
+  matId?: string | null;
   name: string;
   sku: string | null;
   /** màu chủ đạo do kho khai (`ProductSpec.colorHex`) — null = kho chưa khai, KHÔNG bịa màu. */
@@ -67,6 +72,7 @@ export function toMaterialPicks(raw: unknown): MaterialPick[] {
     const gia = typeof o.priceVnd === 'number' && Number.isFinite(o.priceVnd) ? o.priceVnd : null;
     out.push({
       id: o.id,
+      matId: typeof o.matId === 'string' && o.matId ? o.matId : null,
       name: typeof o.name === 'string' && o.name ? o.name : o.id,
       sku: typeof o.sku === 'string' ? o.sku : null,
       colorHex: typeof o.colorHex === 'string' && o.colorHex ? o.colorHex : null,

@@ -236,6 +236,25 @@ interface Base {
   /** override lineweight/lineType của layer (hiếm dùng — giống cơ chế override màu ở trên). */
   lineweight?: number;
   lineType?: LineType;
+  /**
+   * 05/09 (V8c bước 4) — DANH TÍNH VẬT LIỆU của entity: **UUID bất biến do IF sở hữu**
+   * (`lib/materials/matid-identity.ts`, ADR identity 19/08). Optional, thêm vào; `.idf` cũ không
+   * có field vẫn parse bình thường.
+   *
+   * 🔴 KHÔNG TRỘN VỚI `specId`, hai thứ khác hẳn namespace — trộn là nguồn của cả chuỗi hiểu sai:
+   *   · `matId`  = **UUID**, danh tính VẬT LIỆU, thứ `getMaterial()` đi đường CHÍNH
+   *     (`resolvedVia:'uuid'`) và `pbrMapBaTang()` khoá theo.
+   *   · `specId` = `ProductSpec.id` (**cuid** của Prisma, hoặc `hat-giong:<uuid>`), khoá bản ghi
+   *     THƯƠNG MẠI.
+   * Một vật liệu có thể có `matId` mà chưa có bản ghi thương mại, và ngược lại.
+   *
+   * ⚠️ ĐÍNH CHÍNH TẠI CHỖ — chú thích của `HatchEntity.specId` phía dưới còn ghi *"Đây là hiện
+   * thân của matId"*. Câu đó viết 02/08, **có TRƯỚC ADR identity 19/08** và nay SAI: từ 19/08
+   * `matId` là UUID IF sở hữu, KHÔNG còn bằng `ProductSpec.sku`/`id`. Giữ nguyên câu cũ ở đó làm
+   * dấu vết (luật "văn bản bị thay phải đóng dấu tại chỗ, không im lặng sửa cho khớp"), đọc nó
+   * kèm dòng này.
+   */
+  matId?: string;
   /** IF2-nền — tầng chứa entity (BIM storey), VD 'GF' / 'L1' / 'L2'. Optional, `.idf` cũ không
    * có field này vẫn parse bình thường. Chưa có UI gán ở IF1; hiện chỉ nền dữ liệu cho IF2-C. */
   storey?: string;

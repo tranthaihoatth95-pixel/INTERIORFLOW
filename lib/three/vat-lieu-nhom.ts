@@ -13,48 +13,13 @@
  */
 import * as THREE from 'three';
 import type { MaterialPbr } from '../materials/schema';
-import { isMatIdUuid, normalizeMatIdCanonical } from '../materials/matid-identity';
-// Tiền tố lấy TỪ NGUỒN, không gõ lại chuỗi 'hat-giong:' lần thứ hai — gõ lại là dựng nguồn sự thật
-// thứ hai cho cùng một quy ước, đúng họ bệnh `soi:dong-dang` sinh ra để bắt.
-import { TIEN_TO_HAT_GIONG } from '../materials/kho-mo-dau';
+// Luật danh tính sống ở module THUẦN (không `three`) để chặng 2D dùng chung mà không kéo `three`
+// vào bundle của nó. Re-export để nơi gọi cũ không phải đổi đường import.
+import { matIdCuaNhom, type NhomCoDanhTinh } from '../materials/danh-tinh-vat-lieu';
+export { matIdCuaNhom, type NhomCoDanhTinh };
 import { pbrMapBaTang } from '../materials/tang-phan-giai';
 import { loadPbrMap } from '../materials/pbr-store';
 import { buildPbrMaterial, loadPbrTextures, pbrCacheKey } from './pbr-three';
-
-/** Hình lát tối thiểu mà `matIdCuaNhom` cần — `SceneGroup` gán thẳng được, test dựng gọn được. */
-export interface NhomCoDanhTinh {
-  /** UUID vật liệu ghi thẳng trên entity (`Base.matId`) — đường CHÍNH, có từ bước 4 của V8c. */
-  matId?: string;
-  /** FK mềm `ProductSpec.id` đã có sẵn từ trước (`Base.specId`). Với hàng hạt giống nó mang dạng
-   * `hat-giong:<uuid>`; với bản ghi DB thật nó là cuid, KHÔNG suy ra matId được. */
-  specId?: string;
-}
-
-/**
- * DANH TÍNH VẬT LIỆU của một nhóm, hoặc `null` khi nhóm chưa khai gì tra được.
- *
- * Thứ tự lùi — khai báo thắng suy đoán:
- *  1. `matId` — UUID ghi thẳng trên entity.
- *  2. `specId` mang tiền tố hạt giống ⇒ **gỡ 7 ký tự đầu là ra UUID**. Đây là đường sáng rẻ nhất
- *     của cả lát cắt: 7 vật liệu ship theo bản cài lên vân NGAY, không cần CSDL, không cần đăng
- *     nhập. Probe 05/09 đo được đúng chỗ này: cùng một chuỗi, bỏ tiền tố đi là `getMaterial` trả
- *     `resolvedVia:'uuid'` + ảnh + `uvScaleMm` thật.
- *  3. `null`.
- *
- * ⚠️ KHAI THẲNG GIỚI HẠN, đừng để phiên sau tưởng đã trọn: `specId` là **cuid của `ProductSpec`
- * thật** (studio tự nhập) thì hàm này trả `null` — không có cách nào suy UUID từ cuid mà không tra
- * CSDL, và hàm này cố ý THUẦN (không fetch). Nhóm đó rơi về `colorHex` như hôm nay. Đường đúng cho
- * ca ấy là `Base.matId` (bước 4), không phải nhét fetch vào đây.
- */
-export function matIdCuaNhom(g: NhomCoDanhTinh): string | null {
-  if (typeof g.matId === 'string' && isMatIdUuid(g.matId)) return normalizeMatIdCanonical(g.matId);
-  const s = g.specId;
-  if (typeof s === 'string' && s.startsWith(TIEN_TO_HAT_GIONG)) {
-    const loi = s.slice(TIEN_TO_HAT_GIONG.length);
-    if (isMatIdUuid(loi)) return normalizeMatIdCanonical(loi);
-  }
-  return null;
-}
 
 /** Nguồn PBR đã hợp nhất ba tầng (`pbrMapBaTang()` — hạt giống < studio < dự án). */
 export interface NguonVatLieu3D {

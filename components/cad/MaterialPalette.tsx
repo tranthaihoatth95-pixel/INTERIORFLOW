@@ -37,6 +37,9 @@ import MaterialImpactPreview from '@/components/materials/MaterialImpactPreview'
 import { useT } from '@/lib/i18n';
 import { loadMaterialPicks, type MaterialPick } from '@/lib/library/spec-refs';
 import { tronPickHatGiong } from '@/lib/materials/kho-mo-dau';
+// CÙNG luật danh tính mà chặng 3D dùng (`lib/three/vat-lieu-nhom.ts` re-export chính hàm này).
+// Module THUẦN, không kéo `three` vào bundle 2D — xem docstring của nó.
+import { matIdCuaNhom } from '@/lib/materials/danh-tinh-vat-lieu';
 
 const PATTERNS: HatchPattern[] = ['SOLID', 'ANSI31', 'ANSI32', 'ANSI37', 'DOTS'];
 
@@ -128,21 +131,28 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
   /**
    * ÁP CHO PHẠM VI HẸP — vật đang chọn, hoặc (không chọn gì) "vật liệu đang cầm để vẽ tiếp".
    *
-   * Hai nhánh khác nhau đúng một chỗ: THAM SỐ THỨ 6 (`specId`).
+   * Hai nhánh khác nhau ở HAI THAM SỐ CUỐI (`specId` = cuid thương mại · `matId` = UUID vật liệu).
    *  · preset thị giác ⇒ KHÔNG truyền ⇒ entity GIỮ NGUYÊN mã đang có (không xoá mã im lặng), và
    *    "mã đang cầm" về null (không nhận vơ danh tính mình không được trao).
-   *  · dòng kho ⇒ truyền `row.id` (`ProductSpec.id`) ⇒ danh tính đi xuống Doc. Nét vẽ giữ nguyên
-   *    thứ người dùng đang cầm (kho khai giá/NCC, KHÔNG khai nét gạch); màu lấy `colorHex` của kho
-   *    nếu kho có khai, không khai thì giữ màu hiện tại — KHÔNG bịa màu.
+   *    ⚠️ Trừ preset ĐÃ khai `matId` (`tronDefsHatGiong` — hạt giống có UUID thật): lúc đó nó KHÔNG
+   *    còn là preset thị giác thuần, và truyền UUID xuống là đúng, không phải "nhận vơ".
+   *  · dòng kho ⇒ truyền `row.id` (`ProductSpec.id`) ⇒ danh tính thương mại đi xuống Doc; kèm
+   *    `row.matId` (UUID) ⇒ danh tính VẬT LIỆU, thứ chặng 3D tra ra ảnh vân (V8c bước 4).
+   *    Nét vẽ giữ nguyên thứ người dùng đang cầm (kho khai giá/NCC, KHÔNG khai nét gạch); màu lấy
+   *    `colorHex` của kho nếu kho có khai, không khai thì giữ màu hiện tại — KHÔNG bịa màu.
+   *    `matId` rỗng (bản ghi kho chưa backfill) ⇒ không truyền ⇒ 3D rơi về màu phẳng. Đó là sự thật
+   *    của bản ghi đó; bịa UUID từ cuid để lấp chỗ trống là dựng một danh tính không tồn tại.
    */
   const reallyApply = (p: ChoAp) => {
     if (p.loai === 'preset') {
       const m = p.def;
-      applyMaterial(m.name, m.hatchPattern, m.patternScale, m.patternAngle, m.color);
+      applyMaterial(m.name, m.hatchPattern, m.patternScale, m.patternAngle, m.color, undefined, m.matId ?? undefined);
       return;
     }
     const r = p.row;
-    applyMaterial(r.name, hatchPattern, hatchScale, hatchAngle, r.colorHex ?? hatchColor, r.id);
+    // `matIdCuaNhom` nhận CẢ hai đường: `matId` khai thẳng (dòng kho đã backfill) và `id` dạng
+    // `hat-giong:<uuid>` (dòng hạt giống) — một hàm, không hai nhánh tự cắt chuỗi.
+    applyMaterial(r.name, hatchPattern, hatchScale, hatchAngle, r.colorHex ?? hatchColor, r.id, matIdCuaNhom({ matId: r.matId ?? undefined, specId: r.id }) ?? undefined);
   };
 
   /**
