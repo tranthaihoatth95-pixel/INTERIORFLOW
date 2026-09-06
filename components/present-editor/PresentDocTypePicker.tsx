@@ -73,8 +73,15 @@ const LIBRARY: Record<Kind, { label: [string, string]; count: string; lead: [str
     ],
   },
   material: {
-    label: ['Bảng vật liệu', 'Material board'], count: '04',
-    lead: ['Ghép vật liệu, mã hàng và vùng sử dụng trên một tấm rõ ràng.', 'Pair finishes, product codes, and usage zones on a clear board.'],
+    // 06/09 nhãn-nói-thật (lane ĐẦU RA NÓI THẬT). Hai chỗ nói sai, sửa cả hai:
+    //  · `count` ghi '04' trong khi bên dưới đúng 3 thẻ — số đếm sai ngay trên nhãn.
+    //  · `lead` cũ *"Ghép vật liệu, mã hàng và vùng sử dụng trên một tấm rõ ràng"* đọc ra như
+    //    app tự ghép. Đo 06/09: bấm vào ra **trang A3 TRẮNG TRƠN** (17.389.760 px, đúng 1 màu
+    //    trắng) — `PresentSheets.tsx` dựng nó từ khuôn `'blank'` và tự khai đúng rằng
+    //    `material-a3` "không hứa một editor vật liệu riêng". Trang trắng là ĐÚNG THIẾT KẾ;
+    //    thứ sai là câu dẫn hứa nhiều hơn thứ giao ra.
+    label: ['Bảng vật liệu', 'Material board'], count: '03',
+    lead: ['Mở một khổ A3 trống để bạn tự dàn vật liệu. App chưa tự ghép bảng từ dự án.', 'Opens a blank A3 sheet for you to lay out finishes. The app does not compose the board for you yet.'],
     templates: [
       { title: ['Palette hoàn thiện', 'Finish palette'], caption: ['Mở khổ A3 để tự dàn', 'Open an A3 workspace'], tone: '#e5dfd1', enabled: true },
       { title: ['Bảng mẫu dự án', 'Project sample board'], caption: ['Mở khổ A3 để tự dàn', 'Open an A3 workspace'], tone: '#bcae9e', enabled: true },
@@ -159,7 +166,9 @@ export function PresentDocTypePicker({ onChooseBlankDeck, onChooseMagicDeck, onC
       chay?: () => void;
       ly?: [string, string];
     }[] = [
-      { khoa: 'material', nhan: ['Bảng vật liệu A3', 'A3 material board'], icon: <Layers3 size={18} strokeWidth={1.5} />, chay: onChooseMaterialBoard },
+      // 06/09 — nhãn cũ 'Bảng vật liệu A3' hứa một bảng đã dựng sẵn; thứ mở ra là trang A3
+      // trắng. Cửa vào phải nói đúng thứ nằm sau nó (luật "nút không được nói dối").
+      { khoa: 'material', nhan: ['Trang A3 trống để dàn vật liệu', 'Blank A3 for finishes'], icon: <Layers3 size={18} strokeWidth={1.5} />, chay: onChooseMaterialBoard },
       { khoa: 'boq', nhan: ['Khối lượng (BOQ)', 'Bill of quantities'], icon: <FileSpreadsheet size={18} strokeWidth={1.5} />, chay: onChooseBoq },
       { khoa: 'schedule', nhan: ['Bảng thống kê', 'Schedule table'], icon: <ListTree size={18} strokeWidth={1.5} />, chay: onChooseSchedule,
         ly: ['Màn bảng thống kê chưa nối ở chỗ này.', 'The schedule screen is not wired here yet.'] },
