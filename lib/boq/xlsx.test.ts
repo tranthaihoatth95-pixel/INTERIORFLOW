@@ -5,7 +5,7 @@
  * Chạy: node_modules/.bin/sucrase-node lib/boq/xlsx.test.ts
  */
 import JSZip from 'jszip';
-import { boqResultToXlsxBuffer, buildXlsxBuffer, sanitizeSheetName } from './xlsx';
+import { boqResultToXlsxBuffer, buildXlsxBuffer, sanitizeSheetName, NGUON_SO, NHAN_TONG_SO_MAY } from './xlsx';
 import type { BoqResult } from './model';
 
 let pass = 0;
@@ -224,6 +224,62 @@ async function main() {
     ok('ghi ra file: không còn ký tự Excel cấm (trước: còn đủ)', !/[/\\?*[\]:]/.test(written));
     ok('ghi ra file: không quá 31 ký tự (trước: 51)', written.length <= 31);
     ok('BOQ/FF&E hiện tại không đổi tên tab (không hồi quy)', (await nameOf('BOQ')) === 'BOQ');
+  }
+
+  /* ═══ [14] DẤU VẾT SỬA TAY — MỞ TỆP RA ĐỌC, khẳng định số máy còn sống ═══
+   * Ca thật lấy đúng từ lần soi 06/09 (`docs/CHUAN-DAU-RA-NGHE.md` §7): người dùng đè
+   * 12,76 → 20 m². Trước bản vá, tệp ghi `F2=20` y hệt một ô đo được và `12.76` biến mất khỏi
+   * zip — thầu không có cách nào biết. Test này là thứ giữ cho điều đó không quay lại: nó ĐỌC
+   * LẠI tệp đã dựng, không đọc biến trong bộ nhớ. */
+  console.log('\n[14] dấu vết sửa tay sống sót qua cửa xuất');
+  {
+    const mayQty = 12.76;
+    const tayQty = 20;
+    const donGia = 1_250_000;
+    const haoHut = 8;
+    const rowSuaTay = {
+      specId: 'ps-truth-go-soi', matId: 'ps-truth-go-soi', ten: 'Gỗ sồi tự nhiên', ncc: 'Kho A',
+      ma: 'GS-01', m2: tayQty, qty: tayQty, unit: 'm2', kind: 'area' as const, donGia,
+      haoHutPhanTram: haoHut,
+      thanhTien: Math.round(tayQty * (1 + haoHut / 100) * donGia),
+      entityIds: ['h1'],
+      m2Override: { value: tayQty, machineValue: mayQty, at: 1_757_000_000_000 },
+    };
+    const rowSach = {
+      specId: 'ps-truth-terrazzo', matId: 'ps-truth-terrazzo', ten: 'Terrazzo', ncc: 'Kho B',
+      ma: 'TZ-02', m2: 1.85, qty: 1.85, unit: 'm2', kind: 'area' as const, donGia: 890_000,
+      haoHutPhanTram: 5, thanhTien: 1_728_825, entityIds: ['h2'],
+    };
+    const bufTay = await boqResultToXlsxBuffer({
+      rows: [rowSuaTay, rowSach], errors: [],
+      totalAmount: rowSuaTay.thanhTien + rowSach.thanhTien,
+    });
+    const sheetTay = await (await JSZip.loadAsync(bufTay)).files['xl/worksheets/sheet1.xml'].async('string');
+
+    ok('header có cột "Nguồn số"', sheetTay.includes('>Nguồn số<'));
+    ok('header có cột số máy khối lượng', sheetTay.includes('>Số máy: khối lượng<'));
+    ok('header có cột số máy đơn giá', sheetTay.includes('>Số máy: đơn giá (đ)<'));
+
+    // Dòng 2 = món bị sửa tay: cột K nói nguồn, cột L giữ số máy.
+    ok('dòng sửa tay ghi rõ "Người sửa tay"', /<c r="K2"[^>]*>.*?>Người sửa tay</.test(sheetTay));
+    ok('SỐ MÁY 12.76 CÒN TRONG TỆP (trước bản vá: mất hẳn)', sheetTay.includes('<c r="L2" s="2"><v>12.76</v></c>'));
+    ok('số người dùng sửa KHÔNG bị đổi — F2 vẫn là 20', sheetTay.includes('<c r="F2" s="2"><v>20</v></c>'));
+
+    // Dòng 3 = món máy tính, không đè: nói "Đo được", hai cột số máy để TRỐNG.
+    ok('dòng không sửa ghi "Đo được"', /<c r="K3"[^>]*>.*?>Đo được</.test(sheetTay));
+    ok('dòng không sửa KHÔNG có ô số máy (trống, tự giải thích)', !sheetTay.includes('r="L3"') && !sheetTay.includes('r="M3"'));
+
+    // Chênh lệch đọc được ở cấp TỔNG.
+    const tongMay = Math.round(mayQty * (1 + haoHut / 100) * donGia) + rowSach.thanhTien;
+    ok('có dòng TỔNG theo số máy', sheetTay.includes(NHAN_TONG_SO_MAY));
+    ok(`tổng theo số máy = ${tongMay} (khác tổng đang hiện ${rowSuaTay.thanhTien + rowSach.thanhTien})`,
+      sheetTay.includes(`<v>${tongMay}</v>`) && tongMay !== rowSuaTay.thanhTien + rowSach.thanhTien);
+
+    // Bảng SẠCH: không bịa thêm dòng tổng thứ hai.
+    const bufSach = await boqResultToXlsxBuffer({ rows: [rowSach], errors: [], totalAmount: rowSach.thanhTien });
+    const sheetSach = await (await JSZip.loadAsync(bufSach)).files['xl/worksheets/sheet1.xml'].async('string');
+    ok('bảng sạch KHÔNG có dòng tổng theo số máy', !sheetSach.includes(NHAN_TONG_SO_MAY));
+    ok('bảng sạch: mọi dòng đều "Đo được"', sheetSach.includes(NGUON_SO.MAY) && !sheetSach.includes(NGUON_SO.TAY));
   }
 
   console.log(`\nKẾT QUẢ: ${pass} pass, ${fail} fail`);

@@ -27,7 +27,7 @@
  */
 
 import JSZip from 'jszip';
-import type { BoqResult } from './model';
+import type { BoqResult, BoqRow } from './model';
 
 const XML_HEADER = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
 
@@ -338,18 +338,69 @@ export interface BoqXlsxImage {
   hPx: number;
 }
 
+/**
+ * ⭐ 06/09 — DẤU VẾT SỬA TAY (lane ĐẦU RA NÓI THẬT, `docs/CHUAN-DAU-RA-NGHE.md` §3 + §7).
+ *
+ * Soi file thật 06/09 bắt được lỗi NÓI SAI nặng nhất của cả đường xuất: người dùng sửa tay
+ * 12,76 → 20 m² trên màn, MÀN HÌNH nói thật (chấm hổ phách + "⚠ máy 12.76"), nhưng TỆP ghi
+ * `F2=20` **y hệt một ô đo được**, và `12.76` không còn ở đâu trong zip. Thầu nhận bảng
+ * 27.000.000đ mà không một dấu vết nào cho biết có người đã đè lên 17.226.000đ của máy.
+ *
+ * ⇒ Ba cột cuối bảng, LUÔN có (không đổi theo dữ liệu — bảng ổn định giữa các lần xuất, so được):
+ *   · `Nguồn số`         — "Đo được" / "Người sửa tay". Đọc là biết ngay, không cần hỏi ai.
+ *   · `Số máy: khối lượng` / `Số máy: đơn giá (đ)` — giá trị MÁY đã tính TRƯỚC khi bị đè.
+ *     Trống khi ô đó không bị đè: điền lại số y hệt cột bên trái chỉ là nhiễu, còn ô trống ở
+ *     đây TỰ GIẢI THÍCH ("Đo được" ⇒ không có số máy nào khác).
+ * Kèm dòng `TỔNG theo số máy` (chỉ khi bảng có ≥1 ô sửa tay) để chênh lệch đọc được ở cấp tổng.
+ *
+ * ⛔ KHÔNG đổi con số người dùng đã sửa — người quyết cuối [T5]; máy chỉ không được GIẤU.
+ * ⛔ Tên cột cố ý KHÔNG phải "Khối lượng"/"Đơn giá" trần — `lib/present-editor/boq-xlsx-import.ts`
+ *    nhập lại chính file này, hai cột trùng từ khoá là bộ đoán cột nuốt nhầm (test canh: nhập lại
+ *    file có 13 cột vẫn map đúng 5 cột dữ liệu gốc).
+ */
 const HEADERS = [
   'Mã vật liệu', 'Tên vật liệu', 'NCC', 'Mã SP', 'Ảnh',
   'Khối lượng', 'Đơn vị', 'Đơn giá (đ)', 'Hao hụt (%)', 'Thành tiền (đ)',
+  'Nguồn số', 'Số máy: khối lượng', 'Số máy: đơn giá (đ)',
 ];
-const COL_WIDTHS = [16, 30, 20, 14, 12, 14, 10, 16, 12, 18];
+const COL_WIDTHS = [16, 30, 20, 14, 12, 14, 10, 16, 12, 18, 16, 18, 20];
 const COL_AMOUNT = 10; // cột "Thành tiền" (1-based) — dải SUM của dòng tổng
 const COL_IMAGE0 = 4; // cột "Ảnh", 0-based — nơi neo thumbnail
+
+/** Nhãn cột `Nguồn số` — đúng 2 giá trị, không có nấc thứ ba. */
+export const NGUON_SO = { MAY: 'Đo được', TAY: 'Người sửa tay' } as const;
+/** Nhãn dòng tổng theo số máy — export để test mở-file khẳng định đúng chuỗi này. */
+export const NHAN_TONG_SO_MAY = 'TỔNG theo số máy (trước khi sửa tay)';
+
+/** Một ô đã bị người dùng đè: `machineValue` = số MÁY tính ra trước đó. Hình dạng khớp
+ * `BoqOverrideInfo` (`lib/present-editor/boq-overrides.ts`) — cố ý khai lại ở đây thay vì import,
+ * để `lib/boq` không phụ thuộc ngược lên `lib/present-editor`. */
+export interface BoqOSuaTay {
+  value: number;
+  machineValue: number;
+  at: number;
+}
+
+/** `BoqRow` kèm dấu vết sửa tay (nếu có). Mọi field thêm đều optional ⇒ `BoqResult` thuần vẫn
+ * truyền vào được y như trước, không caller nào phải đổi. */
+export type BoqRowCoDauVet = BoqRow & {
+  m2Override?: BoqOSuaTay;
+  donGiaOverride?: BoqOSuaTay;
+};
 
 /** Ô ảnh trong bảng: cao 48px. Ảnh thu theo tỉ lệ để lọt trong hộp 64×48 px. */
 const THUMB_BOX_W_PX = 64;
 const THUMB_BOX_H_PX = 48;
 const IMAGE_ROW_HEIGHT_PT = 40; // 48px ≈ 36pt + đệm
+
+/** Thành tiền TÍNH LẠI TỪ SỐ MÁY — dùng đúng công thức của `compute.ts`
+ * (`round(khốiLượng × (1 + haoHụt%) × đơnGiá)`), chỉ thay hai đầu vào bằng giá trị máy đã tính
+ * trước khi bị đè. Ô nào không bị đè thì giá trị máy CHÍNH LÀ giá trị đang hiện. */
+function thanhTienTheoSoMay(row: BoqRowCoDauVet): number {
+  const qtyMay = row.m2Override ? row.m2Override.machineValue : row.qty;
+  const giaMay = row.donGiaOverride ? row.donGiaOverride.machineValue : row.donGia;
+  return Math.round(qtyMay * (1 + row.haoHutPhanTram / 100) * giaMay);
+}
 
 function fitThumb(wPx: number, hPx: number): { w: number; h: number } {
   if (!(wPx > 0) || !(hPx > 0)) return { w: THUMB_BOX_W_PX, h: THUMB_BOX_H_PX };
@@ -366,12 +417,16 @@ function fitThumb(wPx: number, hPx: number): { w: number; h: number } {
  * `drawings/`/`media/` trong zip).
  */
 export async function boqResultToXlsxBuffer(
-  result: BoqResult,
+  result: Omit<BoqResult, 'rows'> & { rows: BoqRowCoDauVet[] },
   opts?: { images?: Map<string, BoqXlsxImage> },
 ): Promise<Uint8Array> {
   const imagesByMatId = opts?.images;
   const rows: XlsxRow[] = [];
   const images: XlsxImage[] = [];
+  /** Bảng có ít nhất một ô bị người dùng đè ⇒ mới thêm dòng "TỔNG theo số máy". Bảng sạch thì
+   * không thêm dòng nào — không bịa ra một con số thứ hai để người đọc phải đối chiếu vô ích. */
+  let coSuaTay = false;
+  let tongTheoSoMay = 0;
 
   rows.push({ cells: HEADERS.map((h) => ({ t: 'text' as const, v: h, style: STYLE.BOLD })) });
 
@@ -381,6 +436,10 @@ export async function boqResultToXlsxBuffer(
     // Món ĐẾM dùng định dạng số nguyên; vùng tô dùng 2 số lẻ (m²) — cùng 1 cột "Khối lượng",
     // `unit` ở cột kế bên nói rõ nó là gì (đọc `BoqRow.qty`/`unit`, không đọc `m2` đã deprecated).
     const qtyStyle = row.kind === 'count' ? STYLE.NUM_INT : STYLE.NUM_M2;
+    // Dấu vết sửa tay — chỉ ĐỌC field có sẵn trên row, KHÔNG tính lại gì của người dùng.
+    const suaTay = row.m2Override || row.donGiaOverride;
+    if (suaTay) coSuaTay = true;
+    tongTheoSoMay += thanhTienTheoSoMay(row);
     rows.push({
       heightPt: img ? IMAGE_ROW_HEIGHT_PT : undefined,
       cells: [
@@ -394,6 +453,13 @@ export async function boqResultToXlsxBuffer(
         { t: 'num', v: row.donGia, style: STYLE.NUM_VND },
         { t: 'num', v: row.haoHutPhanTram, style: STYLE.NUM_M2 },
         { t: 'num', v: row.thanhTien, style: STYLE.NUM_VND },
+        { t: 'text', v: suaTay ? NGUON_SO.TAY : NGUON_SO.MAY },
+        row.m2Override
+          ? { t: 'num', v: row.m2Override.machineValue, style: qtyStyle }
+          : { t: 'blank' },
+        row.donGiaOverride
+          ? { t: 'num', v: row.donGiaOverride.machineValue, style: STYLE.NUM_VND }
+          : { t: 'blank' },
       ],
     });
     if (img) {
@@ -424,6 +490,20 @@ export async function boqResultToXlsxBuffer(
       totalCell,
     ],
   });
+
+  // Chênh lệch phải đọc được Ở CẤP TỔNG, không bắt người ta tự cộng lại 3 cột dấu vết. Số TĨNH
+  // (không SUM) vì nó cộng những giá trị KHÔNG nằm trong một dải cột nào của bảng — công thức giả
+  // ở đây sẽ tự sai khi ai đó sửa ô trong Excel, tệ hơn là không có.
+  if (coSuaTay) {
+    rows.push({
+      cells: [
+        { t: 'text', v: NHAN_TONG_SO_MAY, style: STYLE.BOLD },
+        { t: 'blank' }, { t: 'blank' }, { t: 'blank' }, { t: 'blank' },
+        { t: 'blank' }, { t: 'blank' }, { t: 'blank' }, { t: 'blank' },
+        { t: 'num', v: tongTheoSoMay, style: STYLE.BOLD_VND },
+      ],
+    });
+  }
 
   return buildXlsxBuffer({ name: 'BOQ', colWidths: COL_WIDTHS, rows, images });
 }
