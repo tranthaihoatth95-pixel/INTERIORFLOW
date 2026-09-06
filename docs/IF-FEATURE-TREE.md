@@ -566,6 +566,25 @@ sha256), **không đọc kích thước trang** ⇒ đổi khổ vật lý **kh�
 | **M6c** | **Tờ bị đánh dấu OAN "Có bản mới"** — dấu vết băm doc CHƯA chuẩn hoá, lần đầu nạp lại `backfillRoomTypes` chạy ⇒ dấu vết đổi dù người dùng không chạm gì. Cảnh báo kêu khi không có chuyện thì lần có chuyện thật cũng không ai nhìn | `vz8x4f15ibqx0` → `1gee2x2pozgt7`, cùng `docId`, 0 thao tác | ✅ `CadSheets.dauVetCuaDoc()` băm doc ĐÃ chuẩn hoá bằng đúng hàm đường nạp dùng; đo lại: dấu vết **giữ nguyên** |
 | **+** | **Hai thanh "Thiết lập trang" NÓI NGƯỢC NHAU** — `CongThietLapTrang` mount 2 chỗ (tầng chặng + trong `PresentEditor`) ⇒ 2 state riêng: bấm Cập nhật xong, thanh trên "Hiện hành", thanh dưới "Có bản mới" | `docs/ship/anh/tc-21-sau-xuat.png` | ✅ bỏ mount trong `PresentEditor`, giữ mount tầng chặng (có lý do ghi tại chỗ) |
 
+### 🔴 CÒN MỞ — ẢNH BẢN VẼ VÀO DECK **KHÔNG CHẮC CHẮN** (đo 06/09, chưa sửa)
+Chạy vòng nghề **4 lượt**: mắt xích M4 (*"Đưa ảnh bản vẽ sang Trình chiếu"* → slide mang ảnh thật)
+**đạt 2, trượt 2**. Lượt trượt: deck còn `soSlide:1 · anhThat:0` sau 40 giây chờ — tức slide ảnh
+**không bao giờ tới**, không phải tới chậm.
+
+**Chỗ nghi, đã khoanh** (INFERENCE — chưa dựng được ca tái hiện tất định):
+`PresentEditor.tsx:403` consume handoff trong `useEffect(..., [])` — chạy **lúc mount** và
+**tiêu thụ một lần**. Deck thì hydrate từ IndexedDB/máy chủ ở một nhịp khác. Mount trước hydrate ⇒
+slide được đẩy vào deck rỗng rồi **bị bản hydrate đè lên**; handoff đã tiêu thụ nên không lấy lại
+được. Đây đúng **họ bẫy** mà `CongThietLapTrang` đã phải vá bằng biến module `toDaNhan` (chú thích
+tại chỗ ghi rõ: *"lần dựng thứ nhất tiêu thụ mất tờ rồi bị vứt"*) — đường ẢNH chưa có lưới an toàn
+tương đương. Cộng thêm hai lần điều hướng (`/present-editor` → redirect `/projects/<id>/present`)
+làm cửa sổ đua rộng ra.
+
+⚠️ Và một quan sát kề bên, cùng họ: **nạp lại trang ngay sau khi chèn slide thì MẤT slide đó** —
+`page.reload()` đặt vào bộ đo làm deck tụt về `soSlide:0` và mất luôn qua lần đóng-mở sau (M4/M5/M6
+cùng trượt). `PresentSheets` có `saver.flush()` ở `beforeunload`, nhưng ghi IndexedDB là bất đồng bộ
+nên trang có thể chết trước khi ghi xong. **Chưa xác minh riêng, chưa sửa.**
+
 ### 8 giờ/ngày được không? — **GẦN HƠN, CHƯA TRỌN**
 06/09 đã đóng phần *cắm dây*: **6/8 lệnh chung hết mờ** (Chữ · Chọn · Xoá · Dời · Chép · Xoay —
 tay thi hành lấy nguyên `onAddText`/`onSelectNext`/`onDeleteSelected`/`onNudge`/`onDuplicateSelected`
