@@ -32,10 +32,17 @@ export function ProjectScopeEmptyState({
   routeId,
   stage,
   info,
+  loiVaoThang,
 }: {
   routeId: string;
   stage: StageSegment;
   info: ScopeMissingInfo;
+  /**
+   * LỐI VÀO THỨ BA — chặng nào tự làm ra được nội dung mà KHÔNG cần bản vẽ thì truyền vào đây
+   * (thi hành **luật X3 lối ③**: *"vào thẳng chặng 3 từ ảnh/ý tưởng, không cần mô hình"*).
+   * Chặng KHÔNG truyền thì màn rỗng giữ nguyên như cũ — không hứa một lối đi mà chặng đó chưa có.
+   */
+  loiVaoThang?: { nhan: string; goiY: string; chay: () => void };
 }) {
   const tr = useT();
   const router = useRouter();
@@ -186,6 +193,12 @@ export function ProjectScopeEmptyState({
                 disabled: true,
                 disabledReason: tr('Chưa có bản vẽ nào chưa thuộc dự án khác để gắn vào đây.', 'No unassigned drawing available to attach.'),
               },
+          /* Lối thứ ba, chỉ hiện khi chặng có thật (xem prop `loiVaoThang`). Đứng SAU hai lối kia
+             vì với dự án có bản vẽ thì hai lối đầu vẫn là đường thường đi — nhưng nó PHẢI có mặt,
+             không thì màn này biến thành lời từ chối, trái luật X2. */
+          ...(loiVaoThang
+            ? [{ label: loiVaoThang.nhan, onClick: loiVaoThang.chay, hint: loiVaoThang.goiY, disabled: busy }]
+            : []),
         ]}
       />
     </div>
