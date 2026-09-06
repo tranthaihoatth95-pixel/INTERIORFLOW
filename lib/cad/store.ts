@@ -24,7 +24,7 @@ import { syncHostedOpenings, expandDeleteWithHostedChildren } from './hosting';
 // mutation + nở tập id lúc chọn/xoá), cố ý gọi cạnh nhau ở đúng các điểm dưới đây, KHÔNG dựng
 // đường mutation thứ hai. Xem đầu `lib/cad/poche.ts`.
 import { syncPocheAnchors, expandIdsWithPoche, propagatePocheEdits } from './poche';
-import { replaceMaterialReferences, type MaterialReplaceScope } from '../materials/impact';
+import { replaceMaterialReferences, type MaterialReplaceScope, type MaterialReplaceValue } from '../materials/impact';
 
 // Dev-only: expose store cho debugging (window.__cadStore) — cùng pattern với
 // window.__flowStore trong lib/store.ts, không lọt vào bản build production.
@@ -34,8 +34,10 @@ declare global {
   }
 }
 
-/** Id các layer KHÔNG được thao tác (khoá HOẶC đang ẩn) — entity trên đó không chọn/sửa/xoá được. */
-function lockedLayerIds(doc: Doc): Set<string> {
+/** Id các layer KHÔNG được thao tác (khoá HOẶC đang ẩn) — entity trên đó không chọn/sửa/xoá được.
+ * Xuất ra (V6, 06/09) để UI hỏi TRƯỚC được: bảng phạm vi đổi vật liệu cần biết chỗ nào bấm không
+ * ăn, kẻo hứa "áp cho 12 chỗ" rồi `select()` lặng lẽ bỏ mấy chỗ nằm trên lớp khoá. Một luật, một chỗ. */
+export function lockedLayerIds(doc: Doc): Set<string> {
   return new Set(doc.layers.filter((l) => l.locked || !l.visible).map((l) => l.id));
 }
 
@@ -417,7 +419,12 @@ interface CadState {
    * Không có gì đổi ⇒ KHÔNG snapshot (khỏi tốn một nấc Undo rỗng).
    * Trả về số tham chiếu đã đổi để UI báo đúng con số, không đoán.
    */
-  replaceMaterial: (fromSpecId: string, toSpecId: string, scope?: MaterialReplaceScope) => number;
+  replaceMaterial: (
+    fromSpecId: string | readonly string[],
+    toSpecId: string,
+    scope?: MaterialReplaceScope,
+    value?: MaterialReplaceValue,
+  ) => number;
 
   importDoc: (d: Doc, mode: 'replace' | 'merge') => void;
   scaleAll: (factor: number) => void;
@@ -939,14 +946,24 @@ export const useCadStore = create<CadState>((set, get) => ({
     });
   },
 
-  replaceMaterial: (fromSpecId, toSpecId, scope) => {
-    const kq = replaceMaterialReferences(get().doc, fromSpecId, toSpecId, scope);
-    if (kq.changedReferences === 0) return 0;
+  replaceMaterial: (fromSpecId, toSpecId, scope, value) => {
+    // V6 (06/09) — nhận CẢ danh sách mã nguồn. Vật đang chọn có thể mang nhiều vật liệu khác nhau;
+    // vòng lặp ở phía UI thì mỗi mã là MỘT snapshot ⇒ một thao tác của người dùng tốn N nấc Undo,
+    // trái luật "một thao tác một nấc" (G-M2-04). Gộp ở đây: cộng dồn trên Doc rồi snapshot MỘT lần.
+    const froms = typeof fromSpecId === 'string' ? [fromSpecId] : fromSpecId;
+    let doc = get().doc;
+    let changedReferences = 0;
+    for (const from of froms) {
+      const kq = replaceMaterialReferences(doc, from, toSpecId, scope, value);
+      doc = kq.doc;
+      changedReferences += kq.changedReferences;
+    }
+    if (changedReferences === 0) return 0;
     get().snapshot();
     // `replaceMaterialReferences` trả về Doc MỚI (không sửa tại chỗ) đã gồm cả `wallTypes` — set
     // thẳng, không đi qua `updateEntities` vì hàm đó chỉ biết `entities`, sẽ bỏ rơi `wallTypes`.
-    set({ doc: kq.doc });
-    return kq.changedReferences;
+    set({ doc });
+    return changedReferences;
   },
 
   importDoc: (d, mode) => {

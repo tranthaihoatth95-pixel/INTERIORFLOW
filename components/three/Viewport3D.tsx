@@ -7,6 +7,7 @@ import { useTool3D } from '@/lib/render-studio/tool3d';
 import { COMMANDS } from '@/lib/commands/registry';
 import { useCadStore } from '@/lib/cad/store';
 import { entityTuCuChi, type CreateTool3D, type CreateSolidPayload } from '@/lib/three/tao-khoi-3d';
+import { demKhoiCoVatLieu, nhanKhoiVatLieu } from '@/lib/three/nhan-vat-lieu';
 import { applyArrayGrid, parseArrayCommand } from '@/lib/render-studio/array-grid-ops';
 import type { Scene3DData } from '@/lib/three/cad-to-obj';
 import type { Scene3DMode, Scene3DCameraApi, LightMarker } from './Scene3DViewer';
@@ -68,7 +69,8 @@ export interface Viewport3DProps {
    * không tự dựng/ghi gì — cùng khuôn `onPushPull`. */
   lightMarkers?: LightMarker[];
   onLightMove?: (id: string, posCadMm: { x: number; y: number; z: number }) => void;
-  label?: string;
+  /** Nhãn khung nhìn. Bỏ trống ⇒ tự đếm khối đã có vật liệu (`lib/three/nhan-vat-lieu.ts`). */
+  label?: string | null;
   /** lưới sàn + chân trời (xem `Scene3DViewer.ground`) — mode Vẽ 3D bật, chỗ chụp ảnh tắt. */
   ground?: boolean;
   /** T4 (P14) — bắt điểm 3D: SnapSettings của useCadStore + bước lưới mm. Viewport chỉ CHUYỂN
@@ -121,12 +123,17 @@ export function Viewport3D({
   onPushPull,
   lightMarkers,
   onLightMove,
-  label = 'Khối xám · chưa vật liệu',
+  // V6 (06/09) — KHÔNG để chuỗi chết làm mặc định. Nơi mount duy nhất hiện truyền nhãn đã đếm
+  // thật; để sẵn một câu khẳng định "chưa vật liệu" ở đây là gài lại đúng lỗi vừa sửa cho nơi
+  // mount thứ hai mai này. `null` ⇒ tự đếm từ cảnh, xem dưới.
+  label = null,
   ground = false,
   snap3d = null,
   cameraApiRef: cameraApiRefNgoai,
   children,
 }: Viewport3DProps) {
+  // Đếm khối đã có vật liệu — dùng cho dòng ghi chú góc dưới (xem chú thích tại chỗ đó).
+  const demVatLieu = demKhoiCoVatLieu(scene);
   // PHIẾU ĐỢT 7 NHÓM B — cầu nối camera SỐNG cho ViewCube3D, xem comment `Scene3DCameraApi`
   // (`Scene3DViewer.tsx`). Viewport3D chỉ CHUYỂN TIẾP ref, không tự đọc/ghi vào đây.
   // Ref nội bộ chỉ dùng khi nơi mount KHÔNG truyền ref của mình vào (giữ nguyên hành vi cũ).
@@ -452,7 +459,7 @@ export function Viewport3D({
         onCreateCancel={() => useTool3D.getState().setActive('select')}
       />
 
-      <div className="vplabel vpover">{label}</div>
+      <div className="vplabel vpover">{label ?? nhanKhoiVatLieu(scene, tr)}</div>
 
       {children}
 
@@ -602,8 +609,16 @@ export function Viewport3D({
         </svg>
       )}
 
+      {/* V6 (06/09) — DÒNG NÀY TỪNG NÓI DỐI. Nó là chuỗi CHẾT: gán vật liệu xong nó vẫn khẳng định
+          "chưa vật liệu", ngay bên dưới một khung nhìn đang có vân. Nay đếm thật trên chính cảnh
+          đang hiện, cùng một hàm với nhãn góc trên (`lib/three/nhan-vat-lieu.ts`) — một luật đếm,
+          hai chỗ đọc. Phần "ảnh thật do D5 dựng" giữ nguyên: nó vẫn đúng. */}
       <div className="vpnote vpover">
-        Khối xám trơn — chưa vật liệu, chưa đèn. Vật liệu chỉ lưu <b>matId</b>; ảnh thật do D5 dựng.
+        {demVatLieu.co === 0
+          ? tr('Khối xám trơn — chưa vật liệu, chưa đèn. ', 'Clay blocks — no material, no lights yet. ')
+          : tr(`${demVatLieu.co}/${demVatLieu.tong} khối đã gán vật liệu — chưa đèn. `,
+               `${demVatLieu.co}/${demVatLieu.tong} blocks have material — no lights yet. `)}
+        {tr('Vật liệu chỉ lưu ', 'Materials only store ')}<b>matId</b>{tr('; ảnh thật do D5 dựng.', '; final images are rendered in D5.')}
       </div>
 
       {mode === 'massing' && <QuickCommandBox scene={scene} />}

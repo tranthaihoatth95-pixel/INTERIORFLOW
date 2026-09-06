@@ -112,6 +112,7 @@ import { LibraryDropBridge } from './LibraryDropBridge';
 // LibrarySheet), không viết toast mới (Luật Đồng Bộ #6). Helper parse ở lib/tasks/focus-entity.
 import { pushLibraryToast } from '@/components/library/LibraryToast';
 import { parseFocusEntity } from '@/lib/tasks/focus-entity';
+import { nhayToiDoiTuong } from '@/lib/cad/nhay-toi';
 import type { CheckpointItem } from '@/components/studio/checkpoint-core';
 import { detectFormat } from '@/lib/gateway/detect';
 import { routeFormat } from '@/lib/gateway/route';
@@ -240,20 +241,10 @@ export default function CadEditor() {
     let unsub: (() => void) | null = null;
     const tryFocus = (): boolean => {
       if (done) return true;
-      const st = useCadStore.getState();
-      const ent = st.doc.entities.find((e) => e.id === focusId);
-      if (!ent) return false;
+      // V6 (06/09) — CÙNG hàm mà bảng "vật liệu dùng ở đâu" gọi (`lib/cad/nhay-toi.ts`). Trước đó
+      // đoạn select + goto-box nằm chìm ngay tại đây nên không ai tái dùng được; nay một đường.
+      if (!nhayToiDoiTuong(focusId, 'Đã chọn đối tượng từ Bảng việc.')) return false;
       done = true;
-      st.select([focusId]);
-      const b = entityBox(ent);
-      if (Number.isFinite(b.minX) && Number.isFinite(b.maxX)) {
-        // đệm 1.5m quanh đối tượng — thấy ngữ cảnh, không dí sát mép (CadCanvas nghe 'cad:goto-box').
-        const pad = 1500;
-        window.dispatchEvent(new CustomEvent('cad:goto-box', {
-          detail: { minX: b.minX - pad, minY: b.minY - pad, maxX: b.maxX + pad, maxY: b.maxY + pad },
-        }));
-      }
-      st.setStatus('Đã chọn đối tượng từ Bảng việc.');
       return true;
     };
     if (!tryFocus()) {

@@ -29,11 +29,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import { useCadStore } from '@/lib/cad/store';
+import { useCadStore, lockedLayerIds } from '@/lib/cad/store';
 import type { HatchPattern } from '@/lib/cad/model';
 import { MATERIALS, materialSwatchStyle, type MaterialDef, type MaterialCategory } from '@/lib/cad/materials';
 import { materialTextureDataUrl } from '@/lib/cad/material-texture';
-import MaterialImpactPreview from '@/components/materials/MaterialImpactPreview';
+import MaterialImpactPreview, { type ImpactRow } from '@/components/materials/MaterialImpactPreview';
+import { inspectMaterialImpact, usageKey } from '@/lib/materials/impact';
+import { nhayToiDoiTuong } from '@/lib/cad/nhay-toi';
 import { useT } from '@/lib/i18n';
 import { loadMaterialPicks, type MaterialPick } from '@/lib/library/spec-refs';
 import { tronPickHatGiong } from '@/lib/materials/kho-mo-dau';
@@ -53,6 +55,25 @@ function tenCho(p: ChoAp): string {
   return p.loai === 'preset' ? p.def.name : p.row.name;
 }
 
+/**
+ * V6 (06/09) — LƯỢT ĐANG CHỜ, ĐÓNG BĂNG.
+ *
+ * ⛔ VÌ SAO PHẢI ĐÓNG BĂNG: bảng tác động nay cho **nhảy tới từng chỗ dùng**, mà nhảy tới = `select()`
+ * ⇒ selection trên store ĐỔI ngay giữa lúc hộp thoại đang mở. Nếu bảng tiếp tục đọc selection sống
+ * thì danh sách chỗ dùng, con số, và nhất là ĐÍCH của lượt ghi sẽ trượt theo mỗi cú nhảy — người
+ * dùng soi một chỗ rồi bấm Áp dụng và đổi trúng thứ khác. Chụp một lần lúc mở, giữ nguyên tới lúc
+ * đóng: cái người dùng thấy chính là cái sẽ bị đổi.
+ */
+interface LuotCho {
+  pick: ChoAp;
+  /** Mã vật liệu của vùng đang chọn tại thời điểm mở — nguồn của lượt thay. */
+  specIds: string[];
+  /** Mọi chỗ sắp bị đụng (chỗ đang dùng + vùng đang chọn chưa có mã). */
+  rows: ImpactRow[];
+  /** Khoá của những chỗ nằm trong vùng người dùng đang chọn lúc mở. */
+  keysVungDangChon: string[];
+}
+
 export default function MaterialPalette({ onClose }: { onClose: () => void }) {
   const tr = useT();
   const hatchMaterialId = useCadStore((s) => s.hatchMaterialId);
@@ -69,13 +90,17 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
   const setHatchAngle = useCadStore((s) => s.setHatchAngle);
   const setHatchColor = useCadStore((s) => s.setHatchColor);
   const setTool = useCadStore((s) => s.setTool);
+  const select = useCadStore((s) => s.select);
+  const setStatus = useCadStore((s) => s.setStatus);
   const doc = useCadStore((s) => s.doc);
   const selection = useCadStore((s) => s.selection);
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<'all' | MaterialCategory>('all');
   const [hovered, setHovered] = useState<MaterialDef | null>(null);
   /** Material Impact preview (Cổng R1 mục 4) — vật liệu đang CHỜ áp, treo lại tới khi xác nhận. */
-  const [pendingPick, setPendingPick] = useState<ChoAp | null>(null);
+  const [pendingPick, setPendingPick] = useState<LuotCho | null>(null);
+  /** Phạm vi áp — khoá `MaterialUsage.key` đang được tick. */
+  const [chonKeys, setChonKeys] = useState<Set<string>>(() => new Set());
   /** Kho vật liệu THẬT (`ProductSpec` kind='material'). `null` = chưa nạp xong — khác hẳn `[]`
    * ("đã hỏi, kho rỗng"). Hai trạng thái này nói hai điều khác nhau nên KHÔNG gộp. */
   const [kho, setKho] = useState<MaterialPick[] | null>(null);
@@ -156,22 +181,120 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
   };
 
   /**
-   * ÁP CHO TOÀN DỰ ÁN — đi qua ĐÚNG `replaceMaterialReferences` (`lib/materials/impact.ts`), tức
-   * cùng cỗ máy mà `MaterialImpactPreview` vừa đếm để trình con số. Đếm bằng một hàm rồi đổi bằng
-   * một hàm khác thì bảng tác động thành lời hứa suông.
-   * Chỉ có nghĩa khi vật đang chọn ĐÃ có mã (`from`); chưa có mã thì không có gì để "thay".
+   * MỞ BẢNG TÁC ĐỘNG — chụp một lần mọi thứ lượt áp sẽ đụng tới (xem docstring `LuotCho`).
+   *
+   * Danh sách gồm HAI nguồn, cố ý không gộp làm một để mỗi dòng nói đúng bản chất của nó:
+   *  ① `inspectMaterialImpact()` — những chỗ ĐANG DÙNG vật liệu của vùng đang chọn, ở khắp dự án.
+   *  ② vùng tô ĐANG CHỌN mà CHƯA có mã — không phải "chỗ đang dùng", nhưng `applyMaterial` vốn vẫn
+   *     ghi lên chúng từ trước; bỏ chúng khỏi bảng là con số "áp cho N chỗ" nói thiếu.
    */
-  const applyProject = (p: ChoAp) => {
-    if (p.loai !== 'kho') return;
-    for (const from of selectedSpecIds) replaceMaterial(from, p.row.id);
-    // Vật đang chọn nếu chưa có mã thì `replaceMaterialReferences` không đụng tới — gán thẳng cho
-    // chúng, để "toàn dự án" không bỏ sót đúng thứ người dùng đang trỏ vào.
-    reallyApply(p);
+  const moBangTacDong = (p: ChoAp): LuotCho => {
+    const rows: ImpactRow[] = [];
+    const daCo = new Set<string>();
+    for (const specId of selectedSpecIds) {
+      for (const u of inspectMaterialImpact(doc, specId).usages) {
+        if (daCo.has(u.key)) continue; // hai mã nguồn khác nhau không thể trỏ cùng một chỗ, nhưng vẫn chặn
+        daCo.add(u.key);
+        rows.push(u);
+      }
+    }
+    for (const e of selectedHatches) {
+      if (e.type !== 'hatch' || e.specId) continue;
+      const key = usageKey('surface', e.id);
+      if (daCo.has(key)) continue;
+      daCo.add(key);
+      rows.push({ kind: 'surface', ownerId: e.id, label: e.layer, key, note: tr('chưa có vật liệu', 'no material yet') });
+    }
+    // Preset thị giác chỉ mang NÉT VẼ 2D — nó không có mã kho để trao cho món rời / loại tường.
+    if (p.loai === 'preset' && !p.def.matId) {
+      for (const r of rows) {
+        if (r.kind !== 'surface') r.lyDoKhoa = tr('preset chỉ đổi nét vẽ vùng tô', 'preset only changes hatch look');
+      }
+    }
+    // Lớp KHOÁ/ẨN: `select()` lặng lẽ bỏ những entity này (`lockedLayerIds`), nên nếu vẫn để tick
+    // được thì bảng hứa một con số mà lượt ghi trả về con số khác. Khoá TRƯỚC, ghi rõ lý do.
+    const layerKhoa = lockedLayerIds(doc);
+    const layerCua = new Map(doc.entities.map((e) => [e.id, e.layer]));
+    for (const r of rows) {
+      if (r.lyDoKhoa || (r.kind !== 'surface' && r.kind !== 'component')) continue;
+      const layer = layerCua.get(r.ownerId);
+      if (layer && layerKhoa.has(layer)) r.lyDoKhoa = tr('lớp đang khoá hoặc ẩn', 'layer locked or hidden');
+    }
+    const dangChon = new Set(selection);
+    const keysVungDangChon = rows
+      .filter((r) => !r.lyDoKhoa && (r.kind === 'surface' || r.kind === 'component') && dangChon.has(r.ownerId))
+      .map((r) => r.key);
+    return { pick: p, specIds: selectedSpecIds, rows, keysVungDangChon };
+  };
+
+  /**
+   * NHẢY TỚI MỘT CHỖ DÙNG — cùng hàm mà deep-link Bảng việc dùng (`lib/cad/nhay-toi.ts`).
+   *
+   * Loại tường KHÔNG phải một vật trên bản vẽ, nó là ĐỊNH NGHĨA dùng chung. Nhảy tới nó nghĩa là
+   * nhảy tới đoạn tường ĐẦU TIÊN đang mang định nghĩa đó — nói rõ trên dòng trạng thái, để người
+   * dùng không tưởng đó là chỗ duy nhất.
+   */
+  const nhayToi = (r: ImpactRow): boolean => {
+    if (r.kind === 'surface' || r.kind === 'component') {
+      if (nhayToiDoiTuong(r.ownerId, tr(`Đã tới: ${r.label}`, `Jumped to: ${r.label}`))) return true;
+      setStatus(tr('Đối tượng không còn trong bản vẽ.', 'That object is no longer in the drawing.'));
+      return false;
+    }
+    const doanTuong = doc.entities.find((e) => e.typeId === r.ownerId);
+    if (doanTuong && nhayToiDoiTuong(doanTuong.id, tr(`Đã tới đoạn tường đầu tiên dùng: ${r.label}`, `Jumped to the first wall using: ${r.label}`))) return true;
+    setStatus(tr(`Chưa có đoạn tường nào dùng loại "${r.label}" trên bản vẽ này.`, `No wall on this sheet uses "${r.label}" yet.`));
+    return false;
+  };
+
+  /**
+   * ÁP THEO ĐÚNG PHẠM VI ĐÃ TICK — hai bước, và thứ tự có lý do:
+   *
+   *  ① Đặt selection = đúng những VÙNG TÔ được tick rồi gọi `reallyApply` (đường `applyMaterial` cũ,
+   *     không đổi). Nó ghi cả NÉT VẼ lẫn DANH TÍNH, và cập nhật "vật liệu đang cầm để vẽ tiếp".
+   *     Đặt selection là cách phạm vi đi xuống mà KHÔNG phải đẻ đường ghi thứ hai.
+   *  ② Phần còn lại (món rời · loại tường · lớp tường) đi qua ĐÚNG `replaceMaterialReferences` —
+   *     cùng cỗ máy đã đếm ra con số trên bảng. Đếm bằng một hàm rồi đổi bằng một hàm khác thì bảng
+   *     tác động chỉ là lời hứa.
+   *
+   * ⚠️ Hai bước = hai nấc Undo khi phạm vi vượt ra ngoài vùng tô. Đây là hành vi CÓ TỪ TRƯỚC của
+   * nhánh "toàn dự án" (nó cũng gọi hai hàm), lượt này không làm xấu đi; gộp một nấc đòi một đường
+   * ghi mới, mà đẻ đường ghi thứ hai cho cùng một việc thì đắt hơn cái nó cứu.
+   */
+  const apTheoPhamVi = (luot: LuotCho, keys: ReadonlySet<string>) => {
+    const p = luot.pick;
+    const chon = luot.rows.filter((r) => keys.has(r.key) && !r.lyDoKhoa);
+    if (!chon.length) return;
+
+    const hatchIds = chon.filter((r) => r.kind === 'surface').map((r) => r.ownerId);
+    let thucTe = 0;
+    if (hatchIds.length) {
+      select(hatchIds);
+      // `select()` còn nở theo poché và lọc lớp khoá — đọc LẠI thứ nó thật sự cầm rồi mới báo số.
+      // Báo con số mình mong đợi thay vì con số đã xảy ra là cách một bảng tác động bắt đầu nói dối.
+      const daCam = new Set(useCadStore.getState().selection);
+      thucTe += hatchIds.filter((id) => daCam.has(id)).length;
+      reallyApply(p);
+    }
+
+    const conLai = chon.filter((r) => r.kind !== 'surface').map((r) => r.key);
+    if (conLai.length && p.loai === 'kho') {
+      // Cộng CON SỐ HÀM TRẢ VỀ, không cộng số dòng đã tick — hai số đó chỉ bằng nhau khi mọi thứ
+      // đúng như mong đợi, mà đúng-như-mong-đợi là thứ không được phép giả định lúc đi báo cáo.
+      thucTe += replaceMaterial(luot.specIds, p.row.id, { usageKeys: conLai }, {
+        // Vật liệu mới không có UUID thì XOÁ UUID cũ: 3D rơi về màu phẳng — sự thật của bản ghi đó.
+        // Giữ UUID cũ là để entity mang mã thương mại mới mà vẫn dựng ra vân của vật liệu vừa bỏ.
+        matId: matIdCuaNhom({ matId: p.row.matId ?? undefined, specId: p.row.id }) ?? null,
+      });
+    }
+    setStatus(tr(`Đã đổi vật liệu ở ${thucTe} chỗ.`, `Changed material in ${thucTe} places.`));
   };
 
   const pick = (p: ChoAp) => {
-    if (selectedHatches.length) setPendingPick(p);
-    else reallyApply(p);
+    if (!selectedHatches.length) { reallyApply(p); return; }
+    const luot = moBangTacDong(p);
+    setPendingPick(luot);
+    // Mặc định là phạm vi HẸP — vùng người dùng đang trỏ vào. Đổi ít là bước lùi được rẻ nhất.
+    setChonKeys(new Set(luot.keysVungDangChon));
   };
 
   if (!mounted) return null;
@@ -191,21 +314,22 @@ export default function MaterialPalette({ onClose }: { onClose: () => void }) {
       {pendingPick && (
         // Tự portal ra body (K4) — đặt ở đây chỉ để cùng vòng đời panel, DOM không lồng trong kính.
         <MaterialImpactPreview
-          doc={doc}
-          specIds={selectedSpecIds}
-          nextName={tenCho(pendingPick)}
-          selectedCount={selectedHatches.length}
+          rows={pendingPick.rows}
+          specCount={pendingPick.specIds.length || 1}
+          chon={chonKeys}
+          keysVungDangChon={pendingPick.keysVungDangChon}
+          onToggle={(key) => setChonKeys((truoc) => {
+            const sau = new Set(truoc);
+            if (sau.has(key)) sau.delete(key); else sau.add(key);
+            return sau;
+          })}
+          onSetChon={(keys) => setChonKeys(new Set(keys))}
+          onJump={nhayToi}
+          nextName={tenCho(pendingPick.pick)}
           onApply={() => {
-            reallyApply(pendingPick);
+            apTheoPhamVi(pendingPick, chonKeys);
             setPendingPick(null);
           }}
-          /* Nút "toàn dự án" chỉ có nghĩa khi (a) đang chọn một vật liệu CÓ MÃ để đổi sang, và
-             (b) vật đang chọn đã có mã để mà thay. Thiếu một trong hai thì không bày nút. */
-          onApplyProject={
-            pendingPick.loai === 'kho' && selectedSpecIds.length
-              ? () => { applyProject(pendingPick); setPendingPick(null); }
-              : undefined
-          }
           onCancel={() => setPendingPick(null)}
         />
       )}

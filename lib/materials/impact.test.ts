@@ -1,6 +1,6 @@
 import { computeBoq } from '../boq/compute';
 import { emptyDoc, type BlockEntity, type HatchEntity, type WallType } from '../cad/model';
-import { inspectMaterialImpact, replaceMaterialReferences } from './impact';
+import { inspectMaterialImpact, replaceMaterialReferences, usageKey } from './impact';
 
 let pass = 0;
 let fail = 0;
@@ -80,6 +80,64 @@ console.log('\n[4] no-op không tạo Doc/snapshot mới');
   const result = replaceMaterialReferences(original, OLD, OLD);
   ok('trả đúng object cũ', result.doc === original);
   ok('không báo thay đổi', result.changedReferences === 0);
+}
+
+/* ═════════ V6 (06/09) — PHẠM VI TỚI TỪNG CHỖ DÙNG, và DANH TÍNH 3D đi cùng ═════════
+   Hai lỗ đo được trước lượt này: (a) phạm vi chỉ có nhị phân toàn-dự-án ↔ tập-entity, không cách
+   nào nói "8 trong 12"; (b) `matId` (UUID vật liệu, thứ `lib/three/cad-to-obj.ts` đọc để tra ảnh
+   vân) KHÔNG đi theo lượt thay ⇒ entity ngoài vùng chọn mang mã thương mại MỚI mà vẫn dựng vân CŨ. */
+
+console.log('\n[5] mỗi chỗ dùng có KHOÁ riêng — hai lớp của cùng một loại tường không lẫn nhau');
+{
+  const impact = inspectMaterialImpact(fixture(), OLD);
+  const keys = impact.usages.map((u) => u.key);
+  ok('khoá không trùng nhau', new Set(keys).size === keys.length);
+  ok('mặc định của loại tường và lớp ốp là HAI khoá khác nhau',
+    keys.includes(usageKey('wall-default', 'wall-type-1')) && keys.includes(usageKey('wall-layer', 'wall-type-1', 1)));
+}
+
+console.log('\n[6] usageKeys — đổi ĐÚNG những chỗ được tick, không hơn không kém');
+{
+  const original = fixture();
+  const chi2 = [usageKey('surface', 'floor-1'), usageKey('wall-layer', 'wall-type-1', 1)];
+  const r = replaceMaterialReferences(original, OLD, NEW, { usageKeys: chi2 });
+  ok('đổi đúng 2 trong 4 chỗ', r.changedReferences === 2);
+  ok('vùng tô được tick đã đổi', (r.doc.entities[0] as HatchEntity).specId === NEW);
+  ok('món rời KHÔNG tick thì đứng yên', (r.doc.entities[1] as BlockEntity).specId === OLD);
+  ok('lớp ốp được tick đã đổi', r.doc.wallTypes![0].layers![1].specId === NEW);
+  ok('mặc định của loại tường KHÔNG tick thì đứng yên', r.doc.wallTypes![0].specId === OLD);
+  ok('còn lại đúng 2 chỗ vẫn dùng mã cũ', inspectMaterialImpact(r.doc, OLD).totalReferences === 2);
+}
+
+console.log('\n[7] usageKeys rỗng ≠ không truyền — rỗng là KHÔNG chỗ nào');
+{
+  const original = fixture();
+  const r = replaceMaterialReferences(original, OLD, NEW, { usageKeys: [] });
+  ok('không đổi chỗ nào', r.changedReferences === 0);
+  ok('trả lại ĐÚNG object cũ ⇒ store không tạo nấc Undo rỗng', r.doc === original);
+  ok('bốn chỗ dùng vẫn còn nguyên mã cũ', inspectMaterialImpact(r.doc, OLD).totalReferences === 4);
+}
+
+console.log('\n[8] matId đi theo lượt thay — 3D không còn dựng vân của vật liệu vừa bị bỏ');
+{
+  const original = fixture();
+  (original.entities[0] as HatchEntity).matId = 'uuid-cu';
+  (original.entities[1] as BlockEntity).matId = 'uuid-cu';
+
+  const giuNguyen = replaceMaterialReferences(original, OLD, NEW);
+  ok('KHÔNG khai matId ⇒ giữ nguyên mã đang có (mọi nơi gọi cũ chạy y như trước)',
+    (giuNguyen.doc.entities[0] as HatchEntity).matId === 'uuid-cu');
+
+  const coMoi = replaceMaterialReferences(original, OLD, NEW, {}, { matId: 'uuid-moi' });
+  ok('khai matId mới ⇒ vùng tô mang UUID mới', (coMoi.doc.entities[0] as HatchEntity).matId === 'uuid-moi');
+  ok('khai matId mới ⇒ món rời cũng mang UUID mới', (coMoi.doc.entities[1] as BlockEntity).matId === 'uuid-moi');
+
+  const xoa = replaceMaterialReferences(original, OLD, NEW, {}, { matId: null });
+  ok('matId null ⇒ XOÁ hẳn (3D rơi về màu phẳng — sự thật của bản ghi mới)',
+    (xoa.doc.entities[0] as HatchEntity).matId === undefined);
+  ok('xoá matId KHÔNG đụng specId', (xoa.doc.entities[0] as HatchEntity).specId === NEW);
+  ok('Doc gốc vẫn nguyên vẹn sau cả ba lượt', (original.entities[0] as HatchEntity).matId === 'uuid-cu'
+    && (original.entities[0] as HatchEntity).specId === OLD);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

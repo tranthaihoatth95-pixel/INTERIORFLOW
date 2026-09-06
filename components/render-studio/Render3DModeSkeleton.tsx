@@ -45,6 +45,7 @@ import KetXuatPanel from '@/components/render-studio/KetXuatPanel';
 import type { Scene3DCameraApi } from '@/components/three/Scene3DViewer';
 import { SECTION_LAYER_KEYS, type SectionAcceptPayload } from '@/components/render-studio/SectionExtractPanel';
 import { SECTION_LAYERS } from '@/lib/three/section-entities';
+import { nhanKhoiVatLieu } from '@/lib/three/nhan-vat-lieu';
 import { useLevelUi, UNASSIGNED_LEVEL, ROOM_LIGHT_KINDS, ROOM_LIGHT_DEFAULT_Z_MM } from '@/components/render-studio/scene3d-ui';
 import { addLevelToDoc, currentLighting, writeSun, writeRoomLights, patchRoomLight, newRoomLightId } from '@/components/render-studio/doc-catalog';
 import { buildLightRig, type RoomLight } from '@/lib/three/lighting';
@@ -342,17 +343,9 @@ export default function Render3DModeSkeleton() {
   /* `[3D-VL-01]` — NHÃN KHUNG NHÌN PHẢI ĐẾM THẬT. Trước lượt này nhãn là chuỗi CHẾT
      "Khối xám · chưa vật liệu": gán vật liệu xong nó vẫn nói "chưa vật liệu" ⇒ một chỗ nữa
      nói sai điều vừa xảy ra. Nay đếm `specId` thật trên chính scene đang hiện — không nguồn
-     thứ hai, không đoán. Chưa gán cái nào thì giữ NGUYÊN VĂN câu cũ (không hồi quy chữ). */
-  const soKhoiCoVatLieu = scene?.groups.filter((g) => !!g.specId).length ?? 0;
-  const nhanKhungNhin =
-    soKhoi === 0
-      ? tr('Không gian trống', 'Empty space')
-      : soKhoiCoVatLieu === 0
-        ? tr('Khối xám · chưa vật liệu', 'Clay blocks · no material yet')
-        : tr(
-            `Khối xám · ${soKhoiCoVatLieu}/${soKhoi} đã gán vật liệu`,
-            `Clay blocks · ${soKhoiCoVatLieu}/${soKhoi} with material`,
-          );
+     thứ hai, không đoán. V6 (06/09): luật đếm dời vào `lib/three/nhan-vat-lieu.ts` vì dòng ghi
+     chú trong `Viewport3D` cũng nói đúng câu đó và cũng đang là chuỗi chết. */
+  const nhanKhungNhin = nhanKhoiVatLieu(scene, tr);
   const coBanVe = doc.entities.length > 0;
 
   // Lọc THẬT khỏi cảnh đưa vào Viewport3D theo tên group đang ẩn (state chia sẻ `useTree3DUi`,
