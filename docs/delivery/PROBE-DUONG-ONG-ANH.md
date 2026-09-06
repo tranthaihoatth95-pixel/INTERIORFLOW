@@ -190,3 +190,12 @@ chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/c
 ```
 Đo được `WebGL 2.0 (OpenGL ES 3.0 Chromium)`. ⇒ **Kiểm bằng GL thật là làm được**, đừng khai là
 không kiểm được nữa.
+
+### 📄 BẢN THI HÀNH — đường ống này đã được nối, 05-06/09
+Phiếu: **`docs/phieu-giao/P-V8c-UV-TRUOC-VAT-LIEU-SAU.md`** (thay `P-V8` và `P-V8b`, cả hai đã
+đóng dấu lỗi thời tại chỗ).
+Kết quả đo sau khi thi công, cùng phép đo với bảng trên: tường 4000 mm, bước 400 mm ⇒
+**1 màu → 570 màu · 20 dải tối trên hàng quét = đúng 10 chu kỳ**; tường có cửa (qua CSG) cũng
+**đúng 10 chu kỳ**, vân liền mạch hai bên hố cửa.
+⇒ Hàng **F · 3D TIÊU THỤ MAP** và **F0 · CHỤP ẢNH/VIDEO** trong bảng tầng chuyển **FAIL → PASS
+(máy)**; vế **HỮU DỤNG** vẫn chờ mắt nghề.

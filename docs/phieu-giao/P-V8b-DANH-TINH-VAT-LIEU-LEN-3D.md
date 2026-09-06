@@ -1,3 +1,9 @@
+> ⛔ **LỖI THỜI — ĐÃ BỊ THAY. Giữ làm dấu vết, KHÔNG thi hành.**
+> Kiến trúc đúng (`matId` tách khỏi `specId`) nhưng **thứ tự sai**: đặt trường dữ liệu trước người
+> tiêu thụ ⇒ ra trường không ai ghi, không ai đọc. Và nó bỏ sót ba chặn thật, nặng nhất là
+> **hình học không có `uv`** — đo trên WebGL: gán map lên đó ra ĐÚNG MỘT MÀU, 0 lỗi ném ra.
+> ⇒ Bản thi hành: **`docs/phieu-giao/P-V8c-UV-TRUOC-VAT-LIEU-SAU.md`**
+
 # P-V8b · MỞ ĐƯỜNG DANH TÍNH VẬT LIỆU LÊN 3D — thay P-V8 (phiếu đó SAI khoá)
 
 > 🔴 **P-V8 (phiếu trước) SAI VÀ ĐÃ BỊ THAY.** Nó bảo `group.specId → getMaterial`.

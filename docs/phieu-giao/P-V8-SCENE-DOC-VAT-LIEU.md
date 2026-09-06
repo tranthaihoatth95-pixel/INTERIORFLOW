@@ -1,3 +1,8 @@
+> ⛔ **LỖI THỜI — ĐÃ BỊ THAY. Giữ làm dấu vết, KHÔNG thi hành.**
+> Phiếu này sai khoá tra: `ProductSpec.id` là **cuid**, `getMaterial` rẽ theo `isMatIdUuid` ⇒ cuid
+> rơi xuống `legacy-sku` ⇒ `pbr = null` vĩnh viễn. Lane bác đúng ở ô ⓪, không gõ dòng mã nào.
+> ⇒ Bản thi hành: **`docs/phieu-giao/P-V8c-UV-TRUOC-VAT-LIEU-SAU.md`**
+
 # P-V8 · SCENE 3D ĐỌC VẬT LIỆU THẬT — trường đã có sẵn, chưa ai đọc
 
 > **Chạy SAU khi V5 khoá hợp đồng hạt-giống.** V5 đang sửa `lib/materials/hat-giong.ts` —
