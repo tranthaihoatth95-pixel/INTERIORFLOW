@@ -16,7 +16,15 @@
  *   Đo TRƯỚC khi sửa: buông tay ms 7987 · ghi bền ms 9273 ⇒ VI PHẠM (cửa sổ 1,3 s).
  *   Đo SAU khi sửa:  buông tay và ghi bền rơi cùng một mẫu ⇒ không vi phạm.
  *
- * Biến:  CA=cho|reload   (cho = để yên quan sát · reload = nạp lại NGAY khi slide vừa hiện lên màn)
+ * 06/09 — MỘT BỘ ĐO, HAI CẦU (`CAU=present|render`). Cùng động tác người dùng (vẽ ở 2D rồi bấm
+ * "Đưa ảnh bản vẽ sang …"), cùng bất biến, chỉ khác NGUỒN nào bị xoá và ĐÍCH nào phải bền:
+ *   · `present` (mặc định, không đổi một dòng) — nguồn `interiorflow.cadPresentHandoff` · đích deck IndexedDB
+ *   · `render`                                 — nguồn `interiorflow.cadHandoff`        · đích flow trên máy chủ
+ * Viết thêm một script riêng cho cầu thứ hai là đẻ bản sao thứ hai của cùng phép đo — đúng thứ
+ * lượt này sinh ra để dẹp.
+ *
+ * Biến:  CAU=present|render (cầu nào đang đo)
+ *        CA=cho|reload   (cho = để yên quan sát · reload = nạp lại NGAY khi slide vừa hiện lên màn)
  *        RELOAD_MS=7400  (ca thứ ba: nạp lại đúng MỐC ĐỒNG HỒ sau lúc bấm — dùng để QUÉT vùng
  *                         nguy hiểm giữa "handoff đã mất" và "deck đã ghi bền")
  *        LUOT=5          (số lượt lặp — nghiệm thu đòi 5/5)
@@ -28,6 +36,13 @@ import { join } from 'path';
 
 const GOC = process.env.IF_URL ?? 'http://localhost:3021';
 const CA = process.env.CA ?? 'cho';
+const CAU = process.env.CAU ?? 'present';
+if (CAU !== 'present' && CAU !== 'render') throw new Error(`CAU phải là present|render, nhận: ${CAU}`);
+/** Mỗi cầu: nguồn bị xoá · nhãn nút bấm · nơi hàng phải hạ cánh. */
+const CAU_HINH = {
+  present: { khoaNguon: 'interiorflow.cadPresentHandoff', nut: /Đưa ảnh bản vẽ sang Trình chiếu/ },
+  render: { khoaNguon: 'interiorflow.cadHandoff', nut: /Đưa ảnh bản vẽ sang Thiết kế 3D/ },
+}[CAU];
 const RELOAD_MS = process.env.RELOAD_MS ? Number(process.env.RELOAD_MS) : 0;
 const LUOT = Number(process.env.LUOT ?? 1);
 const TK = { identifier: 'kiem@localhost.test', password: 'matkhau123' };
@@ -87,9 +102,32 @@ const deckDom = (page) => page.evaluate(() => {
 });
 
 /** Còn hàng trong sessionStorage không — phân biệt "chưa tiêu thụ" với "tiêu thụ rồi mất đích". */
-const conHang = (page) => page.evaluate(() => {
-  try { const v = sessionStorage.getItem('interiorflow.cadPresentHandoff'); return v ? v.length : 0; } catch { return -1; }
-});
+const conHang = (page) => page.evaluate((k) => {
+  try { const v = sessionStorage.getItem(k); return v ? v.length : 0; } catch { return -1; }
+}, CAU_HINH.khoaNguon);
+
+/**
+ * ĐÍCH BỀN của cầu `render`: node `input.image` mang ảnh bản vẽ đã nằm trong graph ĐÃ GHI (máy
+ * chủ), không phải trong bộ nhớ zustand. Quét MỌI flow của user rồi lọc theo `PID` — `applyCadHandoff`
+ * chạy trên route toàn cục `/`, ta không đoán trước nó ghi vào flow nào.
+ *
+ * ⚠️ Không thấy ⇒ báo **KHÔNG ĐO ĐƯỢC**, KHÔNG báo "vi phạm": bộ đo mù và app hỏng là hai chuyện
+ * khác nhau, gộp lại là dựng kết luận trên chỗ mình không nhìn thấy.
+ */
+async function benRender(page, PID) {
+  try {
+    const ds = await (await page.request.get(`${GOC}/api/flows`)).json();
+    const ids = (ds.flows ?? []).filter((f) => f.project?.id === PID).map((f) => f.id);
+    for (const id of ids) {
+      const one = await (await page.request.get(`${GOC}/api/flows/${id}`)).json();
+      const g = one?.flow?.graphJson ?? '';
+      if (g.includes('input.image') && g.includes('data:image')) return { benAnh: 1, flowBen: id };
+    }
+    return { benAnh: 0, soFlow: ids.length };
+  } catch {
+    return { benAnh: 0, loiDo: 1 };
+  }
+}
 
 async function motLuot(n) {
   const HO_SO = join(tmpdir(), `if-tai-hien-${n}`);
@@ -113,6 +151,9 @@ async function motLuot(n) {
   page.on('pageerror', (e) => loi.push('PAGEERROR ' + String(e).slice(0, 160)));
 
   // ── B1 · deck có sẵn 1 slide (đúng trạng thái người dùng thật: đã mở hồ sơ trình bày) ──
+  // Cầu `render` KHÔNG hạ cánh vào deck ⇒ bỏ hẳn bước dựng deck nền: dựng nó chỉ để rồi không đo
+  // tới là kéo dài mỗi lượt ~40 s và thêm một chỗ "hỏng fixture" không liên quan gì tới cầu này.
+  if (CAU === 'present') {
   await page.goto(`${GOC}/projects/${PID}/present`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(5000);
   /**
@@ -136,6 +177,7 @@ async function motLuot(n) {
     await ctx.close();
     return null;
   }
+  }
 
   // ── B2 · 2D có bản vẽ thật ──
   await page.goto(`${GOC}/projects/${PID}/cad`, { waitUntil: 'networkidle' });
@@ -151,7 +193,7 @@ async function motLuot(n) {
   const t0 = Date.now();
   const mx = page.getByRole('button', { name: /^Xuất$/ });
   if (await mx.count()) { await mx.first().click({ force: true }); await page.waitForTimeout(700); }
-  const mi = page.getByRole('menuitem', { name: /Đưa ảnh bản vẽ sang Trình chiếu/ });
+  const mi = page.getByRole('menuitem', { name: CAU_HINH.nut });
   const daBam = await mi.count() > 0;
   if (daBam) await mi.first().click({ force: true });
 
@@ -173,7 +215,13 @@ async function motLuot(n) {
      * chắn thấy nó. Chiều ngược lại — bỏ sót một vi phạm THẬT — chỉ xảy ra nếu cửa sổ nguy hiểm
      * ngắn hơn khoảng lệch giữa hai lời gọi (vài chục ms); cửa sổ thật đo được là 1,3 s.
      */
-    try { hang = await conHang(page); d = await deckIdb(page); dom = await deckDom(page); } catch { /* điều hướng giữa chừng */ }
+    try {
+      hang = await conHang(page);
+      // Đích bền: deck IndexedDB (present) ↔ flow trên máy chủ (render). Cùng thứ tự đọc `hang`
+      // TRƯỚC đích — lý do ở khối chú thích ngay trên, áp cho cả hai cầu.
+      d = CAU === 'present' ? await deckIdb(page) : await benRender(page, PID);
+      dom = await deckDom(page);
+    } catch { /* điều hướng giữa chừng */ }
     if (d && dom) truc.push({ ms: Date.now() - t0, ...dom, ...d, hang });
     if (RELOAD_MS && !daReload && Date.now() - t0 >= RELOAD_MS) {
       daReload = true;
@@ -197,9 +245,9 @@ async function motLuot(n) {
    * đo ngay tại chỗ trang đang đứng — nạp lại trang cắt ngang lúc điều hướng là nó đo nhầm màn
    * (đã trượt đúng kiểu đó ở lượt quét RELOAD_MS=7500, url kết thúc ở `/cad`).
    */
-  await page.goto(`${GOC}/projects/${PID}/present`, { waitUntil: 'networkidle' }).catch(() => {});
+  await page.goto(CAU === 'present' ? `${GOC}/projects/${PID}/present` : `${GOC}/`, { waitUntil: 'networkidle' }).catch(() => {});
   await page.waitForTimeout(8000);
-  const cuoi = await deckIdb(page);
+  const cuoi = CAU === 'present' ? await deckIdb(page) : await benRender(page, PID);
   const domCuoi = await deckDom(page);
 
   /**
@@ -209,14 +257,29 @@ async function motLuot(n) {
    */
   const mau = truc.filter((t) => t.hang !== null && t.hang !== undefined);
   const tBuongTay = mau.find((t) => t.hang === 0)?.ms ?? null;
-  const tGhiBen = truc.find((t) => (t.anhThat ?? 0) >= 1)?.ms ?? null;
-  const viPham = tBuongTay !== null && (tGhiBen === null || tBuongTay < tGhiBen);
+  /** Mốc HẠ CÁNH BỀN — `anhThat` (slide có ảnh trong IndexedDB) ↔ `benAnh` (node ảnh trong flow đã ghi). */
+  const coBen = (t) => (CAU === 'present' ? (t.anhThat ?? 0) : (t.benAnh ?? 0)) >= 1;
+  const tGhiBen = truc.find(coBen)?.ms ?? null;
+  /**
+   * Chưa từng thấy đích bền TRONG SUỐT lượt đo ⇒ hai khả năng KHÔNG phân biệt được từ đây: app
+   * thật sự không ghi, hay bộ đo nhìn nhầm chỗ. Chỉ kết luận VI PHẠM khi đã thấy nguồn bị buông
+   * VÀ cuối lượt đích thật sự có hàng — còn lại trả `null` (không đo được), không đoán.
+   */
+  const benCuoi = CAU === 'present' ? (cuoi?.anhThat ?? 0) >= 1 : (cuoi?.benAnh ?? 0) >= 1;
+  const viPham =
+    tBuongTay === null ? false : tGhiBen !== null ? tBuongTay < tGhiBen : benCuoi ? true : null;
 
   ghi({ luot: n, moc: 'B3 trục thời gian', daBam, truc });
   ghi({ luot: n, moc: 'B4 bất biến', tBuongTay, tGhiBen, viPhamBatBien: viPham });
   ghi({ luot: n, moc: 'B5 chốt', ...cuoi, ...domCuoi, loi: loi.slice(0, 4) });
-  const dat = !!cuoi && cuoi.anhThat >= 1 && cuoi.soSlide >= 2 && !viPham;
-  ghi({ luot: n, KET: dat ? 'ĐẠT' : 'KHÔNG ĐẠT', ca: CA, reloadMs: RELOAD_MS || null });
+  const dat =
+    viPham === false &&
+    (CAU === 'present' ? !!cuoi && cuoi.anhThat >= 1 && cuoi.soSlide >= 2 : benCuoi);
+  ghi({
+    luot: n,
+    KET: viPham === null ? 'KHÔNG ĐO ĐƯỢC' : dat ? 'ĐẠT' : 'KHÔNG ĐẠT',
+    cau: CAU, ca: CA, reloadMs: RELOAD_MS || null,
+  });
   await ctx.close();
   return dat;
 }
@@ -226,6 +289,9 @@ for (let i = 1; i <= LUOT; i++) {
   const r = await motLuot(i);
   if (r === null) hong++; else if (r) dat++;
 }
-ghi({ TONG: `${dat}/${LUOT - hong}`, hongFixture: hong, ca: CA, reloadMs: RELOAD_MS || null });
-writeFileSync(`${RA}/tc-mat-slide-${CA}${RELOAD_MS ? `-${RELOAD_MS}` : ''}.json`, JSON.stringify(nhatKy, null, 1));
+ghi({ TONG: `${dat}/${LUOT - hong}`, hongFixture: hong, cau: CAU, ca: CA, reloadMs: RELOAD_MS || null });
+writeFileSync(
+  `${RA}/tc-mat-slide-${CAU}-${CA}${RELOAD_MS ? `-${RELOAD_MS}` : ''}.json`,
+  JSON.stringify(nhatKy, null, 1),
+);
 process.exit(hong === 0 && dat === LUOT ? 0 : 1);

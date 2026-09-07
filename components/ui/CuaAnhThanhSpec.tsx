@@ -38,6 +38,7 @@ import LightBar from './LightBar';
 import SoSpecDaLuu from './SoSpecDaLuu';
 import { loadImage } from '@/lib/imaging';
 import { stashSpecPresentHandoff } from '@/lib/present-editor/spec-present-handoff';
+import { useSheetsBucketId } from '@/lib/scope';
 import { extractForeground } from '@/lib/render-core/furniture-extract-core';
 import {
   FURNITURE_SIZE_PRIORS,
@@ -261,6 +262,8 @@ export default function CuaAnhThanhSpec({ onDong }: { onDong: () => void }) {
   // "Đưa sang Trình bày →" — CHỈ bật SAU khi `daLuu` có (spec đã ghi thật vào AssetRepresentation
   // qua /api/asset-representation, không phải state nháp trên màn). Cùng pattern CAD→Present
   // (lib/cad/present-handoff.ts): stash rồi router.push, PresentEditor tự consume-once.
+  /** Dự án đang mở — đóng dấu lên tờ spec gửi sang Trình chiếu (cùng khuôn `CadEditor.tsx`). */
+  const banGiaoProjectId = useSheetsBucketId();
   const toPresent = useCallback(() => {
     if (!spec || !daLuu) return;
     const dongChu = [
@@ -274,9 +277,12 @@ export default function CuaAnhThanhSpec({ onDong }: { onDong: () => void }) {
       dongChu,
       boqNote: spec.boq.duoc ? 'Đủ điều kiện vào BOQ.' : `Chưa vào BOQ: ${spec.boq.lyDo}`,
       representationId: daLuu.id,
+      // Đóng dấu dự án: từ 06/09 payload được GIỮ tới lúc ghi bền nên nó có thể còn sống khi
+      // người dùng mở Trình chiếu của dự án khác — xem `projectId` ở spec-present-handoff.ts.
+      projectId: banGiaoProjectId || null,
     });
     router.push('/present-editor');
-  }, [spec, daLuu, router]);
+  }, [spec, daLuu, router, banGiaoProjectId]);
 
   if (!mounted) return null; // portal cần DOM — tránh lệch SSR (cùng khuôn `CuaSoCongCu.tsx`).
 

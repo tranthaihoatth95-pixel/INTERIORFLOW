@@ -1,6 +1,7 @@
 'use client';
 
-import { useFlowStore } from '@/lib/store';
+import { useFlowStore, luuFlowNgay } from '@/lib/store';
+import { buongKhiDaGhi } from '@/lib/ban-giao/giu-den-khi-ben';
 import type { CadRole } from './store';
 
 /**
@@ -12,6 +13,13 @@ import type { CadRole } from './store';
  * thời điểm bàn giao, chống mất dữ liệu khi hoạ viên/BIM sửa parallel — xem IF1_IF2_BIGPICTURE.md
  * §2). PAYLOAD CŨ (chuỗi dataURL trần) VẪN PARSE ĐƯỢC: hàm consume tự nhận diện shape và bọc
  * lại thành `{version:1, dataUrl, snapshot:null, ...}` — không breaking file/session cũ.
+ *
+ * 🔴 TÁCH "ĐỌC" KHỎI "BUÔNG TAY" (06/09) — cùng lỗ với ba cầu bàn giao kia, và ở đây CỬA SỔ MẤT
+ * MÁT DÀI NHẤT. `applyCadHandoff` cũ xoá nguồn ngay lúc đọc rồi `addNode` vào zustand — bộ nhớ
+ * thuần; flow chỉ bền sau autosave **debounce 2000 ms** (`lib/store.ts`), cộng thêm một vòng
+ * mạng nếu đã đăng nhập. Nạp lại trang trong khoảng đó ⇒ node ảnh biến mất VÀ nguồn đã bị xoá ⇒
+ * người dùng bấm "Đưa sang Render", thấy app chuyển chặng, rồi không có gì cả. Luật + số đo:
+ * `lib/ban-giao/giu-den-khi-ben.ts`.
  */
 
 const KEY = 'interiorflow.cadHandoff';
@@ -97,20 +105,43 @@ function normalizePayload(raw: string | null): CadHandoffPayload | null {
   }
 }
 
-/** Gọi SAU bootstrapWorkspace()/openFlow() — tạo node Import Image từ bản vẽ đã stash. */
-export function applyCadHandoff(): void {
-  let raw: string | null = null;
+/** BUÔNG TAY — dọn cả 2 nguồn. Gọi SAU khi chắc chắn node ảnh đã ghi bền, không sớm hơn. */
+export function clearCadHandoff(): void {
   try {
-    raw = sessionStorage.getItem(KEY);
-    if (raw) sessionStorage.removeItem(KEY);
+    sessionStorage.removeItem(KEY);
   } catch {
-    raw = null;
+    /* private mode — mem-fallback dưới đây vẫn dọn */
   }
-  let payload = normalizePayload(raw);
-  // Fallback bộ nhớ (B1): consume một lần, dọn ngay để tránh double-consume.
-  if (!payload && memHandoff) payload = memHandoff;
   memHandoff = null;
+}
+
+/** Bản vẽ này ĐÃ nằm trong graph chưa? — bằng chứng luỹ đẳng, xem docstring `applyCadHandoff`. */
+function daCoTrongGraph(dataUrl: string): boolean {
+  return useFlowStore
+    .getState()
+    .nodes.some((n) => n.data?.defType === 'input.image' && n.data?.params?.file === dataUrl);
+}
+
+/**
+ * Gọi SAU bootstrapWorkspace()/openFlow() — tạo node Import Image từ bản vẽ đã stash.
+ *
+ * ĐỌC MÀ GIỮ → thêm node → chỉ `clearCadHandoff()` khi `luuFlowNgay()` trả biên nhận `true`.
+ *
+ * LUỸ ĐẲNG bằng CHÍNH NỘI DUNG, không bằng cờ: graph đã có node `input.image` mang đúng dataURL
+ * này nghĩa là lô hàng đã hạ cánh (autosave ghi cả `params`, kể cả nhánh `slim` lúc quota) ⇒
+ * buông tay. Chốt này gánh hai vai cùng lúc, và cả hai đều cần:
+ *   · hàm được gọi **nhiều lần trong một lượt điều hướng** (ProjectSelect 3 chỗ · HomeScreen 2) —
+ *     trước đây consume-once tự làm cho lần 2..n thành no-op; bỏ consume mà không có chốt là
+ *     thêm 3 node ảnh trùng nhau;
+ *   · lần mở trang SAU, nếu lượt trước ghi hỏng — thấy đã có thì dọn, chưa có thì thêm lại.
+ */
+export function applyCadHandoff(): void {
+  const payload = peekCadHandoffPayload(); // ĐỌC MÀ GIỮ — xem docstring đầu tệp
   if (!payload) return;
+  if (daCoTrongGraph(payload.dataUrl)) {
+    clearCadHandoff(); // đã hạ cánh từ lượt trước ⇒ buông tay, không chèn thêm
+    return;
+  }
   const store = useFlowStore.getState();
   try {
     store.setWorkspace('render');
@@ -119,7 +150,14 @@ export function applyCadHandoff(): void {
   }
   store.addNode('input.image', { x: 220, y: 180 });
   const node = useFlowStore.getState().nodes.at(-1);
-  if (node) store.updateParam(node.id, 'file', payload.dataUrl);
+  if (!node) return; // không thêm được node ⇒ KHÔNG xoá nguồn, lượt sau còn cứu được
+  store.updateParam(node.id, 'file', payload.dataUrl);
+  void buongKhiDaGhi({
+    bienNhan: luuFlowNgay,
+    xoaNguon: clearCadHandoff,
+    // Người dùng có thể đã đổi flow trong lúc ghi — bản vẽ chưa vào flow này thì đừng buông.
+    conHieuLuc: () => daCoTrongGraph(payload.dataUrl),
+  });
 }
 
 /** Test/dev: đọc payload đã stash mà không consume (để test parse backward-compat). */

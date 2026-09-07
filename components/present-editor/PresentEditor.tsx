@@ -63,7 +63,8 @@ import type { GridGeometryInput } from '@/lib/present-editor/suggest';
 import { consumePresentHandoffWithIds, deckImagesWithIdsFromNodes } from '@/lib/present-editor/handoff';
 import { peekCadPresentHandoffPayload, clearCadPresentHandoff } from '@/lib/cad/present-handoff';
 import { useSheetsBucketId } from '@/lib/scope';
-import { consumeSpecPresentHandoff } from '@/lib/present-editor/spec-present-handoff';
+import { peekSpecPresentHandoff, clearSpecPresentHandoff } from '@/lib/present-editor/spec-present-handoff';
+import { buongKhiDaGhi } from '@/lib/ban-giao/giu-den-khi-ben';
 import { consumePresentReturn, peekPresentReturn } from '@/lib/present-editor/present-return';
 import { markDemoStep } from '@/lib/studio/demo-spine';
 /**
@@ -416,8 +417,35 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
   // nguồn khi IndexedDB đã xác nhận. Hai vai mà `consume` từng gánh một mình nay tách rõ:
   // chống-chèn-đôi = `daNhanToRef` + id suy từ lô hàng · buông-tay = effect "BUÔNG TAY" bên dưới.
   const banGiaoBucketId = useSheetsBucketId();
-  /** Tờ bản vẽ ĐÃ chèn vào deck sống nhưng CHƯA xác nhận ghi bền — chưa được xoá nguồn. */
-  const toChoHaCanhRef = useRef<string | null>(null);
+  /**
+   * ═══ HÀNG CHỜ HẠ CÁNH — MỘT CỖ MÁY, BA MẶT TIỀN (06/09) ═══
+   *
+   * Ba cầu bàn giao đổ vào deck này: CAD→Trình chiếu (tờ bản vẽ) · Spec→Trình chiếu (tờ spec) ·
+   * Chỉnh ảnh→Trình chiếu (ảnh đã sửa, ghi về từ TAB KHÁC). Cả ba có CÙNG một bài toán và nó
+   * KHÔNG tự nhiên chút nào, nên viết ra đây thay vì để mỗi cầu tự mò lại:
+   *
+   *   ① không được xoá nguồn lúc chèn — lúc đó món hàng mới ở trong bộ nhớ, chưa bền
+   *      (số đo cửa sổ mất mát: `lib/ban-giao/giu-den-khi-ben.ts`);
+   *   ② không được gọi `luuNgay()` ngay trong effect chèn — `ed.update` xong thì CHA
+   *      (`PresentSheets`) CHƯA cầm deck mới; nó nhận qua `onDeckChange` ở effect khai TRƯỚC
+   *      effect này. Ghi ngay = ghi bản CŨ rồi xoá nguồn ⇒ mất y như cũ, chỉ khó thấy hơn.
+   *
+   * ⇒ hàng chờ + MỘT effect chạy theo `ed.deck`: tới lượt đó `liveDeck.current` mới đúng. Mỗi mục
+   * tự khai BẰNG CHỨNG nó đã nằm trong deck (`daHaCanh`) — không mục nào được buông tay dựa vào
+   * "chắc là chèn xong rồi".
+   */
+  interface ChoHaCanh {
+    /** Tên để đọc log/test, không hiện ra giao diện. */
+    ten: string;
+    /** Bằng chứng món hàng ĐANG nằm trong deck sống. `false` ⇒ chưa tới lượt, giữ nguyên nguồn. */
+    daHaCanh: (d: typeof ed.deck) => boolean;
+    /** BUÔNG TAY — chỉ chạy sau biên nhận `true` từ `luuNgay()`. */
+    buongTay: () => void;
+  }
+  const choHaCanhRef = useRef<ChoHaCanh[]>([]);
+  const themChoHaCanh = useCallback((muc: ChoHaCanh) => {
+    if (!choHaCanhRef.current.some((m) => m.ten === muc.ten)) choHaCanhRef.current.push(muc);
+  }, []);
   /**
    * 🔴 CHỐNG CHÈN HAI LẦN — vai này TRƯỚC ĐÂY do chính `consume` gánh: xoá nguồn ngay lúc đọc thì
    * lượt chạy thứ hai tự thành no-op. Bỏ consume mà không dựng lại chốt là chèn đôi NGAY, đo được
@@ -472,29 +500,35 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
       });
     });
     ed.selectSlide(insertAt);
-    toChoHaCanhRef.current = slideId;
+    themChoHaCanh({
+      ten: `cad:${slideId}`,
+      daHaCanh: (d) => d.slides.some((s) => s.id === slideId),
+      buongTay: clearCadPresentHandoff,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /**
-   * BUÔNG TAY — và chỉ buông khi tờ bản vẽ đã THẬT SỰ nằm trong IndexedDB.
+   * BUÔNG TAY — và chỉ buông khi món hàng đã THẬT SỰ nằm trong IndexedDB. Một effect cho CẢ BA
+   * cầu (xem docstring `ChoHaCanh` ở trên); luật nằm ở `buongKhiDaGhi`, không chép lại ở đây.
    *
-   * Chạy theo `ed.deck` chứ không nằm chung effect chèn ở trên: lúc `ed.update` vừa xong, cha
-   * (`PresentSheets`) CHƯA nhận deck mới — nó nhận qua `onDeckChange` ở effect khai TRƯỚC effect
-   * này, nên tới lượt chạy này `liveDeck.current` mới đúng và `luuNgay()` mới ghi đúng thứ vừa
-   * chèn. Ghi hỏng / chưa có `luuNgay` ⇒ GIỮ NGUYÊN nguồn: lần mở trang sau phép chèn idempotent
-   * ở trên tự dọn. Không có nhánh nào xoá nguồn mà không có bằng chứng đã ghi.
+   * Ghi hỏng / chưa có `luuNgay` ⇒ GIỮ NGUYÊN nguồn: lần mở trang sau, phép áp LUỸ ĐẲNG của từng
+   * cầu tự nhận ra "đã có ở đích" rồi dọn. Không có nhánh nào xoá nguồn mà không có bằng chứng.
    */
   useEffect(() => {
-    const slideId = toChoHaCanhRef.current;
-    if (!slideId) return;
-    if (!ed.deck.slides.some((s) => s.id === slideId)) return;
+    const cho = choHaCanhRef.current.filter((m) => m.daHaCanh(ed.deck));
+    if (!cho.length) return;
     let huy = false;
     void (async () => {
-      const ok = await (luuNgayRef.current?.() ?? Promise.resolve(false));
-      if (huy || !ok) return;
-      toChoHaCanhRef.current = null;
-      clearCadPresentHandoff();
+      for (const muc of cho) {
+        const daBuong = await buongKhiDaGhi({
+          bienNhan: () => luuNgayRef.current?.() ?? false,
+          xoaNguon: muc.buongTay,
+          conHieuLuc: () => !huy,
+        });
+        if (huy) return;
+        if (daBuong) choHaCanhRef.current = choHaCanhRef.current.filter((m) => m !== muc);
+      }
     })();
     return () => {
       huy = true;
@@ -505,13 +539,30 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
   // (IF-LIVE-BRIDGE.md MISSING). Cùng pattern consume-once + chèn 1 SLIDE MỚI như cầu CAD→Present
   // ở trên — KHÔNG content-model mới, chỉ makeText đã có. Chỉ tới đây khi spec đã DUYỆT VÀ LƯU
   // THẬT (nút "Đưa sang Trình bày" ở G4 chỉ bật sau khi /api/asset-representation trả 200).
+  /** Cùng vai `daNhanToRef` của cầu CAD — xem docstring ở đó. Bỏ consume mà không dựng lại chốt
+   *  này là chèn đôi ngay ở React StrictMode (effect mount chạy hai lần). */
+  const daNhanSpecRef = useRef(false);
   useEffect(() => {
-    const p = consumeSpecPresentHandoff();
+    if (daNhanSpecRef.current) return;
+    const p = peekSpecPresentHandoff(); // ĐỌC MÀ GIỮ — xem docstring spec-present-handoff.ts
     if (!p) return;
+    // Tờ gửi từ dự án KHÁC: không nhận, và cũng KHÔNG xoá (nó là hàng của nhà bên kia).
+    if (p.projectId && banGiaoBucketId && p.projectId !== banGiaoBucketId) return;
+    /**
+     * ID SUY TỪ CHÍNH LÔ HÀNG (thay `newId('sld')` ngẫu nhiên) ⇒ phép chèn LUỸ ĐẲNG: mở lại trang
+     * mà deck khôi phục ĐÃ có slide này nghĩa là lô hàng đã hạ cánh bền ⇒ buông tay. Chưa có ⇒
+     * chèn lại. Với id ngẫu nhiên thì không có cách nào hỏi câu đó, nên mất là mất hẳn.
+     */
+    const slideId = `sld-spec-${p.timestamp}-${p.version}`;
+    if (ed.deck.slides.some((s) => s.id === slideId)) {
+      clearSpecPresentHandoff();
+      return;
+    }
+    daNhanSpecRef.current = true; // chốt TRƯỚC khi chèn
     const insertAt = ed.deck.slides.length;
     ed.update((d) => {
       d.slides.push({
-        id: newId('sld'),
+        id: slideId,
         background: '#F4F1EA',
         backgroundImage: null,
         elements: [
@@ -542,6 +593,11 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
       });
     });
     ed.selectSlide(insertAt);
+    themChoHaCanh({
+      ten: `spec:${slideId}`,
+      daHaCanh: (d) => d.slides.some((s) => s.id === slideId),
+      buongTay: clearSpecPresentHandoff,
+    });
     // Chế độ hiển thị Demo — mốc CHỈ ghi khi slide thật vừa được chèn (đúng lúc, không sớm hơn).
     markDemoStep('specPresent', p.doiTuong);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2013,15 +2069,25 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
   const lastAppliedReturnTs = useRef(0);
   useEffect(() => {
     function applyPendingReturn() {
-      const ret = readPhotoEditorReturn();
+      const ret = readPhotoEditorReturn(); // ĐÃ là peek từ đầu — chỉ chỗ XOÁ là sai (xem dưới)
       if (!ret || ret.ts <= lastAppliedReturnTs.current) return;
       lastAppliedReturnTs.current = ret.ts;
       const { dataUrl, target } = ret;
+      /**
+       * 🔴 06/09 — CẦU NÀY MẤT NHIỀU NHẤT NẾU HỎNG, vì nó là cầu DUY NHẤT chở VIỆC MỚI: ảnh đã
+       * sửa chỉ tồn tại trong `localStorage`, tài liệu của tab Chỉnh ảnh KHÔNG được lưu ở đâu cả.
+       * Bản cũ gọi `clearPhotoEditorReturn()` ngay sau `ed.update` — tức xoá bản duy nhất trong
+       * khi deck mới nằm trong bộ nhớ. Nay xếp vào hàng chờ hạ cánh như hai cầu kia.
+       *
+       * Áp lại LUỸ ĐẲNG sẵn: gán `el.src = dataUrl` lần hai cho ra đúng kết quả lần đầu.
+       */
+      let coDich = false;
       ed.update((d) => {
         if (target.assetId) {
           const next = setLinkedAssetSrc(d, target.assetId, dataUrl);
           d.linkedAssets = next.linkedAssets;
           d.slides = next.slides;
+          coDich = true;
           return;
         }
         const slide = d.slides.find((s) => s.id === target.slideId);
@@ -2029,9 +2095,22 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
         if (el && el.kind === 'image') {
           el.src = dataUrl;
           el.crop = { x: 0, y: 0, w: 1, h: 1 }; // ảnh mới (đã composite) — crop cũ hết ý nghĩa
+          coDich = true;
         }
       });
-      clearPhotoEditorReturn();
+      if (!coDich) {
+        // Đích không còn (slide/element đã xoá ở tab này trong lúc người dùng chỉnh ảnh bên kia).
+        // Giữ nguồn lúc này KHÔNG cứu được gì — không có chỗ nào để hạ cánh — mà lại kẹt mãi và
+        // ôm một dataURL lớn trong localStorage. Buông, và đó là quyết định có ý thức.
+        clearPhotoEditorReturn();
+        return;
+      }
+      themChoHaCanh({
+        ten: `anh-ve:${ret.ts}`,
+        daHaCanh: (d) =>
+          d.slides.some((sl) => sl.elements.some((e) => e.kind === 'image' && e.src === dataUrl)),
+        buongTay: clearPhotoEditorReturn,
+      });
     }
     applyPendingReturn(); // phòng ảnh đã ghi về trong lúc tab này chưa mount / đang tải
     function onStorage(e: StorageEvent) {
@@ -2043,7 +2122,7 @@ export default function PresentEditor({ initialDeck, onDeckChange, initialTab, s
       window.removeEventListener('storage', onStorage);
       window.removeEventListener('focus', applyPendingReturn);
     };
-  }, [ed]);
+  }, [ed, themChoHaCanh]);
 
   // Tài sản liên kết (PS-3) — panel Inspector chọn/gắn/gỡ; chỉnh nguồn thật xảy ra ở
   // applyPendingReturn (ghi về từ /photo-editor) qua setLinkedAssetSrc.

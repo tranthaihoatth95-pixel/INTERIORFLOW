@@ -1145,7 +1145,15 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let quotaWarned = false;
 
-function persistNow() {
+/**
+ * Ghi flow xuống kho bền. Trả BIÊN NHẬN `true` = đã bền thật (máy chủ nhận, hoặc localStorage đã
+ * nuốt) — 06/09, phục vụ luật bàn giao `lib/ban-giao/giu-den-khi-ben.ts`: `applyCadHandoff` chỉ
+ * được xoá bản vẽ đã stash SAU khi node ảnh thật sự nằm trong kho bền.
+ *
+ * Mọi caller CŨ (timer 2 s, `flush()`) bỏ giá trị trả về nên hành vi của chúng không đổi một
+ * dòng; đây thuần là mở thêm một cửa đọc kết quả vốn đã có mà trước nay ném đi.
+ */
+function persistNow(): Promise<boolean> {
   const { flowName, credits, nodes, edges, groups, comments, strokes, user, currentFlowId, currentFlowRev } =
     useFlowStore.getState();
 
@@ -1155,7 +1163,7 @@ function persistNow() {
     // vd flow local-only vừa lên đời) → KHÔNG gửi `expectedRev`, server coi như client cũ (xem
     // app/api/flows/[id]/route.ts). Có giá trị → server chặn ghi nếu ai đó đã ghi trước ta.
     const flowIdAtRequest = currentFlowId;
-    fetch(`/api/flows/${flowIdAtRequest}`, {
+    return fetch(`/api/flows/${flowIdAtRequest}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1166,20 +1174,20 @@ function persistNow() {
     })
       .then(async (res) => {
         // Người dùng có thể đã chuyển sang flow khác trong lúc request đang bay — đừng ghi rev
-        // của flow A vào state của flow B.
-        if (useFlowStore.getState().currentFlowId !== flowIdAtRequest) return;
+        // của flow A vào state của flow B. (Ghi đã xong trên máy chủ ⇒ vẫn là biên nhận `true`.)
+        if (useFlowStore.getState().currentFlowId !== flowIdAtRequest) return res.ok;
         if (res.status === 409) {
           useFlowStore
             .getState()
             .setNotice('Ai đó vừa sửa flow này trước bạn — tải lại trang để lấy bản mới nhất.');
-          return;
+          return false; // 409 = KHÔNG ghi được. Người gọi phải giữ nguyên nguồn bàn giao.
         }
-        if (!res.ok) return;
+        if (!res.ok) return false;
         const body = await res.json().catch(() => null);
         if (typeof body?.rev === 'number') useFlowStore.setState({ currentFlowRev: body.rev });
+        return true;
       })
-      .catch(() => {});
-    return;
+      .catch(() => false);
   }
 
   // Đóng dấu CHỦ SỞ HỮU bản lưu local — để bootstrapWorkspace không bê flow của
@@ -1197,6 +1205,7 @@ function persistNow() {
   const payload = { version: 1, owner, flowName, credits, nodes, edges, groups, comments, strokes };
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify(payload));
+    return Promise.resolve(true);
   } catch {
     // quota — thử bỏ outputs (ảnh kết quả) để nhẹ bớt
     try {
@@ -1208,6 +1217,9 @@ function persistNow() {
         })),
       };
       localStorage.setItem(SAVE_KEY, JSON.stringify(slim));
+      // Bản `slim` bỏ `run` (ảnh KẾT QUẢ) nhưng GIỮ `params` — nơi ảnh bàn giao CAD→Render nằm
+      // (`updateParam(id,'file',dataUrl)`) ⇒ vẫn là biên nhận hợp lệ cho luật bàn giao.
+      return Promise.resolve(true);
     } catch {
       if (!quotaWarned) {
         quotaWarned = true;
@@ -1215,8 +1227,19 @@ function persistNow() {
           .getState()
           .setConnectError('Flow quá nặng để autosave (ảnh upload lớn) — kết quả vẫn chạy bình thường.');
       }
+      return Promise.resolve(false);
     }
   }
+}
+
+/**
+ * GHI FLOW NGAY + trả biên nhận — anh em của `SheetsAutosaver.flushCho()` bên Trình chiếu.
+ * Huỷ lượt debounce đang treo để không ghi hai lần liên tiếp cùng một nội dung.
+ */
+export function luuFlowNgay(): Promise<boolean> {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = null;
+  return persistNow();
 }
 
 if (typeof window !== 'undefined') {
